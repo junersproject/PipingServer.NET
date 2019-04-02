@@ -9,6 +9,9 @@ namespace Piping
     {
         [OperationContract]
         [WebInvoke(UriTemplate = "{perKey}")]
-        Stream Pipe(string perKey, Stream InputStream);
+        string Upload(string perKey, Stream InputStream);
+        [OperationContract]
+        [WebGet(UriTemplate = "{perKey}")]
+        Stream Download(string perKey);
     }
 }

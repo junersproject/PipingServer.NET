@@ -8,8 +8,11 @@ namespace Piping
     public interface IService
     {
         [OperationContract]
-        [WebInvoke(UriTemplate = "{perKey}")]
-        string Upload(string perKey, Stream InputStream);
+        [WebInvoke(UriTemplate = "{perKey}", Method = "POST")]
+        string PostUpload(string perKey, Stream InputStream);
+        [OperationContract]
+        [WebInvoke(UriTemplate = "{perKey}", Method = "PUT")]
+        string PutUpload(string perKey, Stream InputStream);
         [OperationContract]
         [WebGet(UriTemplate = "{perKey}")]
         Stream Download(string perKey);

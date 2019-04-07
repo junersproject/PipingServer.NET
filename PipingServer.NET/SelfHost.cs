@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 
 namespace Piping
@@ -7,25 +8,27 @@ namespace Piping
     internal class SelfHost : IDisposable
     {
         public SelfHost() { }
-        public bool HttpGetEnabled { get; set;}
-        public bool HttpsGetEnabled { get; set; }
+        public bool HttpGetEnabled { get; set; } = true;
+        public bool HttpsGetEnabled { get; set; } = true;
+        public PolicyVersion PolicyVersion { get; set; } = PolicyVersion.Policy15;
         ServiceHost Host;
 
         public void Open(params Uri[] baseAddress)
         {
             if (Host != null)
                 throw new InvalidOperationException("Opend.");
-            Host = new ServiceHost(typeof(Service), baseAddress) {
+            Host = new ServiceHost(typeof(Service), baseAddress)
+            {
                 Description = {
                     Behaviors =
                     {
                         new ServiceMetadataBehavior
                         {
-                            HttpGetEnabled = true,
-                            HttpsGetEnabled = true,
+                            HttpGetEnabled = HttpGetEnabled,
+                            HttpsGetEnabled = HttpsGetEnabled,
                             MetadataExporter =
                             {
-                                PolicyVersion = PolicyVersion.Policy15,
+                                PolicyVersion = PolicyVersion,
                             },
                         },
                     },
@@ -36,7 +39,13 @@ namespace Piping
 
         public void Dispose()
         {
-            Host?.Close();
+            try
+            {
+                Host?.Close();
+            }catch(Exception e)
+            {
+                System.Diagnostics.Trace.WriteLine(e);
+            }
             Host = null;
         }
     }

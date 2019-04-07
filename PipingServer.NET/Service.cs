@@ -5,7 +5,11 @@ namespace Piping
 {
     public class Service : IService
     {
-        public string Upload(string per, Stream inputStream)
+        public string PostUpload(string per, Stream inputStream)
+        {
+            throw new NotImplementedException();
+        }
+        public string PutUpload(string per, Stream inputStream)
         {
             throw new NotImplementedException();
         }

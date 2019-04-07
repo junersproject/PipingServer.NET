@@ -11,10 +11,18 @@ namespace Piping.Tests
     [TestClass()]
     public class ServiceTests
     {
+        [TestMethod]
+        public void InstanceTest()
+        {
+            using (var Host = new SelfHost())
+            {
+                Host.Open(new Uri("http://localhost:8080/PipingServiceInstanceTest"));
+            }
+        }
         [TestMethod()]
         public void UploadTest()
         {
-            Assert.Fail();
+            
         }
     }
 }

@@ -18,29 +18,7 @@ namespace Piping
         {
             if (Host != null)
                 throw new InvalidOperationException("Opend.");
-            Host = new ServiceHost(typeof(Service), baseAddress)
-            {
-                Description = {
-                    Behaviors =
-                    {
-                        new ServiceMetadataBehavior
-                        {
-                            
-                            HttpGetEnabled = HttpGetEnabled,
-                            HttpsGetEnabled = HttpsGetEnabled,
-                            MetadataExporter =
-                            {
-                                PolicyVersion = PolicyVersion,
-                            },
-                            HttpsGetBinding = new BasicHttpBinding
-                            {
-                                TransferMode = TransferMode,
-                                
-                            },
-                        },
-                    },
-                },
-            };
+            Host = new ServiceHost(typeof(Service), baseAddress);
             Host.Open();
         }
 

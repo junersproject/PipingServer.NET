@@ -14,7 +14,9 @@ namespace Piping.Tests
         [TestMethod]
         public void InstanceTest()
         {
-            using (var Host = new SelfHost())
+            using (var Host = new SelfHost {
+                HttpGetEnabled = true,
+            })
             {
                 Host.Open(new Uri("http://localhost:8080/PipingServiceInstanceTest"));
             }

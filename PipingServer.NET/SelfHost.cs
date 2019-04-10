@@ -8,8 +8,9 @@ namespace Piping
     internal class SelfHost : IDisposable
     {
         public SelfHost() { }
-        public bool HttpGetEnabled { get; set; } = true;
-        public bool HttpsGetEnabled { get; set; } = true;
+        public bool HttpGetEnabled { get; set; } = false;
+        public bool HttpsGetEnabled { get; set; } = false;
+        public TransferMode TransferMode { get; } = TransferMode.Streamed;
         public PolicyVersion PolicyVersion { get; set; } = PolicyVersion.Policy15;
         ServiceHost Host;
 
@@ -24,11 +25,17 @@ namespace Piping
                     {
                         new ServiceMetadataBehavior
                         {
+                            
                             HttpGetEnabled = HttpGetEnabled,
                             HttpsGetEnabled = HttpsGetEnabled,
                             MetadataExporter =
                             {
                                 PolicyVersion = PolicyVersion,
+                            },
+                            HttpsGetBinding = new BasicHttpBinding
+                            {
+                                TransferMode = TransferMode,
+                                
                             },
                         },
                     },

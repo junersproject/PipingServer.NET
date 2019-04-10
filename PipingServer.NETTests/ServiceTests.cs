@@ -11,7 +11,7 @@ namespace Piping.Tests
     [TestClass()]
     public class ServiceTests
     {
-        [TestMethod]
+        [TestMethod,TestCategory("ShortTime")]
         public void InstanceTest()
         {
             using (var Host = new SelfHost())
@@ -19,10 +19,10 @@ namespace Piping.Tests
                 Host.Open(new Uri("http://localhost:8080/PipingServiceInstanceTest"));
             }
         }
-        [TestMethod()]
+        [TestMethod,TestCategory("ShortTime")]
         public void UploadTest()
         {
-            
+            Assert.Fail();
         }
     }
 }

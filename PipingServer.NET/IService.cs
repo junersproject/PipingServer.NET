@@ -14,7 +14,7 @@ namespace Piping
         [WebInvoke(UriTemplate = "{perKey}", Method = "PUT")]
         string PutUpload(string perKey, Stream InputStream);
         [OperationContract]
-        [WebGet(UriTemplate = "{perKey}")]
-        Stream Download(string perKey);
+        [WebInvoke(UriTemplate = "{perKey}", Method = "GET")]
+        Stream Download(string perKey, Stream inputStream);
     }
 }

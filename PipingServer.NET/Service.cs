@@ -15,15 +15,15 @@ namespace Piping
             //config.EnableProtocol(new NetTcpBinding{ TransferMode = TransferMode.Streamed });
             config.AddServiceEndpoint(typeof(IService), new BasicHttpBinding(), "basic");
         }
-        public string PostUpload(string per, Stream inputStream)
+        public string PostUpload(Stream inputStream)
         {
             throw new NotImplementedException();
         }
-        public string PutUpload(string per, Stream inputStream)
+        public string PutUpload(Stream inputStream)
         {
             throw new NotImplementedException();
         }
-        public Stream Download(string per, Stream inputStream)
+        public Stream Download(Stream inputStream)
         {
             throw new NotImplementedException();
         }

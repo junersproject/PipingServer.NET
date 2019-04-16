@@ -9,11 +9,17 @@ namespace Piping
     {
         public static void Configure(ServiceConfiguration config)
         {
-            config.Description.Behaviors.Add(new ServiceMetadataBehavior { HttpGetEnabled = true });
+            config.Description.Behaviors.Add(new ServiceMetadataBehavior { HttpGetEnabled = true, HttpsGetEnabled = true, });
             config.EnableProtocol(new BasicHttpBinding{ TransferMode = TransferMode.Streamed });
             config.EnableProtocol(new BasicHttpsBinding{ TransferMode = TransferMode.Streamed });
             //config.EnableProtocol(new NetTcpBinding{ TransferMode = TransferMode.Streamed });
-            config.AddServiceEndpoint(typeof(IService), new BasicHttpBinding(), "basic");
+            config.AddServiceEndpoint(typeof(IService), new WebHttpBinding {
+                TransferMode = TransferMode.Streamed,
+                MaxReceivedMessageSize = int.MaxValue,
+                MaxBufferSize = int.MaxValue,
+                ReceiveTimeout = TimeSpan.FromHours(1),
+                SendTimeout = TimeSpan.FromHours(1),
+            }, "basic");
         }
         public string PostUpload(Stream inputStream)
         {

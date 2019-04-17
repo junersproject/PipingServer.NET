@@ -14,9 +14,7 @@ namespace Piping.Tests
         public void InstanceTest()
         {
             var Uri = new Uri("http://localhost:8080/PipingServiceInstanceTest");
-            using (var Host = new SelfHost{ 
-                HttpGetEnabled = true,
-            })
+            using (var Host = new SelfHost())
             {
                 Host.Open(Uri);
             }
@@ -24,10 +22,7 @@ namespace Piping.Tests
         [TestMethod,TestCategory("ShortTime")]
         public void UploadTest()
         {
-            using (var Host = new SelfHost
-            {
-                HttpGetEnabled = true,
-            })
+            using (var Host = new SelfHost())
             {
                 var Uri = new Uri("http://localhost:8080/UploadTest");
                 Host.Open(Uri);
@@ -38,7 +33,8 @@ namespace Piping.Tests
                     request.Method = "PUT";
                     request.ContentType = "application/octet-stream";
                     request.ContentLength = stream.Length;
-                    request.AllowWriteStreamBuffering = false;
+                    request.AllowWriteStreamBuffering = true;
+                    request.AllowReadStreamBuffering = false;
                     // タイムアウト6h
                     request.Timeout = 360 * 60 * 1000;
                     request.ReadWriteTimeout = 360 * 60 * 1000;

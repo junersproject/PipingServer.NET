@@ -8,7 +8,7 @@ namespace Piping
     public interface IService
     {
         [OperationContract]
-        [WebInvoke(UriTemplate ="")]
+        [WebInvoke(UriTemplate ="", Method ="*", BodyStyle =WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json)]
         Stream Default(Stream InputStream);
     }
 }

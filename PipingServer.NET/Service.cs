@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.ServiceModel;
 using System.ServiceModel.Activation;
@@ -57,7 +58,8 @@ namespace Piping
             var IncomingRequest = WebOperationContext.Current.IncomingRequest;
             var Method = IncomingRequest.Method;
             var RequestUri = IncomingRequest.UriTemplateMatch.RequestUri;
-            //WebOperationContext.Current.OutgoingResponse
+            var reqPath = RequestUri.LocalPath.TrimEnd('/');
+
             throw new NotImplementedException();
         }
         internal Stream 

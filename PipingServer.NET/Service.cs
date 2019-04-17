@@ -2,6 +2,7 @@
 using System.IO;
 using System.ServiceModel;
 using System.ServiceModel.Description;
+using System.ServiceModel.Web;
 
 namespace Piping
 {
@@ -21,16 +22,9 @@ namespace Piping
                 SendTimeout = TimeSpan.FromHours(1),
             }, "basic");
         }
-        public string PostUpload(Stream inputStream)
+        public Stream Default(Stream inputStream)
         {
-            throw new NotImplementedException();
-        }
-        public string PutUpload(Stream inputStream)
-        {
-            throw new NotImplementedException();
-        }
-        public Stream Download(Stream inputStream)
-        {
+            var Method = WebOperationContext.Current.IncomingRequest.Method;
             throw new NotImplementedException();
         }
     }

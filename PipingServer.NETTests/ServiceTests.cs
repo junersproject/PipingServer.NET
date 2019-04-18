@@ -1,9 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.ServiceModel;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Piping.Tests
 {
@@ -50,6 +52,28 @@ namespace Piping.Tests
                         // nop
                     }
                     request.GetResponse();
+                }
+            }
+        }
+        [TestMethod, TestCategory("ShortTime")]
+        public async Task GetVersionTest()
+        {
+            using (var Host = new SelfHost())
+            {
+                var Uri = new Uri("http://localhost:8080/version");
+                Host.Open(Uri);
+                HttpWebRequest request = WebRequest.Create(Uri) as HttpWebRequest;
+                request.Method = "GET";
+                request.AllowWriteStreamBuffering = true;
+                request.AllowReadStreamBuffering = false;
+                // タイムアウト6h
+                request.Timeout = 360 * 60 * 1000;
+                request.ReadWriteTimeout = 360 * 60 * 1000;
+                var response = request.GetResponse();
+                var resStream = response.GetResponseStream();
+                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
+                {
+                    Trace.WriteLine(await reader.ReadToEndAsync());
                 }
             }
         }

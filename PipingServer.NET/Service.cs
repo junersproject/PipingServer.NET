@@ -16,11 +16,11 @@ namespace Piping
 {
     [AspNetCompatibilityRequirements(RequirementsMode =AspNetCompatibilityRequirementsMode.Allowed)]
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-    [ServiceContract(SessionMode= SessionMode.NotAllowed)]
     public class Service : IService
     {
+        string Location;
         string BasePath;
-        Lazy<FileVersionInfo> VERSION = new Lazy<FileVersionInfo>(() => FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location));
+        FileVersionInfo VERSION;
         /// <summary>
         /// デフォルト設定の反映
         /// </summary>
@@ -57,7 +57,9 @@ namespace Piping
         }
         public Service()
         {
-            BasePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            Location = Assembly.GetExecutingAssembly().Location;
+            BasePath = Path.GetDirectoryName(Location);
+            VERSION = FileVersionInfo.GetVersionInfo(Location);
             NAME_TO_RESERVED_PATH = new Dictionary<string, Func<OutgoingWebResponseContext, Stream>>
             {
                 {"/", DefaultPage },
@@ -69,6 +71,7 @@ namespace Piping
         }
         private Encoding Encoding = new UTF8Encoding(false);
         private Dictionary<string, Func<OutgoingWebResponseContext, Stream>> NAME_TO_RESERVED_PATH;
+
         /// <summary>
         /// エントリーポイント
         /// </summary>
@@ -121,7 +124,6 @@ namespace Piping
         protected Stream HelpPage(OutgoingWebResponseContext Response)
         {
             var url = HttpContext.Current.Server.MapPath(".");
-            var VERSION = this.VERSION.Value;
             var Encoding = Response.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes(@$"Help for piping - server { VERSION}
 (Repository: https://github.com/nwtgck/piping-server)
@@ -153,7 +155,6 @@ curl ${url}/mypath | openssl aes-256-cbc -d");
         }
         protected Stream VersionPage(OutgoingWebResponseContext Response)
         {
-            var VERSION = this.VERSION.Value;
             var Encoding = Response.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes($"{VERSION}\n");
             Response.ContentLength = Bytes.Length;

@@ -15,7 +15,7 @@ namespace Piping.Tests
         [TestMethod,TestCategory("ShortTime")]
         public void InstanceTest()
         {
-            var Uri = new Uri("http://localhost:8080/PipingServiceInstanceTest");
+            var Uri = new Uri("http://localhost:8080/InstanceTest");
             using (var Host = new SelfHost())
             {
                 Host.Open(Uri);
@@ -26,12 +26,13 @@ namespace Piping.Tests
         {
             using (var Host = new SelfHost())
             {
-                var Uri = new Uri("http://localhost:8080/UploadTest");
-                Host.Open(Uri);
+                var BaseUri = new Uri("http://localhost:8080/UploadTest");
+                var SendUri = new Uri(BaseUri, "UploadTest");
+                Host.Open(BaseUri);
                 var message = "Hello World.";
                 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(message)))
                 {
-                    HttpWebRequest request = WebRequest.Create(Uri) as HttpWebRequest;
+                    HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
                     request.Method = "PUT";
                     request.ContentType = "application/octet-stream";
                     request.ContentLength = stream.Length;
@@ -60,9 +61,10 @@ namespace Piping.Tests
         {
             using (var Host = new SelfHost())
             {
-                var Uri = new Uri("http://localhost:8080/version");
-                Host.Open(Uri);
-                HttpWebRequest request = WebRequest.Create(Uri) as HttpWebRequest;
+                var BaseUri = new Uri("http://localhost:8080/version");
+                var SendUri = new Uri(BaseUri, "version");
+                Host.Open(BaseUri);
+                HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
                 request.Method = "GET";
                 request.AllowWriteStreamBuffering = true;
                 request.AllowReadStreamBuffering = false;

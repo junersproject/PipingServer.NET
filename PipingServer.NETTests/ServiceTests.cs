@@ -12,22 +12,22 @@ namespace Piping.Tests
     [TestClass()]
     public class ServiceTests
     {
-        [TestMethod,TestCategory("ShortTime")]
+        [TestMethod, TestCategory("ShortTime")]
         public void InstanceTest()
         {
-            var Uri = new Uri("http://localhost:8080/InstanceTest");
+            var Uri = new Uri("http://localhost/InstanceTest");
             using (var Host = new SelfHost())
             {
                 Host.Open(Uri);
             }
         }
-        [TestMethod,TestCategory("ShortTime")]
+        [TestMethod, TestCategory("ShortTime")]
         public void UploadTest()
         {
             using (var Host = new SelfHost())
             {
-                var BaseUri = new Uri("http://localhost:8080/UploadTest");
-                var SendUri = new Uri(BaseUri, "UploadTest");
+                var BaseUri = new Uri("http://localhost/" + nameof(UploadTest));
+                var SendUri = new Uri(BaseUri, "./" + nameof(UploadTest) + "/UploadTest");
                 Host.Open(BaseUri);
                 var message = "Hello World.";
                 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(message)))
@@ -61,8 +61,8 @@ namespace Piping.Tests
         {
             using (var Host = new SelfHost())
             {
-                var BaseUri = new Uri("http://localhost:8080/version");
-                var SendUri = new Uri(BaseUri, "version");
+                var BaseUri = new Uri("http://localhost/" + nameof(GetVersionTest));
+                var SendUri = new Uri(BaseUri, "./" + nameof(GetVersionTest) + "/version");
                 Host.Open(BaseUri);
                 HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
                 request.Method = "GET";

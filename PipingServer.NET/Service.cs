@@ -62,16 +62,14 @@ namespace Piping
             VERSION = FileVersionInfo.GetVersionInfo(Location);
             NAME_TO_RESERVED_PATH = new Dictionary<string, Func<OutgoingWebResponseContext, Stream>>
             {
-                {"/", DefaultPage },
-                {"/version",  VersionPage},
-                {"/help", HelpPage },
+                {"/", DefaultPageResponseGenerator },
+                {"/version",  VersionResponseGenerator},
+                {"/help", HelpPageResponseGenerator },
                 {"/favicon.ico", FileGetGenerator("/favicon.ico") },
                 {"/robots.txt", FileGetGenerator("/robots.txt") },
             };
         }
-        private Encoding Encoding = new UTF8Encoding(false);
         private Dictionary<string, Func<OutgoingWebResponseContext, Stream>> NAME_TO_RESERVED_PATH;
-
         /// <summary>
         /// エントリーポイント
         /// </summary>
@@ -107,13 +105,23 @@ namespace Piping
                         return Generator(Response);
                     throw new NotImplementedException();
                 case "OPTIONS":
-                    return Options(Response);
+                    return OptionsResponseGenerator(Response);
                 default:
                     return NotImplemented(Response);
             }
             throw new NotImplementedException();
         }
-        protected Stream DefaultPage(OutgoingWebResponseContext Response)
+        public Stream GetVersion()
+            => NAME_TO_RESERVED_PATH["/version"].Invoke(WebOperationContext.Current.OutgoingResponse);
+        public Stream GetHelp()
+            => NAME_TO_RESERVED_PATH["/help"].Invoke(WebOperationContext.Current.OutgoingResponse);
+        public Stream GetFavicon()
+            => NAME_TO_RESERVED_PATH["/favicon.ico"].Invoke(WebOperationContext.Current.OutgoingResponse);
+        public Stream GetRobots()
+            => NAME_TO_RESERVED_PATH["/robots.txt"].Invoke(WebOperationContext.Current.OutgoingResponse);
+        public Stream GetOptions()
+            => OptionsResponseGenerator(WebOperationContext.Current.OutgoingResponse);
+        protected Stream DefaultPageResponseGenerator(OutgoingWebResponseContext Response)
         {
             var Encoding = Response.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes(Properties.Resource.DefaultPage);
@@ -121,11 +129,11 @@ namespace Piping
             Response.ContentType = $"text/html;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
-        protected Stream HelpPage(OutgoingWebResponseContext Response)
+        protected Stream HelpPageResponseGenerator(OutgoingWebResponseContext Response)
         {
             var url = HttpContext.Current.Server.MapPath(".");
             var Encoding = Response.BindingWriteEncoding;
-            var Bytes = Encoding.GetBytes(@$"Help for piping - server { VERSION}
+            var Bytes = Encoding.GetBytes($@"Help for piping - server { VERSION}
 (Repository: https://github.com/nwtgck/piping-server)
 
 ======= Get  =======
@@ -153,15 +161,15 @@ curl ${url}/mypath | openssl aes-256-cbc -d");
             Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
-        protected Stream VersionPage(OutgoingWebResponseContext Response)
+        protected Stream VersionResponseGenerator(OutgoingWebResponseContext Response)
         {
             var Encoding = Response.BindingWriteEncoding;
-            var Bytes = Encoding.GetBytes($"{VERSION}\n");
+            var Bytes = Encoding.GetBytes($"{VERSION.FileVersion}\n");
             Response.ContentLength = Bytes.Length;
             Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
-        protected Stream Options(OutgoingWebResponseContext Response)
+        protected Stream OptionsResponseGenerator(OutgoingWebResponseContext Response)
         {
             Response.StatusCode = HttpStatusCode.OK;
             Response.Headers.Add("Access-Control-Allow-Origin", "*");

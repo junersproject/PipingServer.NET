@@ -48,6 +48,9 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BytesReadEventArgs.cs" />
+    <Compile Include="CacheOutputStream.cs" />
+    <Compile Include="CacheStream.cs" />
     <Compile Include="Disposable.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

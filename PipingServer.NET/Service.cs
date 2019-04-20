@@ -11,6 +11,7 @@ using System.Web;
 using System.Security;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Piping
 {
@@ -18,9 +19,9 @@ namespace Piping
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class Service : IService
     {
-        string Location;
-        string BasePath;
-        FileVersionInfo VERSION;
+        readonly string Location;
+        readonly string BasePath;
+        readonly FileVersionInfo VERSION;
         /// <summary>
         /// デフォルト設定の反映
         /// </summary>
@@ -60,16 +61,48 @@ namespace Piping
             Location = Assembly.GetExecutingAssembly().Location;
             BasePath = Path.GetDirectoryName(Location);
             VERSION = FileVersionInfo.GetVersionInfo(Location);
-            NAME_TO_RESERVED_PATH = new Dictionary<string, Func<OutgoingWebResponseContext, Stream>>
+            NAME_TO_RESERVED_PATH = new Dictionary<string, Func<Stream>>
             {
-                {"/", DefaultPageResponseGenerator },
-                {"/version",  VersionResponseGenerator},
-                {"/help", HelpPageResponseGenerator },
-                {"/favicon.ico", FileGetGenerator("/favicon.ico") },
-                {"/robots.txt", FileGetGenerator("/robots.txt") },
+                {DefaultPath.Root, GetDefaultPage },
+                {DefaultPath.Version, GetVersion},
+                {DefaultPath.Help, GetHelp},
+                {DefaultPath.Favicon, GetFavicon},
+                {DefaultPath.Robots, GetRobots},
             };
         }
-        private Dictionary<string, Func<OutgoingWebResponseContext, Stream>> NAME_TO_RESERVED_PATH;
+        internal Dictionary<string, Func<Stream>> NAME_TO_RESERVED_PATH;
+        
+        internal static Uri GetBaseUri(IEnumerable<Uri> BaseAddresses, Uri RequestUri)
+        {
+            var RequestUriString = RequestUri.ToString();
+            return BaseAddresses.FirstOrDefault(IsFind);
+            bool IsFind(Uri a)
+            {
+                var _a = a.ToString();
+                if (_a.Last() != '/')
+                    _a += '/';
+                return RequestUriString.IndexOf(_a) == 0;
+            }
+        }
+        internal Uri GetBaseUri()
+            => GetBaseUri(OperationContext.Current.Host.BaseAddresses, WebOperationContext.Current.IncomingRequest.UriTemplateMatch.RequestUri);
+        internal static string GetRelativeUri(IEnumerable<Uri> BaseAddresses, Uri RequestUri)
+            => GetRelativeUri(GetBaseUri(BaseAddresses, RequestUri), RequestUri);
+        internal static string GetRelativeUri(Uri BaseAddress, Uri RequestUri)
+        {
+            var b = BaseAddress.ToString();
+            if (b.Last() != '/')
+                b += '/';
+            var r = RequestUri.ToString();
+            var result = r.Substring(b.Length -1);
+            if (!result.Any())
+                result = "/";
+            else if (result.FirstOrDefault() != '/')
+                result = '/' + result;
+            return result;
+        }
+        internal string GetRelativeUri()
+            => GetRelativeUri(OperationContext.Current.Host.BaseAddresses, WebOperationContext.Current.IncomingRequest.UriTemplateMatch.RequestUri);
         /// <summary>
         /// エントリーポイント
         /// </summary>
@@ -82,43 +115,56 @@ namespace Piping
             var Request = Current.IncomingRequest;
             var Response = Current.OutgoingResponse;
             var Method = Request.Method;
-            var RequestUri = Request.UriTemplateMatch.RequestUri;
-            var reqPath = RequestUri.LocalPath.TrimEnd('/');
-            if (reqPath == string.Empty)
-                reqPath = "/";
             switch (Method)
             {
                 case "POST":
                 case "PUT":
-                    if (NAME_TO_RESERVED_PATH.TryGetValue(reqPath, out _))
-                    {
-                        Response.StatusCode = HttpStatusCode.BadRequest;
-                        var Encoding = Response.BindingWriteEncoding;
-                        var Bytes = Encoding.GetBytes($"[ERROR] Cannot send to a reserved path '{reqPath}'. (e.g. '/mypath123')\n");
-                        Response.ContentLength = Bytes.Length;
-                        Response.ContentType = $"text/plain;charset={Encoding.WebName}";
-                        return new MemoryStream(Bytes);
-                    }
-                    throw new NotImplementedException();
+                    return Upload(inputStream, GetRelativeUri(), Request, Response);
                 case "GET":
-                    if (NAME_TO_RESERVED_PATH.TryGetValue(reqPath, out var Generator))
-                        return Generator(Response);
-                    throw new NotImplementedException();
+                    return Download(GetRelativeUri(), Response);
                 case "OPTIONS":
                     return OptionsResponseGenerator(Response);
                 default:
                     return NotImplemented(Response);
             }
+        }
+        protected Stream BadRequest(OutgoingWebResponseContext Response, string RelativeUri)
+        {
+            Response.StatusCode = HttpStatusCode.BadRequest;
+            var Encoding = Response.BindingWriteEncoding;
+            var Bytes = Encoding.GetBytes($"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
+            Response.ContentLength = Bytes.Length;
+            Response.ContentType = $"text/plain;charset={Encoding.WebName}";
+            return new MemoryStream(Bytes);
+        }
+        public Stream Upload(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
+        {
+            Request ??= WebOperationContext.Current.IncomingRequest;
+            Response ??= WebOperationContext.Current.OutgoingResponse;
+            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
+                return BadRequest(Response, RelativeUri);
             throw new NotImplementedException();
         }
+        Stream IService.PostUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
+        Stream IService.PutUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
+        public Stream Download(string RelativeUri, OutgoingWebResponseContext Response = null)
+        {
+            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
+                return Generator();
+            Response ??= WebOperationContext.Current.OutgoingResponse;
+            throw new NotImplementedException();
+        }
+        Stream IService.GetDownload() => Download(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);
+        public Stream GetDefaultPage()
+            => DefaultPageResponseGenerator(WebOperationContext.Current.OutgoingResponse);
         public Stream GetVersion()
-            => NAME_TO_RESERVED_PATH["/version"].Invoke(WebOperationContext.Current.OutgoingResponse);
+            => VersionResponseGenerator(WebOperationContext.Current.OutgoingResponse);
         public Stream GetHelp()
-            => NAME_TO_RESERVED_PATH["/help"].Invoke(WebOperationContext.Current.OutgoingResponse);
+            => HelpPageResponseGenerator(WebOperationContext.Current.OutgoingResponse);
         public Stream GetFavicon()
-            => NAME_TO_RESERVED_PATH["/favicon.ico"].Invoke(WebOperationContext.Current.OutgoingResponse);
+            => FileGetGenerator(DefaultPath.Favicon, WebOperationContext.Current.OutgoingResponse);
         public Stream GetRobots()
-            => NAME_TO_RESERVED_PATH["/robots.txt"].Invoke(WebOperationContext.Current.OutgoingResponse);
+            => FileGetGenerator(DefaultPath.Robots, WebOperationContext.Current.OutgoingResponse);
         public Stream GetOptions()
             => OptionsResponseGenerator(WebOperationContext.Current.OutgoingResponse);
         protected Stream DefaultPageResponseGenerator(OutgoingWebResponseContext Response)
@@ -190,34 +236,31 @@ curl ${url}/mypath | openssl aes-256-cbc -d");
             var FilePath = Path.Combine(BasePath, FileName.TrimStart('/'));
             return File.Exists(FilePath);
         }
-        protected Func<OutgoingWebResponseContext, Stream> FileGetGenerator(string FileName)
+        protected Stream FileGetGenerator(string FileName, OutgoingWebResponseContext Response)
         {
             var FilePath = Path.Combine(BasePath, FileName.TrimStart('/'));
-            return (Response) =>
+            try
             {
-                try
-                {
-                    var Bytes = File.ReadAllBytes(FilePath);
-                    Response.StatusCode = HttpStatusCode.OK;
-                    Response.ContentType = MimeMapping.GetMimeMapping(FilePath);
-                    Response.ContentLength = Bytes.Length;
-                    return new MemoryStream(Bytes);
-                }
-                catch (FileNotFoundException)
-                {
-                    Response.StatusCode = HttpStatusCode.NotFound;
-                }
-                catch (SecurityException)
-                {
-                    Response.StatusCode = HttpStatusCode.NotFound;
-                }
-                catch (Exception)
-                {
-                    Response.StatusCode = HttpStatusCode.InternalServerError;
-                }
-                Response.ContentLength = 0;
-                return new MemoryStream(new byte[0]);
-            };
+                var Bytes = File.ReadAllBytes(FilePath);
+                Response.StatusCode = HttpStatusCode.OK;
+                Response.ContentType = MimeMapping.GetMimeMapping(FilePath);
+                Response.ContentLength = Bytes.Length;
+                return new MemoryStream(Bytes);
+            }
+            catch (FileNotFoundException)
+            {
+                Response.StatusCode = HttpStatusCode.NotFound;
+            }
+            catch (SecurityException)
+            {
+                Response.StatusCode = HttpStatusCode.NotFound;
+            }
+            catch (Exception)
+            {
+                Response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+            Response.ContentLength = 0;
+            return new MemoryStream(new byte[0]);
         }
     }
 }

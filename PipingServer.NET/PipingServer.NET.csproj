@@ -51,6 +51,7 @@
     <Compile Include="BytesReadEventArgs.cs" />
     <Compile Include="CacheOutputStream.cs" />
     <Compile Include="CacheStream.cs" />
+    <Compile Include="DefaultPath.cs" />
     <Compile Include="Disposable.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -59,6 +60,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
+    <Compile Include="RequestKey.cs" />
     <Compile Include="SelfHost.cs" />
     <Compile Include="Service.cs" />
   </ItemGroup>

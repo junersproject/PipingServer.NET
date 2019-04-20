@@ -12,6 +12,18 @@ namespace Piping
         Stream Default(Stream InputStream);
 
         [OperationContract]
+        [WebInvoke(UriTemplate = "*", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        Stream GetDownload();
+
+        [OperationContract]
+        [WebInvoke(UriTemplate = "*", Method = "POST", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        Stream PostUpload(Stream InputStream);
+
+        [OperationContract]
+        [WebInvoke(UriTemplate = "*", Method = "PUT", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        Stream PutUpload(Stream InputStream);
+
+        [OperationContract]
         [WebInvoke(UriTemplate = "help", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
         Stream GetHelp();
         [OperationContract]

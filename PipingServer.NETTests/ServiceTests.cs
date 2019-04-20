@@ -1,83 +1,81 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Piping.Tests
 {
-    [TestClass()]
-    public class ServiceTests
+    [TestClass]
+    public class ServiceTest
     {
-        [TestMethod, TestCategory("ShortTime")]
-        public void InstanceTest()
+        static IEnumerable<object[]> GetBaseUriTestData
         {
-            var Uri = new Uri("http://localhost/InstanceTest");
-            using (var Host = new SelfHost())
+            get
             {
-                Host.Open(Uri);
+                yield return new object[]
+                {
+                    new[]
+                    {
+                        new Uri("http://localhost/test1"),
+                        new Uri("http://localhost/test2"),
+                        new Uri("http://localhost/test3"),
+                    },
+                    new Uri("http://localhost/test2/action"),
+                    new Uri("http://localhost/test2"),
+                };
+                yield return new object[]
+                {
+                    new[]
+                    {
+                        new Uri("http://localhost/test1/"),
+                        new Uri("http://localhost/test"),
+                        new Uri("http://localhost/test3/"),
+                    },
+                    new Uri("http://localhost/test3/action"),
+                    new Uri("http://localhost/test3/"),
+                };
             }
         }
-        [TestMethod, TestCategory("ShortTime")]
-        public void UploadTest()
+        [TestMethod, DynamicData(nameof(GetBaseUriTestData)), TestCategory("ShortTime")]
+        public void GetBaseUriTest(IEnumerable<Uri> BaseAddresses, Uri RequestUri, Uri ExpectBaseAddress)
         {
-            using (var Host = new SelfHost())
+            var ActualBaseAddress = Service.GetBaseUri(BaseAddresses, RequestUri);
+            Assert.AreEqual(ExpectBaseAddress, ActualBaseAddress);
+        }
+        static IEnumerable<object[]> GetRelativeUriTestData
+        {
+            get
             {
-                var BaseUri = new Uri("http://localhost/" + nameof(UploadTest));
-                var SendUri = new Uri(BaseUri, "./" + nameof(UploadTest) + "/UploadTest");
-                Host.Open(BaseUri);
-                var message = "Hello World.";
-                using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(message)))
+                yield return new object[]
                 {
-                    HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
-                    request.Method = "PUT";
-                    request.ContentType = "application/octet-stream";
-                    request.ContentLength = stream.Length;
-                    request.AllowWriteStreamBuffering = true;
-                    request.AllowReadStreamBuffering = false;
-                    // タイムアウト6h
-                    request.Timeout = 360 * 60 * 1000;
-                    request.ReadWriteTimeout = 360 * 60 * 1000;
-                    try
-                    {
-                        using (Stream requestStream = request.GetRequestStream())
-                        {
-                            stream.CopyTo(requestStream);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // nop
-                    }
-                    request.GetResponse();
-                }
+                    new Uri("http://localhost/test1"),
+                    new Uri("http://localhost/test1/action"),
+                    "/action",
+                };
+                yield return new object[]
+                {
+                    new Uri("http://localhost/test2/"),
+                    new Uri("http://localhost/test2/action"),
+                    "/action",
+                };
+                yield return new object[]
+                {
+                    new Uri("http://localhost/test2"),
+                    new Uri("http://localhost/test2/"),
+                    "/",
+                };
+                yield return new object[]
+                {
+                    new Uri("http://localhost/test2"),
+                    new Uri("http://localhost/test2"),
+                    "/",
+                };
             }
         }
-        [TestMethod, TestCategory("ShortTime")]
-        public async Task GetVersionTest()
+        [TestMethod, DynamicData(nameof(GetRelativeUriTestData)), TestCategory("ShortTime")]
+        public void GetRelativeUriTest(Uri BaseAddress, Uri RequestUri, string ExpectRelativeUri)
         {
-            using (var Host = new SelfHost())
-            {
-                var BaseUri = new Uri("http://localhost/" + nameof(GetVersionTest));
-                var SendUri = new Uri(BaseUri, "./" + nameof(GetVersionTest) + "/version");
-                Host.Open(BaseUri);
-                HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "GET";
-                request.AllowWriteStreamBuffering = true;
-                request.AllowReadStreamBuffering = false;
-                // タイムアウト6h
-                request.Timeout = 360 * 60 * 1000;
-                request.ReadWriteTimeout = 360 * 60 * 1000;
-                var response = request.GetResponse();
-                var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
-                {
-                    Trace.WriteLine(await reader.ReadToEndAsync());
-                }
-            }
+            var ActualRelativeUri = Service.GetRelativeUri(BaseAddress, RequestUri);
+            Assert.AreEqual(ExpectRelativeUri, ActualRelativeUri);
         }
     }
 }

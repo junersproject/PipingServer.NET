@@ -60,9 +60,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
+    <Compile Include="ReqRes.cs" />
+    <Compile Include="ReqResAndUnsubscribe.cs" />
     <Compile Include="RequestKey.cs" />
     <Compile Include="SelfHost.cs" />
     <Compile Include="Service.cs" />
+    <Compile Include="UnestablishedPipe.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

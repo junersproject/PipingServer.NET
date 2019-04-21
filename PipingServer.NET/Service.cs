@@ -28,24 +28,12 @@ namespace Piping
         /// <param name="config"></param>
         public static void Configure(ServiceConfiguration config)
         {
-            var HttpGetEnabled = false;
-            var HttpsGetEnabled = false;
             var TransferMode = System.ServiceModel.TransferMode.Streamed;
             var SendTimeout = TimeSpan.FromHours(1);
             var OpenTimeout = TimeSpan.FromHours(1);
             var CloseTimeout = TimeSpan.FromHours(1);
             var MaxBufferSize = int.MaxValue;
             var MaxReceivedMessageSize = int.MaxValue;
-            foreach (var address in config.BaseAddresses)
-                if (address.Scheme == "http")
-                    HttpGetEnabled = true;
-                else if (address.Scheme == "https")
-                    HttpsGetEnabled = true;
-            config.Description.Behaviors.Add(new ServiceMetadataBehavior
-            {
-                HttpGetEnabled = HttpGetEnabled,
-                HttpsGetEnabled = HttpsGetEnabled,
-            });
             config.AddServiceEndpoint(typeof(IService), new WebHttpBinding
             {
                 TransferMode = TransferMode,
@@ -55,6 +43,9 @@ namespace Piping
                 MaxBufferSize = MaxBufferSize,
                 MaxReceivedMessageSize = MaxReceivedMessageSize,
             }, "").EndpointBehaviors.Add(new WebHttpBehavior());
+            var sdb = config.Description.Behaviors.Find<ServiceDebugBehavior>();
+            if (sdb != null)
+                sdb.HttpHelpPageEnabled = false;
         }
         public Service()
         {

@@ -136,7 +136,8 @@ namespace Piping
         {
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
-            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
+
+            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out _))
                 return Task.FromResult(BadRequest(Response, RelativeUri));
             throw new NotImplementedException();
         }
@@ -144,7 +145,7 @@ namespace Piping
         Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
         public Task<Stream> DownloadAsync(string RelativeUri, OutgoingWebResponseContext Response = null)
         {
-            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
+            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out var Generator))
                 return Generator();
             Response ??= WebOperationContext.Current.OutgoingResponse;
             throw new NotImplementedException();
@@ -165,42 +166,47 @@ namespace Piping
         protected Stream DefaultPageResponseGenerator(OutgoingWebResponseContext Response)
         {
             var Encoding = Response.BindingWriteEncoding;
-            var Bytes = Encoding.GetBytes(Properties.Resource.DefaultPage);
+            var Bytes = Encoding.GetBytes(GetDefaultPage());
             Response.ContentLength = Bytes.Length;
             Response.ContentType = $"text/html;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
+        internal static string GetDefaultPage() => Properties.Resource.DefaultPage;
         protected Stream HelpPageResponseGenerator(OutgoingWebResponseContext Response)
         {
-            var url = HttpContext.Current.Server.MapPath(".");
+            var url = GetBaseUri();
             var Encoding = Response.BindingWriteEncoding;
-            var Bytes = Encoding.GetBytes($@"Help for piping - server { VERSION}
-(Repository: https://github.com/nwtgck/piping-server)
-
-======= Get  =======
-curl ${url}/mypath
-
-======= Send =======
-# Send a file
-curl -T myfile ${url}/mypath
-
-# Send a text
-echo 'hello!' | curl -T - ${url}/mypath
-
-# Send a directory (zip)
-zip -q -r - ./mydir | curl -T - ${url}/mypath
-
-# Send a directory (tar.gz)
-tar zfcp - ./mydir | curl -T - ${url}/mypath
-
-# Encryption
-## Send
-cat myfile | openssl aes-256-cbc | curl -T - ${url}/mypath
-## Get
-curl ${url}/mypath | openssl aes-256-cbc -d");
+            var Bytes = Encoding.GetBytes(GetHelpPageText(url, VERSION));
             Response.ContentLength = Bytes.Length;
             Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
+        }
+        internal static string GetHelpPageText(Uri url, FileVersionInfo version)
+        {
+            return $@"Help for piping - server {version}
+(Repository: https://github.com/nwtgck/piping-server)
+
+======= Get  =======
+curl {url}/mypath
+
+======= Send =======
+# Send a file
+curl -T myfile {url}/mypath
+
+# Send a text
+echo 'hello!' | curl -T - {url}/mypath
+
+# Send a directory (zip)
+zip -q -r - ./mydir | curl -T - {url}/mypath
+
+# Send a directory (tar.gz)
+tar zfcp - ./mydir | curl -T - {url}/mypath
+
+# Encryption
+## Send
+cat myfile | openssl aes-256-cbc | curl -T - {url}/mypath
+## Get
+curl {url}/mypath | openssl aes-256-cbc -d";
         }
         protected Stream VersionResponseGenerator(OutgoingWebResponseContext Response)
         {

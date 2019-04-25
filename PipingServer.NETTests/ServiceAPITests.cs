@@ -32,7 +32,7 @@ namespace Piping.Tests
                 var message = "Hello World.";
                 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(message)))
                 {
-                    HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
+                    var request = WebRequest.Create(SendUri) as HttpWebRequest;
                     request.Method = "PUT";
                     request.ContentType = "application/octet-stream";
                     request.ContentLength = stream.Length;
@@ -56,74 +56,71 @@ namespace Piping.Tests
                 }
             }
         }
+
         [TestMethod, TestCategory("ShortTime")]
         public async Task GetVersionTest()
         {
+            var BaseUri = new Uri("http://localhost/" + nameof(GetVersionTest));
+            var SendUri = new Uri(BaseUri, "./" + nameof(GetVersionTest) + "/version");
             using (var Host = new SelfHost())
             {
-                var BaseUri = new Uri("http://localhost/" + nameof(GetVersionTest));
-                var SendUri = new Uri(BaseUri, "./" + nameof(GetVersionTest) + "/version");
                 Host.Open(BaseUri);
-                HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "GET";
-                request.AllowWriteStreamBuffering = true;
-                request.AllowReadStreamBuffering = false;
-                // タイムアウト6h
-                request.Timeout = 360 * 60 * 1000;
-                request.ReadWriteTimeout = 360 * 60 * 1000;
-                var response = request.GetResponse();
-                var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
-                {
-                    Trace.WriteLine(await reader.ReadToEndAsync());
-                }
+                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
             }
         }
         [TestMethod, TestCategory("ShortTime")]
         public async Task GetTopPageTest()
         {
+            var BaseUri = new Uri("http://localhost/" + nameof(GetTopPageTest));
+            var SendUri = new Uri(BaseUri, "./" + nameof(GetTopPageTest) + "/");
             using (var Host = new SelfHost())
             {
-                var BaseUri = new Uri("http://localhost/" + nameof(GetTopPageTest));
-                var SendUri = new Uri(BaseUri, "./" + nameof(GetTopPageTest) + "/");
                 Host.Open(BaseUri);
-                HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "GET";
-                request.AllowWriteStreamBuffering = true;
-                request.AllowReadStreamBuffering = false;
-                // タイムアウト6h
-                request.Timeout = 360 * 60 * 1000;
-                request.ReadWriteTimeout = 360 * 60 * 1000;
-                var response = request.GetResponse();
-                var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
-                {
-                    Trace.WriteLine(await reader.ReadToEndAsync());
-                }
+                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
             }
         }
         [TestMethod, TestCategory("ShortTime")]
         public async Task GetTopPageTest2()
         {
+            var BaseUri = new Uri("http://localhost/" + nameof(GetTopPageTest));
+            var SendUri = BaseUri;
             using (var Host = new SelfHost())
             {
-                var BaseUri = new Uri("http://localhost/" + nameof(GetTopPageTest));
-                var SendUri = BaseUri;
                 Host.Open(BaseUri);
-                HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "GET";
-                request.AllowWriteStreamBuffering = true;
-                request.AllowReadStreamBuffering = false;
-                // タイムアウト6h
-                request.Timeout = 360 * 60 * 1000;
-                request.ReadWriteTimeout = 360 * 60 * 1000;
-                var response = request.GetResponse();
-                var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
-                {
-                    Trace.WriteLine(await reader.ReadToEndAsync());
-                }
+                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
             }
+        }
+        [TestMethod, TestCategory("ShortTime")]
+        public async Task GetHelpPageTest()
+        {
+            var BaseUri = new Uri("http://localhost/" + nameof(GetHelpPageTest));
+            var SendUri = new Uri(BaseUri, "./" + nameof(GetHelpPageTest) + "/help");
+            using (var Host = new SelfHost())
+            {
+                Host.Open(BaseUri);
+                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="BaseUri"></param>
+        /// <param name="SendUri"></param>
+        /// <param name="Method"></param>
+        /// <returns></returns>
+        internal async Task<string> GetResponseAsync(Uri SendUri, string Method)
+        {
+            var request = WebRequest.Create(SendUri) as HttpWebRequest;
+            request.Method = Method;
+            request.AllowWriteStreamBuffering = true;
+            request.AllowReadStreamBuffering = false;
+            // タイムアウト6h
+            request.Timeout = 360 * 60 * 1000;
+            request.ReadWriteTimeout = 360 * 60 * 1000;
+            var response = request.GetResponse();
+            var resStream = response.GetResponseStream();
+            using (var reader = new StreamReader(resStream, Encoding.UTF8, false))
+                return await reader.ReadToEndAsync();
         }
     }
 }

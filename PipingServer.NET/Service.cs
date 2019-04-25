@@ -12,6 +12,7 @@ using System.Security;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Piping
 {
@@ -52,16 +53,16 @@ namespace Piping
             Location = Assembly.GetExecutingAssembly().Location;
             BasePath = Path.GetDirectoryName(Location);
             VERSION = FileVersionInfo.GetVersionInfo(Location);
-            NAME_TO_RESERVED_PATH = new Dictionary<string, Func<Stream>>
+            NAME_TO_RESERVED_PATH = new Dictionary<string, Func<Task<Stream>>>
             {
-                {DefaultPath.Root, GetDefaultPage },
-                {DefaultPath.Version, GetVersion},
-                {DefaultPath.Help, GetHelp},
-                {DefaultPath.Favicon, GetFavicon},
-                {DefaultPath.Robots, GetRobots},
+                {DefaultPath.Root, GetDefaultPageAsync },
+                {DefaultPath.Version, GetVersionAsync},
+                {DefaultPath.Help, GetHelpAsync},
+                {DefaultPath.Favicon, GetFaviconAsync},
+                {DefaultPath.Robots, GetRobotsAsync},
             };
         }
-        internal Dictionary<string, Func<Stream>> NAME_TO_RESERVED_PATH;
+        internal Dictionary<string, Func<Task<Stream>>> NAME_TO_RESERVED_PATH;
         
         internal static Uri GetBaseUri(IEnumerable<Uri> BaseAddresses, Uri RequestUri)
         {
@@ -100,7 +101,7 @@ namespace Piping
         /// <param name="inputStream"></param>
         /// <returns></returns>
         [OperationBehavior(ReleaseInstanceMode = ReleaseInstanceMode.None)]
-        public Stream Default(Stream inputStream)
+        public Task<Stream> DefaultAsync(Stream inputStream)
         {
             var Current = WebOperationContext.Current;
             var Request = Current.IncomingRequest;
@@ -110,13 +111,13 @@ namespace Piping
             {
                 case "POST":
                 case "PUT":
-                    return Upload(inputStream, GetRelativeUri(), Request, Response);
+                    return UploadAsync(inputStream, GetRelativeUri(), Request, Response);
                 case "GET":
-                    return Download(GetRelativeUri(), Response);
+                    return DownloadAsync(GetRelativeUri(), Response);
                 case "OPTIONS":
-                    return OptionsResponseGenerator(Response);
+                    return Task.FromResult(OptionsResponseGenerator(Response));
                 default:
-                    return NotImplemented(Response);
+                    return Task.FromResult(NotImplemented(Response));
             }
         }
         protected Stream BadRequest(OutgoingWebResponseContext Response, string RelativeUri)
@@ -128,36 +129,36 @@ namespace Piping
             Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
-        public Stream Upload(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
+        public Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
         {
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
-                return BadRequest(Response, RelativeUri);
+                return Task.FromResult(BadRequest(Response, RelativeUri));
             throw new NotImplementedException();
         }
-        Stream IService.PostUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
-        Stream IService.PutUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
-        public Stream Download(string RelativeUri, OutgoingWebResponseContext Response = null)
+        Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
+        Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
+        public Task<Stream> DownloadAsync(string RelativeUri, OutgoingWebResponseContext Response = null)
         {
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
                 return Generator();
             Response ??= WebOperationContext.Current.OutgoingResponse;
             throw new NotImplementedException();
         }
-        Stream IService.GetDownload() => Download(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);
-        public Stream GetDefaultPage()
-            => DefaultPageResponseGenerator(WebOperationContext.Current.OutgoingResponse);
-        public Stream GetVersion()
-            => VersionResponseGenerator(WebOperationContext.Current.OutgoingResponse);
-        public Stream GetHelp()
-            => HelpPageResponseGenerator(WebOperationContext.Current.OutgoingResponse);
-        public Stream GetFavicon()
-            => FileGetGenerator(DefaultPath.Favicon, WebOperationContext.Current.OutgoingResponse);
-        public Stream GetRobots()
-            => FileGetGenerator(DefaultPath.Robots, WebOperationContext.Current.OutgoingResponse);
-        public Stream GetOptions()
-            => OptionsResponseGenerator(WebOperationContext.Current.OutgoingResponse);
+        Task<Stream> IService.GetDownloadAsync() => DownloadAsync(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);
+        public Task<Stream> GetDefaultPageAsync()
+            => Task.FromResult(DefaultPageResponseGenerator(WebOperationContext.Current.OutgoingResponse));
+        public Task<Stream> GetVersionAsync()
+            => Task.FromResult(VersionResponseGenerator(WebOperationContext.Current.OutgoingResponse));
+        public Task<Stream> GetHelpAsync()
+            => Task.FromResult(HelpPageResponseGenerator(WebOperationContext.Current.OutgoingResponse));
+        public Task<Stream> GetFaviconAsync()
+            => Task.FromResult(FileGetGenerator(DefaultPath.Favicon, WebOperationContext.Current.OutgoingResponse));
+        public Task<Stream> GetRobotsAsync()
+            => Task.FromResult(FileGetGenerator(DefaultPath.Robots, WebOperationContext.Current.OutgoingResponse));
+        public Task<Stream> GetOptionsAsync()
+            => Task.FromResult(OptionsResponseGenerator(WebOperationContext.Current.OutgoingResponse));
         protected Stream DefaultPageResponseGenerator(OutgoingWebResponseContext Response)
         {
             var Encoding = Response.BindingWriteEncoding;

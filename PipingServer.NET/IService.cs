@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.ServiceModel;
 using System.ServiceModel.Web;
+using System.Threading.Tasks;
 
 namespace Piping
 {
@@ -9,35 +10,35 @@ namespace Piping
     {
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method ="*", BodyStyle =WebMessageBodyStyle.Bare, RequestFormat =WebMessageFormat.Json,ResponseFormat = WebMessageFormat.Json)]
-        Stream Default(Stream InputStream);
+        Task<Stream> DefaultAsync(Stream InputStream);
 
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream GetDownload();
+        Task<Stream> GetDownloadAsync();
 
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method = "POST", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream PostUpload(Stream InputStream);
+        Task<Stream> PostUploadAsync(Stream InputStream);
 
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method = "PUT", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream PutUpload(Stream InputStream);
+        Task<Stream> PutUploadAsync(Stream InputStream);
 
         [OperationContract]
         [WebInvoke(UriTemplate = "help", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream GetHelp();
+        Task<Stream> GetHelpAsync();
         [OperationContract]
         [WebInvoke(UriTemplate = "version", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream GetVersion();
+        Task<Stream> GetVersionAsync();
         [OperationContract]
         [WebInvoke(UriTemplate = "favicon.ico", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream GetFavicon();
+        Task<Stream> GetFaviconAsync();
         [OperationContract]
         [WebInvoke(UriTemplate = "robots.txt", Method = "GET", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream GetRobots();
+        Task<Stream> GetRobotsAsync();
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method = "OPTIONS", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Stream GetOptions();
+        Task<Stream> GetOptionsAsync();
     
     }
 }

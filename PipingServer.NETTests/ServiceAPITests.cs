@@ -65,7 +65,9 @@ namespace Piping.Tests
             using (var Host = new SelfHost())
             {
                 Host.Open(BaseUri);
-                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
+                var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
             }
         }
         [TestMethod, TestCategory("ShortTime")]
@@ -76,7 +78,9 @@ namespace Piping.Tests
             using (var Host = new SelfHost())
             {
                 Host.Open(BaseUri);
-                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
+                var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
             }
         }
         [TestMethod, TestCategory("ShortTime")]
@@ -87,7 +91,9 @@ namespace Piping.Tests
             using (var Host = new SelfHost())
             {
                 Host.Open(BaseUri);
-                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
+                var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
             }
         }
         [TestMethod, TestCategory("ShortTime")]
@@ -98,7 +104,9 @@ namespace Piping.Tests
             using (var Host = new SelfHost())
             {
                 Host.Open(BaseUri);
-                Trace.WriteLine(await GetResponseAsync(SendUri, "GET"));
+                var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
             }
         }
         /// <summary>
@@ -108,7 +116,7 @@ namespace Piping.Tests
         /// <param name="SendUri"></param>
         /// <param name="Method"></param>
         /// <returns></returns>
-        internal async Task<string> GetResponseAsync(Uri SendUri, string Method)
+        internal async Task<(WebHeaderCollection Headers, string BodyText)> GetResponseAsync(Uri SendUri, string Method)
         {
             var request = WebRequest.Create(SendUri) as HttpWebRequest;
             request.Method = Method;
@@ -120,7 +128,7 @@ namespace Piping.Tests
             var response = request.GetResponse();
             var resStream = response.GetResponseStream();
             using (var reader = new StreamReader(resStream, Encoding.UTF8, false))
-                return await reader.ReadToEndAsync();
+                return (response.Headers, await reader.ReadToEndAsync());
         }
     }
 }

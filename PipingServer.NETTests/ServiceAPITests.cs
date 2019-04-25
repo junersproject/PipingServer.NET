@@ -73,7 +73,7 @@ namespace Piping.Tests
                 request.ReadWriteTimeout = 360 * 60 * 1000;
                 var response = request.GetResponse();
                 var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
+                using (var reader = new StreamReader(resStream, Encoding.UTF8, false))
                 {
                     Trace.WriteLine(await reader.ReadToEndAsync());
                 }
@@ -96,7 +96,7 @@ namespace Piping.Tests
                 request.ReadWriteTimeout = 360 * 60 * 1000;
                 var response = request.GetResponse();
                 var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
+                using (var reader = new StreamReader(resStream, Encoding.UTF8, false))
                 {
                     Trace.WriteLine(await reader.ReadToEndAsync());
                 }
@@ -119,7 +119,30 @@ namespace Piping.Tests
                 request.ReadWriteTimeout = 360 * 60 * 1000;
                 var response = request.GetResponse();
                 var resStream = response.GetResponseStream();
-                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false))
+                using (var reader = new StreamReader(resStream, Encoding.UTF8, false))
+                {
+                    Trace.WriteLine(await reader.ReadToEndAsync());
+                }
+            }
+        }
+        [TestMethod, TestCategory("ShortTime")]
+        public async Task GetHelpPageTest()
+        {
+            using (var Host = new SelfHost())
+            {
+                var BaseUri = new Uri("http://localhost/" + nameof(GetHelpPageTest));
+                var SendUri = new Uri(BaseUri, "./" + nameof(GetHelpPageTest) + "/help");
+                Host.Open(BaseUri);
+                HttpWebRequest request = WebRequest.Create(SendUri) as HttpWebRequest;
+                request.Method = "GET";
+                request.AllowWriteStreamBuffering = true;
+                request.AllowReadStreamBuffering = false;
+                // タイムアウト6h
+                request.Timeout = 360 * 60 * 1000;
+                request.ReadWriteTimeout = 360 * 60 * 1000;
+                var response = request.GetResponse();
+                var resStream = response.GetResponseStream();
+                using (var reader = new StreamReader(resStream, Encoding.UTF8, false))
                 {
                     Trace.WriteLine(await reader.ReadToEndAsync());
                 }

@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HttpMultipartParser;
 
 namespace Piping
 {
@@ -23,6 +24,7 @@ namespace Piping
         readonly string Location;
         readonly string BasePath;
         readonly FileVersionInfo VERSION;
+        readonly Encoding Encoding = new UTF8Encoding(false);
         /// <summary>
         /// デフォルト設定の反映
         /// </summary>
@@ -48,6 +50,8 @@ namespace Piping
             if (sdb != null)
                 sdb.HttpHelpPageEnabled = false;
         }
+        protected IDictionary<string, bool> pathToEstablished { get; } = new Dictionary<string, bool>();
+        protected IDictionary<string, UnestablishedPipe> pathToUnestablishedPipe { get; } = new Dictionary<string, UnestablishedPipe>();
         public Service()
         {
             Location = Assembly.GetExecutingAssembly().Location;
@@ -123,7 +127,6 @@ namespace Piping
         protected Stream BadRequest(OutgoingWebResponseContext Response, string RelativeUri)
         {
             Response.StatusCode = HttpStatusCode.BadRequest;
-            var Encoding = Response.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes($"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             Response.ContentLength = Bytes.Length;
             Response.ContentType = $"text/plain;charset={Encoding.WebName}";
@@ -253,6 +256,61 @@ curl ${url}/mypath | openssl aes-256-cbc -d");
             }
             Response.ContentLength = 0;
             return new MemoryStream(new byte[0]);
+        }
+        protected Pipe getPipeIfEstablished(UnestablishedPipe p)
+        {
+            if (p.Sender != null && p.Receivers.Count == p.ReceiversCount)
+                return new Pipe(p.Sender.ReqRes, p.Receivers.Select(v =>
+                {
+                    v.FireUnsubscribeClose();
+                    return v.ReqRes;
+                }));
+            return null;
+        }
+        protected async Task<Stream> RunPipeAsync(string path, Pipe pipe)
+        {
+            pathToEstablished[path] = true;
+            pathToUnestablishedPipe.Remove(path);
+            var (Sender, Receivers) = pipe;
+            using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, 1024, true))
+                await writer.WriteLineAsync($"[INFO] Start sending with ${pipe.Receivers.Count} receiver(s)");
+            var IsMutiForm = (pipe.Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
+            // TODO: support web multipart
+            var (Part, PartContentType, PartContentDisposition) = await GetPartStream();
+            Task<(Stream stream, string contentType, string contentDisposition)> GetPartStream() {
+                var tcs = new TaskCompletionSource<(Stream, string, string)>();
+                var sm = new StreamingMultipartFormDataParser(Sender.RequestStream);
+                sm.FileHandler += (name, fileName, contentType, contentDisposition, buffer, bytes)
+                    => tcs.TrySetResult((new MemoryStream(buffer), contentType, contentDisposition));
+                sm.Run();
+                return tcs.Task;
+            }
+            // 実装中
+            var closeCount = 0;
+            foreach (var receiver in Receivers) {
+                // Close receiver
+                void closeReceiver()
+                {
+                    closeCount++;
+                    //senderData.unpipe(passThrough);
+                    // If close-count is # of receivers
+                    if (closeCount == Receivers.Count)
+                    {
+                        using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, 1024, true))
+                            writer.WriteLineAsync("[INFO] All receiver(s) was/were closed halfway.");
+                        pathToEstablished.Remove(path);
+                        Sender.ResponseStream.Close();
+                    }
+                }
+                if(Part == null)
+                {
+                    if (!string.IsNullOrEmpty(Sender.Request.Headers[HttpRequestHeader.ContentLength]))
+                        receiver.Response.ContentLength = Sender.Request.ContentLength;
+                    if (!string.IsNullOrEmpty(Sender.Request.Headers[HttpRequestHeader.ContentType]))
+                        receiver.Response.ContentType = Sender.Request.ContentType;
+                    if (!string.IsNullOrEmpty(Sender.Request.Headers["content-disposition"]))
+                        receiver.Response.Headers.Add();
+                    }
         }
     }
 }

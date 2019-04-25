@@ -7,6 +7,7 @@ namespace Piping
         public ReqResAndUnsubscribe(ReqRes ReqRes)
            => this.ReqRes = ReqRes;
         public ReqRes ReqRes { get; }
-        public event EventHandler Close;
+        public event EventHandler unsubscribeClose;
+        public void FireUnsubscribeClose() => unsubscribeClose?.Invoke(this, new EventArgs());
     }
 }

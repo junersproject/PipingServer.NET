@@ -11,5 +11,7 @@ namespace Piping
         public Pipe(ReqRes Sender, IList<ReqRes> Receivers)
             => (this.Sender, this.Receivers) = (Sender, new ReadOnlyCollection<ReqRes>(Receivers));
         public Pipe(ReqRes Sender, IEnumerable<ReqRes> Receivers) : this(Sender, Receivers.ToList()) { }
+        public void Deconstruct(out ReqRes Sender, out IReadOnlyCollection<ReqRes> Receivers)
+            => (Sender, Receivers) = (this.Sender, this.Receivers);
     }
 }

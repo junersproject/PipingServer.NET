@@ -282,18 +282,19 @@ curl {url}/mypath | openssl aes-256-cbc -d";
                 await writer.WriteLineAsync($"[INFO] Start sending with ${pipe.Receivers.Count} receiver(s)");
             var IsMutiForm = (pipe.Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
             // TODO: support web multipart
-            var (Part, PartContentType, PartContentDisposition) = await GetPartStream();
-            Task<(Stream stream, string contentType, string contentDisposition)> GetPartStream() {
-                var tcs = new TaskCompletionSource<(Stream, string, string)>();
+            var (Part, PartLength, PartContentType, PartContentDisposition) = await GetPartStream();
+            Task<(Stream stream, long contentLength, string contentType, string contentDisposition)> GetPartStream() {
+                var tcs = new TaskCompletionSource<(Stream, long, string, string)>();
                 var sm = new StreamingMultipartFormDataParser(Sender.RequestStream);
                 sm.FileHandler += (name, fileName, contentType, contentDisposition, buffer, bytes)
-                    => tcs.TrySetResult((new MemoryStream(buffer), contentType, contentDisposition));
+                    => tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, contentDisposition));
                 sm.Run();
                 return tcs.Task;
             }
             // 実装中
             var closeCount = 0;
-            foreach (var receiver in Receivers) {
+            foreach (var receiver in Receivers)
+            {
                 // Close receiver
                 void closeReceiver()
                 {
@@ -308,15 +309,28 @@ curl {url}/mypath | openssl aes-256-cbc -d";
                         Sender.ResponseStream.Close();
                     }
                 }
-                if(Part == null)
+                if (Part == null)
                 {
                     if (!string.IsNullOrEmpty(Sender.Request.Headers[HttpRequestHeader.ContentLength]))
                         receiver.Response.ContentLength = Sender.Request.ContentLength;
                     if (!string.IsNullOrEmpty(Sender.Request.Headers[HttpRequestHeader.ContentType]))
                         receiver.Response.ContentType = Sender.Request.ContentType;
                     if (!string.IsNullOrEmpty(Sender.Request.Headers["content-disposition"]))
-                        receiver.Response.Headers.Add();
-                    }
+                        receiver.Response.Headers.Add("content-disposition", Sender.Request.Headers["content-disposition"]);
+                } else
+                {
+                    receiver.Response.ContentLength = PartLength;
+                    if (!string.IsNullOrEmpty(PartContentType))
+                        receiver.Response.ContentType = PartContentType;
+                    if (!string.IsNullOrEmpty(PartContentDisposition))
+                        receiver.Response.Headers.Add("content-disposition", PartContentDisposition);
+                }
+                receiver.Response.StatusCode = HttpStatusCode.OK;
+                receiver.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                // TODO sender to receiver
+            }
+            //TODO 仮
+            return pipe.Sender.ResponseStream;
         }
     }
 }

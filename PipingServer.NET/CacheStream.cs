@@ -7,18 +7,21 @@ using System.Threading.Tasks;
 namespace Piping
 {
     /// <summary>
-    /// A stream that, as it reads, makes those bytes available on an ouput    /// stream. Thread safe.
-    /// </summary>    /// <remarks>https://stackoverflow.com/questions/3202594/stream-to-file-while-returning-a-wcf-stream</remarks>    public class CacheStream : Stream
+    /// A stream that, as it reads, makes those bytes available on an ouput
+    /// stream. Thread safe.
+    /// </summary>
+    /// <remarks>https://stackoverflow.com/questions/3202594/stream-to-file-while-returning-a-wcf-stream</remarks>
+    public class CacheStream : Stream
     {
         private readonly Stream stream;
-        public CacheStream(Stream stream)
+        public CacheStream(Stream stream, int receivers = 1)
         {
             this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            OutputStream = new CacheOutputStream(this);
+            OutputStreams = Enumerable.Range(0, receivers).Select(v => new CacheOutputStream(this)).ToArray();
         }
         public event EventHandler<BytesReadEventArgs> BytesRead;
         public event EventHandler Closing;
-        public Stream OutputStream { get; private set; }
+        public Stream[] OutputStreams { get; private set; }
         public override void Flush()
         {
             stream.Flush();
@@ -75,7 +78,8 @@ namespace Piping
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            OutputStream.Dispose();
+            foreach( var stream in OutputStreams)
+                stream.Dispose();
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Piping
 {
@@ -48,6 +49,28 @@ namespace Piping
                     if (sourceIsClosed)
                         return 0;
                     Thread.Sleep(TimeSpan.FromMilliseconds(50));
+                }
+            }
+            byte[] currentBuffer = GetCurrentBuffer();
+            int numberOfBytesRead = DoRead(buffer, count, currentBuffer, offset);
+            PutLeftoverBytesAtFrontOfQueue(currentBuffer, numberOfBytesRead);
+            return numberOfBytesRead;
+        }
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (buffer == null) throw new ArgumentNullException("buffer");
+            bool noMoreBuffersAvailable = HasNoMoreBuffersAvailable();
+            // Guard clause - closed and nothing more to write.
+            if (noMoreBuffersAvailable && sourceIsClosed)
+                return 0;
+            if (noMoreBuffersAvailable)
+            {
+                // Not closed yet! Block infinitely until we get closed or have some data.
+                while (HasNoMoreBuffersAvailable())
+                {
+                    if (sourceIsClosed)
+                        return 0;
+                    await Task.Delay(TimeSpan.FromMilliseconds(50));
                 }
             }
             byte[] currentBuffer = GetCurrentBuffer();

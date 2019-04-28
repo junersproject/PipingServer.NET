@@ -46,25 +46,11 @@ namespace Piping
             BytesRead?.Invoke(this, new BytesReadEventArgs(tmp));
         }
         public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new InvalidOperationException("Cannot write in CachingStream.");
-        }
-        public override bool CanRead
-        {
-            get { return stream.CanRead; }
-        }
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
-        public override long Length
-        {
-            get { return stream.Length; }
-        }
+            => throw new InvalidOperationException("Cannot write in CachingStream.");
+        public override bool CanRead => stream.CanRead;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length=> stream.Length; 
         public override long Position
         {
             get { return stream.Position; }

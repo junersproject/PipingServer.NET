@@ -2,11 +2,11 @@
 
 namespace Piping
 {
-    public class ReqResAndUnsubscribe
+    public class ResAndUnsubscribe
     {
-        public ReqResAndUnsubscribe(ReqRes ReqRes)
+        public ResAndUnsubscribe(Res ReqRes)
            => this.ReqRes = ReqRes;
-        public ReqRes ReqRes { get; }
+        public Res ReqRes { get; }
         public event EventHandler unsubscribeClose;
         public void FireUnsubscribeClose() => unsubscribeClose?.Invoke(this, new EventArgs());
     }

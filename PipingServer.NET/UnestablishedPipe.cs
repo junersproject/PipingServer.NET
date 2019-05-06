@@ -4,8 +4,8 @@ namespace Piping
 {
     public class UnestablishedPipe
     {
-        public ReqResAndUnsubscribe Sender { get; set; }
-        public IList<ReqResAndUnsubscribe> Receivers { get; } = new List<ReqResAndUnsubscribe>();
+        public ReqAndUnsubscribe Sender { get; set; }
+        public IList<ResAndUnsubscribe> Receivers { get; } = new List<ResAndUnsubscribe>();
         public int ReceiversCount { get; set; }
     }
 }

@@ -140,6 +140,7 @@ namespace Piping
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out _))
                 return Task.FromResult(BadRequest(Response, RelativeUri));
             throw new NotImplementedException();
+
         }
         Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
         Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);

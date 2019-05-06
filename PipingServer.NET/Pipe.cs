@@ -6,12 +6,12 @@ namespace Piping
 {
     public class Pipe
     {
-        public ReqRes Sender { get; }
-        public IReadOnlyCollection<ReqRes> Receivers { get; }
-        public Pipe(ReqRes Sender, IList<ReqRes> Receivers)
-            => (this.Sender, this.Receivers) = (Sender, new ReadOnlyCollection<ReqRes>(Receivers));
-        public Pipe(ReqRes Sender, IEnumerable<ReqRes> Receivers) : this(Sender, Receivers.ToList()) { }
-        public void Deconstruct(out ReqRes Sender, out IReadOnlyCollection<ReqRes> Receivers)
+        public Req Sender { get; }
+        public IReadOnlyCollection<Res> Receivers { get; }
+        public Pipe(Req Sender, IList<Res> Receivers)
+            => (this.Sender, this.Receivers) = (Sender, new ReadOnlyCollection<Res>(Receivers));
+        public Pipe(Req Sender, IEnumerable<Res> Receivers) : this(Sender, Receivers.ToList()) { }
+        public void Deconstruct(out Req Sender, out IReadOnlyCollection<Res> Receivers)
             => (Sender, Receivers) = (this.Sender, this.Receivers);
     }
 }

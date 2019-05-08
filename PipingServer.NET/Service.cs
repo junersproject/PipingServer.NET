@@ -21,6 +21,7 @@ namespace Piping
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class Service : IService
     {
+        readonly bool EnableLog = false;
         readonly string Location;
         readonly string BasePath;
         readonly FileVersionInfo VERSION;
@@ -50,8 +51,8 @@ namespace Piping
             if (sdb != null)
                 sdb.HttpHelpPageEnabled = false;
         }
-        protected IDictionary<string, bool> pathToEstablished { get; } = new Dictionary<string, bool>();
-        protected IDictionary<string, UnestablishedPipe> pathToUnestablishedPipe { get; } = new Dictionary<string, UnestablishedPipe>();
+        readonly Dictionary<string, bool> pathToEstablished = new Dictionary<string, bool>();
+        readonly Dictionary<string, UnestablishedPipe> pathToUnestablishedPipe = new Dictionary<string, UnestablishedPipe>();
         public Service()
         {
             Location = Assembly.GetExecutingAssembly().Location;
@@ -124,21 +125,36 @@ namespace Piping
                     return Task.FromResult(NotImplemented(Response));
             }
         }
-        protected Stream BadRequest(OutgoingWebResponseContext Response, string RelativeUri)
+        protected Stream BadRequest(OutgoingWebResponseContext Response, string AndMessage = null)
         {
             Response.StatusCode = HttpStatusCode.BadRequest;
-            var Bytes = Encoding.GetBytes($"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
-            Response.ContentLength = Bytes.Length;
+            Response.StatusDescription = AndMessage;
+            Response.ContentLength = 0;
             Response.ContentType = $"text/plain;charset={Encoding.WebName}";
-            return new MemoryStream(Bytes);
+            return new MemoryStream(new byte[0]);
         }
-        public Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
+
+        public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
         {
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
 
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out _))
-                return Task.FromResult(BadRequest(Response, RelativeUri));
+                return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
+            var Key = new RequestKey(RelativeUri);
+            var Receivers = Key.Receivers;
+            if (Receivers <= 0)
+                return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Receivers}.\n");
+            if (EnableLog)
+                Console.WriteLine(pathToUnestablishedPipe.Select(v => $"{v.Key}:{v.Value}"));
+            // If the path connection is connecting
+            if (pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var unestablishedPipe)){
+                // If a sender have not been registered yet
+                if (Receivers == unestablishedPipe.ReceiversCount)
+                {
+                    
+                }
+            }
             throw new NotImplementedException();
 
         }

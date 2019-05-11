@@ -27,7 +27,7 @@ namespace Piping
             stream.Flush();
         }
         public override long Seek(long offset, SeekOrigin origin)
-            => throw new InvalidOperationException("Cannot seek in CachingStream.");
+            => throw new InvalidOperationException("Cannot seek in " + nameof(CacheStream) + ".");
         public override void SetLength(long value)
         {
             stream.SetLength(value);
@@ -46,7 +46,7 @@ namespace Piping
             BytesRead?.Invoke(this, new BytesReadEventArgs(tmp));
         }
         public override void Write(byte[] buffer, int offset, int count)
-            => throw new InvalidOperationException("Cannot write in CachingStream.");
+            => throw new InvalidOperationException("Cannot write in " + nameof(CacheStream) + ".");
         public override bool CanRead => stream.CanRead;
         public override bool CanSeek => false;
         public override bool CanWrite => false;
@@ -54,7 +54,7 @@ namespace Piping
         public override long Position
         {
             get { return stream.Position; }
-            set { throw new InvalidOperationException("Cannot set position in CachingStream."); }
+            set { throw new InvalidOperationException("Cannot set position in " + nameof(CacheStream) + "."); }
         }
         public override void Close()
         {

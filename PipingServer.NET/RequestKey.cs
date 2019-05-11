@@ -12,7 +12,7 @@ namespace Piping
         {
             var Collection = HttpUtility.ParseQueryString(relativeUri.Query);
             var n = Collection.Get("n");
-            Receivers = n != null && uint.TryParse(n, out var _n) ? (int)_n : 1;
+            Receivers = n != null && int.TryParse(n, out var _n) ? _n : 1;
             LocalPath = relativeUri.LocalPath;
         }
         public override int GetHashCode() => LocalPath.GetHashCode();

@@ -136,27 +136,52 @@ namespace Piping
 
         public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
         {
+            var output = new MemoryStream();
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
 
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out _))
                 return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             var Key = new RequestKey(RelativeUri);
+            // Get the number of receivers
             var Receivers = Key.Receivers;
+            // If the number of receivers is invalid
             if (Receivers <= 0)
                 return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Receivers}.\n");
             if (EnableLog)
                 Console.WriteLine(pathToUnestablishedPipe.Select(v => $"{v.Key}:{v.Value}"));
             // If the path connection is connecting
-            if (pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var unestablishedPipe)){
+            if (pathToEstablished.TryGetValue(Key.LocalPath, out _))
+                return BadRequest(Response, $"[ERROR] Connection on '${RelativeUri}' has been established already.\n");
+
+            // If the path connection is connecting
+            // Get unestablished pipe
+            if (pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var unestablishedPipe))
+            {
                 // If a sender have not been registered yet
-                if (Receivers == unestablishedPipe.ReceiversCount)
+                if (unestablishedPipe.Sender == null)
                 {
-                    
+                    if (Receivers == unestablishedPipe.ReceiversCount)
+                    {
+                        unestablishedPipe.Sender = createSender(Request, Response, RelativeUri);
+                        Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                        using (var writer = new StreamWriter(output, Encoding, 1024, true))
+                        {
+                            await writer.WriteLineAsync($"[INFO] Waiting for ${Receivers} receiver(s)...");
+                            await writer.WriteLineAsync($"[INFO] {unestablishedPipe.Receivers.Count} receiver(s) has/have been connected.");
+                        }
+                    }
                 }
             }
             throw new NotImplementedException();
-
+        }
+        ReqAndUnsubscribe createSender(IncomingWebRequestContext Request, OutgoingWebResponseContext Response, string RelativeUri)
+        {
+            throw new NotImplementedException();
+        }
+        ResAndUnsubscribe createReceiver(IncomingWebRequestContext Request, OutgoingWebResponseContext Response, string RelativeUri)
+        {
+            throw new NotImplementedException();
         }
         Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
         Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);

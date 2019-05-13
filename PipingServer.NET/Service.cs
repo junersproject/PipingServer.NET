@@ -170,10 +170,25 @@ namespace Piping
                             await writer.WriteLineAsync($"[INFO] Waiting for ${Receivers} receiver(s)...");
                             await writer.WriteLineAsync($"[INFO] {unestablishedPipe.Receivers.Count} receiver(s) has/have been connected.");
                         }
+                        var pipe = getPipeIfEstablished(unestablishedPipe);
+                        if (pipe != null)
+                            await RunPipeAsync(RelativeUri, pipe);
+
                     }
+                    else
+                        return BadRequest(Response, $"[ERROR] The number of receivers has reached limits.\n");
                 }
+                else
+                    return BadRequest(Response, $"[ERROR] The number of receivers should be {unestablishedPipe.Receivers} but ${Receivers}.\n");
+            } else
+            {
+                pathToUnestablishedPipe[RelativeUri] = new UnestablishedPipe
+                {
+                    Sender = new ReqAndUnsubscribe(new Req(Request, InputStream, Response, output)),
+                    ReceiversCount = Receivers,
+                };
             }
-            throw new NotImplementedException();
+            return null;
         }
         ReqAndUnsubscribe createSender(IncomingWebRequestContext Request, OutgoingWebResponseContext Response, string RelativeUri)
         {

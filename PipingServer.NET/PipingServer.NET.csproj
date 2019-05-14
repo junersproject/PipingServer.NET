@@ -68,10 +68,12 @@
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
     <Compile Include="Req.cs" />
+    <Compile Include="ReqRes.cs" />
     <Compile Include="Res.cs" />
     <Compile Include="ReqAndUnsubscribe.cs" />
     <Compile Include="RequestKey.cs" />
     <Compile Include="ResAndUnsubscribe.cs" />
+    <Compile Include="SenderResponseWaiters.cs" />
     <Compile Include="SelfHost.cs" />
     <Compile Include="Service.cs" />
     <Compile Include="UnestablishedPipe.cs" />

@@ -139,9 +139,9 @@ namespace Piping
             var output = new MemoryStream();
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
+            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
+                return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             var Key = new RequestKey(RelativeUri);
-            if (NAME_TO_RESERVED_PATH.TryGetValue(Key.LocalPath, out _))
-                return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{Key.LocalPath}'. (e.g. '/mypath123')\n");
             // If the number of receivers is invalid
             if (Key.Receivers <= 0)
                 return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
@@ -156,6 +156,7 @@ namespace Piping
             if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
                 waiter = new SenderResponseWaiters(Key.Receivers);
+                pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             try
             {
@@ -171,21 +172,18 @@ namespace Piping
                 return BadRequest(Response, e.Message);
             }
         }
-        ReqAndUnsubscribe createSender(IncomingWebRequestContext Request, OutgoingWebResponseContext Response, string RelativeUri)
-        {
-            throw new NotImplementedException();
-        }
-        ResAndUnsubscribe createReceiver(IncomingWebRequestContext Request, OutgoingWebResponseContext Response, string RelativeUri)
-        {
-            throw new NotImplementedException();
-        }
         Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
         Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
-        public Task<Stream> DownloadAsync(string RelativeUri, OutgoingWebResponseContext Response = null)
+        public async Task<Stream> DownloadAsync(string RelativeUri, OutgoingWebResponseContext Response = null)
         {
-            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out var Generator))
-                return Generator();
+            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
+                return await Generator();
             Response ??= WebOperationContext.Current.OutgoingResponse;
+            var ResponseStream = new MemoryStream();
+            var Key = new RequestKey(RelativeUri);
+            if (Key.Receivers <= 0)
+                return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
+
             throw new NotImplementedException();
         }
         Task<Stream> IService.GetDownloadAsync() => DownloadAsync(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);
@@ -310,65 +308,6 @@ curl {url}/mypath | openssl aes-256-cbc -d";
                     return v.ReqRes;
                 }));
             return null;
-        }
-        protected async Task<Stream> RunPipeAsync(string path, Pipe pipe)
-        {
-            pathToEstablished[path] = true;
-            pathToUnestablishedPipe.Remove(path);
-            var (Sender, Receivers) = pipe;
-            using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, 1024, true))
-                await writer.WriteLineAsync($"[INFO] Start sending with ${pipe.Receivers.Count} receiver(s)");
-            var IsMutiForm = (pipe.Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
-            // TODO: support web multipart
-            var (Part, PartLength, PartContentType, PartContentDisposition) = await GetPartStream();
-            Task<(Stream stream, long contentLength, string contentType, string contentDisposition)> GetPartStream() {
-                var tcs = new TaskCompletionSource<(Stream, long, string, string)>();
-                var sm = new StreamingMultipartFormDataParser(Sender.RequestStream);
-                sm.FileHandler += (name, fileName, contentType, contentDisposition, buffer, bytes)
-                    => tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, contentDisposition));
-                sm.Run();
-                return tcs.Task;
-            }
-            // 実装中
-            var closeCount = 0;
-            foreach (var receiver in Receivers)
-            {
-                // Close receiver
-                void closeReceiver()
-                {
-                    closeCount++;
-                    //senderData.unpipe(passThrough);
-                    // If close-count is # of receivers
-                    if (closeCount == Receivers.Count)
-                    {
-                        using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, 1024, true))
-                            writer.WriteLineAsync("[INFO] All receiver(s) was/were closed halfway.");
-                        pathToEstablished.Remove(path);
-                        Sender.ResponseStream.Close();
-                    }
-                }
-                if (Part == null)
-                {
-                    if (!string.IsNullOrEmpty(Sender.Request.Headers[HttpRequestHeader.ContentLength]))
-                        receiver.Response.ContentLength = Sender.Request.ContentLength;
-                    if (!string.IsNullOrEmpty(Sender.Request.Headers[HttpRequestHeader.ContentType]))
-                        receiver.Response.ContentType = Sender.Request.ContentType;
-                    if (!string.IsNullOrEmpty(Sender.Request.Headers["content-disposition"]))
-                        receiver.Response.Headers.Add("content-disposition", Sender.Request.Headers["content-disposition"]);
-                } else
-                {
-                    receiver.Response.ContentLength = PartLength;
-                    if (!string.IsNullOrEmpty(PartContentType))
-                        receiver.Response.ContentType = PartContentType;
-                    if (!string.IsNullOrEmpty(PartContentDisposition))
-                        receiver.Response.Headers.Add("content-disposition", PartContentDisposition);
-                }
-                receiver.Response.StatusCode = HttpStatusCode.OK;
-                receiver.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-                // TODO sender to receiver
-            }
-            //TODO 仮
-            return pipe.Sender.ResponseStream;
         }
     }
 }

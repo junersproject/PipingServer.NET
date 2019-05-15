@@ -17,7 +17,8 @@ namespace Piping
         TaskCompletionSource<bool> ResponseTasksource = new TaskCompletionSource<bool>();
         Task<bool> ReadyTask => ReadyTaskSource.Task;
         Task<bool> ResponseTask => ResponseTasksource.Task;
-        public ReqRes? Sender = null;
+        public bool IsSetSenderComplete { private set; get; } = false;
+        ReqRes? Sender = null;
         List<ReqRes> _Receivers = new List<ReqRes>();
         public IReadOnlyCollection<ReqRes> Receivers { get; }
         int ReceiversCount = 1;

@@ -52,7 +52,7 @@ namespace Piping
                 sdb.HttpHelpPageEnabled = false;
         }
         readonly Dictionary<string, bool> pathToEstablished = new Dictionary<string, bool>();
-        readonly Dictionary<string, UnestablishedPipe> pathToUnestablishedPipe = new Dictionary<string, UnestablishedPipe>();
+        readonly Dictionary<string, SenderResponseWaiters> pathToUnestablishedPipe = new Dictionary<string, SenderResponseWaiters>();
         public Service()
         {
             Location = Assembly.GetExecutingAssembly().Location;
@@ -139,15 +139,12 @@ namespace Piping
             var output = new MemoryStream();
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
-
-            if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri.ToLower(), out _))
-                return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             var Key = new RequestKey(RelativeUri);
-            // Get the number of receivers
-            var Receivers = Key.Receivers;
+            if (NAME_TO_RESERVED_PATH.TryGetValue(Key.LocalPath, out _))
+                return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{Key.LocalPath}'. (e.g. '/mypath123')\n");
             // If the number of receivers is invalid
-            if (Receivers <= 0)
-                return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Receivers}.\n");
+            if (Key.Receivers <= 0)
+                return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
             if (EnableLog)
                 Console.WriteLine(pathToUnestablishedPipe.Select(v => $"{v.Key}:{v.Value}"));
             // If the path connection is connecting
@@ -156,39 +153,23 @@ namespace Piping
 
             // If the path connection is connecting
             // Get unestablished pipe
-            if (pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var unestablishedPipe))
+            if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
-                // If a sender have not been registered yet
-                if (unestablishedPipe.Sender == null)
-                {
-                    if (Receivers == unestablishedPipe.ReceiversCount)
-                    {
-                        unestablishedPipe.Sender = createSender(Request, Response, RelativeUri);
-                        Response.Headers.Add("Access-Control-Allow-Origin", "*");
-                        using (var writer = new StreamWriter(output, Encoding, 1024, true))
-                        {
-                            await writer.WriteLineAsync($"[INFO] Waiting for ${Receivers} receiver(s)...");
-                            await writer.WriteLineAsync($"[INFO] {unestablishedPipe.Receivers.Count} receiver(s) has/have been connected.");
-                        }
-                        var pipe = getPipeIfEstablished(unestablishedPipe);
-                        if (pipe != null)
-                            await RunPipeAsync(RelativeUri, pipe);
-
-                    }
-                    else
-                        return BadRequest(Response, $"[ERROR] The number of receivers has reached limits.\n");
-                }
-                else
-                    return BadRequest(Response, $"[ERROR] The number of receivers should be {unestablishedPipe.Receivers} but ${Receivers}.\n");
-            } else
-            {
-                pathToUnestablishedPipe[RelativeUri] = new UnestablishedPipe
-                {
-                    Sender = new ReqAndUnsubscribe(new Req(Request, InputStream, Response, output)),
-                    ReceiversCount = Receivers,
-                };
+                waiter = new SenderResponseWaiters(Key.Receivers);
             }
-            return null;
+            try
+            {
+                return await waiter.AddSenderAsync(Key, new ReqRes
+                {
+                    Request = Request,
+                    RequestStream = InputStream,
+                    Response = Response,
+                    ResponseStream = output,
+                }, Encoding, 1024);
+            }catch(InvalidOperationException e)
+            {
+                return BadRequest(Response, e.Message);
+            }
         }
         ReqAndUnsubscribe createSender(IncomingWebRequestContext Request, OutgoingWebResponseContext Response, string RelativeUri)
         {

@@ -158,14 +158,14 @@ namespace Piping.Tests
                     Cache.OutputStreams.Select((os, index) =>
                         Task.Run(async () =>
                         {
-                            using (var reader = new StreamReader(os, Encoding, false, 1024, true))
-                                foreach (var ExpectText in Data)
-                                {
-                                    Token.ThrowIfCancellationRequested();
-                                    var Text = await reader.ReadLineAsync();
-                                    Trace.WriteLine($"cache {index} read: {Text}");
-                                    Assert.AreEqual(ExpectText, Text);
-                                }
+                            using var reader = new StreamReader(os, Encoding, false, 1024, true);
+                            foreach (var ExpectText in Data)
+                            {
+                                Token.ThrowIfCancellationRequested();
+                                var Text = await reader.ReadLineAsync();
+                                Trace.WriteLine($"cache {index} read: {Text}");
+                                Assert.AreEqual(ExpectText, Text);
+                            }
                         }));
                 await Task.WhenAll(new[] { readerTask }.Concat(cacheReaderTasks));
             }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Piping
 {
-    public class CloseRegisterStreamWrapper : Stream
+    public class CloseRegisterStream : Stream
     {
         private Stream origin;
         
@@ -23,7 +23,7 @@ namespace Piping
             }
             remove => closed -= value;
         }
-        public CloseRegisterStreamWrapper(Stream origin) => this.origin = origin;
+        public CloseRegisterStream(Stream origin) => this.origin = origin;
         public override bool CanRead => origin.CanRead;
 
         public override bool CanSeek => origin.CanSeek;
@@ -50,14 +50,24 @@ namespace Piping
         public override bool CanTimeout => origin.CanTimeout;
         public override void Close()
         {
+            FireEventsAndRelease();
+            base.Close();
+            origin.Close();
+        }
+        bool isDisposed = false;
+        protected void FireEventsAndRelease()
+        {
+            if (isDisposed)
+                return;
             try
             {
                 closed.Invoke(this, new EventArgs());
-            }catch { }
+            }
+            catch { }
             foreach (var closedHandler in closed.GetInvocationList().Cast<EventHandler>())
                 closed -= closedHandler;
-            base.Close();
-            origin.Close();
+
+            isDisposed = true;
         }
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
             => origin.CopyToAsync(destination, bufferSize, cancellationToken);
@@ -77,12 +87,11 @@ namespace Piping
             => origin.WriteAsync(buffer, offset, count, cancellationToken);
         public override void WriteByte(byte value) => origin.WriteByte(value);
         public override string ToString() => origin.ToString();
-        bool isDisposed = false;
         protected override void Dispose(bool disposing)
         {
+            FireEventsAndRelease();
             base.Dispose(disposing);
             origin.Dispose();
-            isDisposed = true;
         }
     }
 }

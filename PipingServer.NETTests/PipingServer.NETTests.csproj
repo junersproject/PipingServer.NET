@@ -58,6 +58,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="CloseRegisterStreamTests.cs" />
     <Compile Include="PipingStreamTests.cs" />
     <Compile Include="CacheStreamTests.cs" />
     <Compile Include="DebugUtils.cs" />

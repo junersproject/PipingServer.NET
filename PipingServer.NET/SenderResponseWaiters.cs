@@ -7,6 +7,7 @@ using System.ServiceModel.Web;
 using HttpMultipartParser;
 using System.Net;
 using System.Text;
+using System.Linq;
 
 #nullable enable
 namespace Piping
@@ -20,6 +21,8 @@ namespace Piping
         public bool IsSetSenderComplete { private set; get; } = false;
         ReqRes? Sender = null;
         List<ReqRes> _Receivers = new List<ReqRes>();
+        public bool UnRegisterReceiver(ReqRes Receiver) => _Receivers.Remove(Receiver);
+        public bool ReceiversIsEmpty => !_Receivers.Any();
         public IReadOnlyCollection<ReqRes> Receivers { get; }
         int ReceiversCount = 1;
         public SenderResponseWaiters(int ResponseCount) 
@@ -27,7 +30,7 @@ namespace Piping
         public bool IsReady() => Sender != null && _Receivers.Count == ReceiversCount;
         public async Task<Stream> AddSenderAsync(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
-            if (this.Sender != null)
+            if (IsSetSenderComplete)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {_Receivers} but ${_Receivers}.\n");
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
@@ -37,6 +40,7 @@ namespace Piping
                 await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
             }
             this.Sender = Sender;
+            IsSetSenderComplete = true;
             var IsMultiForm = (Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
             var MultiFormTask = IsMultiForm ? GetPartStreamAsync(Sender, Token) : null;
             if (IsReady())

@@ -88,7 +88,7 @@ namespace Piping
             if (ContentDisposition != null)
                 Response.Response.Headers.Add("content-disposition", ContentDisposition!);
         }
-        public async Task<Stream> AddResponseAsync(ReqRes Response, CancellationToken Token = default)
+        public async Task<Stream> AddReceiverAsync(ReqRes Response, CancellationToken Token = default)
         {
             _Receivers.Add(Response);
             if (IsReady())

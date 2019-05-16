@@ -149,7 +149,7 @@ namespace Piping
                 Console.WriteLine(pathToUnestablishedPipe.Select(v => $"{v.Key}:{v.Value}"));
             // If the path connection is connecting
             if (pathToEstablished.TryGetValue(Key.LocalPath, out _))
-                return BadRequest(Response, $"[ERROR] Connection on '${RelativeUri}' has been established already.\n");
+                return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
 
             // If the path connection is connecting
             // Get unestablished pipe
@@ -182,8 +182,37 @@ namespace Piping
             var ResponseStream = new MemoryStream();
             var Key = new RequestKey(RelativeUri);
             if (Key.Receivers <= 0)
-                return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
-
+                return BadRequest(Response, $"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
+            if (pathToEstablished.TryGetValue(Key.LocalPath, out _))
+                return BadRequest(Response, $"[ERROR] Connection on '{Key.LocalPath}' has been established already.\n");
+            if (pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
+            {
+                waiter = new SenderResponseWaiters(Key.Receivers);
+                pathToUnestablishedPipe[Key.LocalPath] = waiter;
+            }
+            var rs = new ReqRes
+            {
+                Response = Response,
+            };
+            try
+            {
+                var stream = new CloseRegisterStream(await waiter.AddReceiverAsync(rs));
+                stream.Closed += (obj, args) =>
+                {
+                    waiter.UnRegisterReceiver(rs);
+                    if (waiter.ReceiversIsEmpty)
+                    {
+                        pathToUnestablishedPipe.Remove(Key.LocalPath);
+                        waiter.Dispose();
+                    }
+                };
+                return stream;
+            }
+            catch(Exception e)
+            {
+                waiter.UnRegisterReceiver(rs);
+                return BadRequest(Response, e.Message);
+            }
             throw new NotImplementedException();
         }
         Task<Stream> IService.GetDownloadAsync() => DownloadAsync(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);

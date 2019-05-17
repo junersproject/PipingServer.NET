@@ -18,6 +18,7 @@ namespace Piping
         TaskCompletionSource<bool> ResponseTasksource = new TaskCompletionSource<bool>();
         Task<bool> ReadyTask => ReadyTaskSource.Task;
         Task<bool> ResponseTask => ResponseTasksource.Task;
+        public bool IsEstablished { private set; get; } = false;
         public bool IsSetSenderComplete { private set; get; } = false;
         ReqRes? Sender = null;
         List<ReqRes> _Receivers = new List<ReqRes>();
@@ -25,8 +26,8 @@ namespace Piping
         public bool ReceiversIsEmpty => !_Receivers.Any();
         public IReadOnlyCollection<ReqRes> Receivers { get; }
         int ReceiversCount = 1;
-        public SenderResponseWaiters(int ResponseCount) 
-            => (this.ReceiversCount, Receivers) = (ResponseCount, _Receivers.AsReadOnly());
+        public SenderResponseWaiters(int ReceiversCount) 
+            => (this.ReceiversCount, Receivers) = (ReceiversCount, _Receivers.AsReadOnly());
         public bool IsReady() => Sender != null && _Receivers.Count == ReceiversCount;
         public async Task<Stream> AddSenderAsync(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
@@ -47,6 +48,7 @@ namespace Piping
                 ReadyTaskSource.TrySetResult(true);
             else
                 await ReadyTask;
+            IsEstablished = true;
             var (Stream, ContentLength, ContentType, ContentDisposition) = IsMultiForm ? await MultiFormTask! : GetRequestStream(Sender);
             var Buffers = new List<BufferStream>();
             foreach (var Response in _Receivers)

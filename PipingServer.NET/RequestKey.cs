@@ -5,9 +5,10 @@ namespace Piping
 {
     public readonly struct RequestKey
     {
+        const string PATH = "http://example.com/";
         public readonly string LocalPath;
         public readonly int Receivers;
-        public RequestKey(string relativeUri) : this (new Uri(relativeUri, UriKind.Relative)) { }
+        public RequestKey(string relativeUri) : this (new Uri(PATH + relativeUri.TrimStart('/'))) { }
         public RequestKey(Uri relativeUri)
         {
             var Collection = HttpUtility.ParseQueryString(relativeUri.Query);

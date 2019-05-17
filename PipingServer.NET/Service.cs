@@ -18,7 +18,7 @@ using HttpMultipartParser;
 namespace Piping
 {
     [AspNetCompatibilityRequirements(RequirementsMode =AspNetCompatibilityRequirementsMode.Allowed)]
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple)]
     public class Service : IService
     {
         readonly bool EnableLog = false;
@@ -51,7 +51,6 @@ namespace Piping
             if (sdb != null)
                 sdb.HttpHelpPageEnabled = false;
         }
-        readonly Dictionary<string, bool> pathToEstablished = new Dictionary<string, bool>();
         readonly Dictionary<string, SenderResponseWaiters> pathToUnestablishedPipe = new Dictionary<string, SenderResponseWaiters>();
         public Service()
         {
@@ -147,9 +146,6 @@ namespace Piping
                 return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
             if (EnableLog)
                 Console.WriteLine(pathToUnestablishedPipe.Select(v => $"{v.Key}:{v.Value}"));
-            // If the path connection is connecting
-            if (pathToEstablished.TryGetValue(Key.LocalPath, out _))
-                return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
 
             // If the path connection is connecting
             // Get unestablished pipe
@@ -158,6 +154,8 @@ namespace Piping
                 waiter = new SenderResponseWaiters(Key.Receivers);
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
+            if (waiter.IsEstablished)
+                return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
                 return await waiter.AddSenderAsync(Key, new ReqRes
@@ -183,13 +181,13 @@ namespace Piping
             var Key = new RequestKey(RelativeUri);
             if (Key.Receivers <= 0)
                 return BadRequest(Response, $"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
-            if (pathToEstablished.TryGetValue(Key.LocalPath, out _))
-                return BadRequest(Response, $"[ERROR] Connection on '{Key.LocalPath}' has been established already.\n");
-            if (pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
+            if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
                 waiter = new SenderResponseWaiters(Key.Receivers);
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
+            if (waiter.IsEstablished)
+                return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             var rs = new ReqRes
             {
                 Response = Response,

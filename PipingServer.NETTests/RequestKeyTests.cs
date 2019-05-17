@@ -13,12 +13,18 @@ namespace Piping.Tests
                 yield return new object[]
                 {
                     "/PutAndOneGetTest",
-                    "",
+                    "/putandonegettest",
                     1,
+                };
+                yield return new object[]
+                {
+                    "/test/test?n=2",
+                    "/test/test",
+                    2,
                 };
             }
         }
-        [TestMethod, DynamicData(nameof(RequestKeyTest1Data))]
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(RequestKeyTest1Data))]
         public void RequestKeyTest1(string relativeUri, string ExpectedLocalPath, int ExpectedReceivers)
         {
             var Key = new RequestKey(relativeUri);

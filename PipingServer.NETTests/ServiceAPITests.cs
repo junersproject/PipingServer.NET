@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -33,14 +34,30 @@ namespace Piping.Tests
             var SendUri = new Uri(BaseUri, "./" + nameof(PutAndOneGetTest) + "/"+nameof(PutAndOneGetTest));
             var message = "Hello World.";
             using var HostDispose = Source.Token.Register(() => Host.Dispose());
+            Trace.WriteLine($"BASE URL: {BaseUri}");
+            Trace.WriteLine($"TARGET URL: {SendUri}");
+            var (_, Version) = await GetVersionAsync(BaseUri);
+            Trace.WriteLine($"VERSION: {Version}");
             await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
         }
-        [TestMethod, TestCategory("Example")]
-        public async Task PutAndOneGetOriginPipingServer()
+        static IEnumerable<object[]> OriginPipingServerUrls
+        {
+            get
+            {
+                yield return new object[]{ "https://ppng.ml/" };
+            }
+        }
+        [TestMethod, TestCategory("Example"),DynamicData(nameof(OriginPipingServerUrls))]
+        public async Task PutAndOneGetOriginPipingServerTest(string pipingServerUrl)
         {
             using var Source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var SendUri = new Uri("https://ppng.ml/" + nameof(PutAndOneGetOriginPipingServer));
+            var BaseUri = new Uri(pipingServerUrl);
+            var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PutAndOneGetOriginPipingServerTest));
             var message = "Hello World.";
+            Trace.WriteLine($"BASE URL: {BaseUri}");
+            Trace.WriteLine($"TARGET URL: {SendUri}");
+            var (_, Version) = await GetVersionAsync(BaseUri);
+            Trace.WriteLine($"VERSION: {Version}");
             await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
         }
         protected async Task PipingServerPutAndGetMessageSimple(Uri SendUri, string message, CancellationToken Token)
@@ -88,7 +105,7 @@ namespace Piping.Tests
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
-                        Trace.WriteLine("[SENDER RESPONSE] : " + Line);
+                        Trace.WriteLine($"[SENDER RESPONSE MESSAGE] : {Line}");
                         ReadToEnd += Line;
                     }
                     return ReadToEnd;
@@ -121,14 +138,14 @@ namespace Piping.Tests
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
-                        Trace.WriteLine("[RECEIVE MESSAGE] : " + Line);
+                        Trace.WriteLine($"[RECEIVE MESSAGE] : {Line}");
                         ReadToEnd += Line;
                     }
                     return ReadToEnd;
                 }
                 catch (WebException e)
                 {
-                    Trace.WriteLine(e.Status);
+                    Trace.WriteLine($"[RECEIVER ERROR STATUS] : {e.Status}");
                     throw;
                 }
                 finally
@@ -151,6 +168,7 @@ namespace Piping.Tests
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
+        public async Task<(WebHeaderCollection, string BodyText)> GetVersionAsync(Uri BaseUri) => await GetResponseAsync(new Uri(BaseUri.ToString().TrimEnd('/') + "/version"), "GET");
         [TestMethod, TestCategory("ShortTime")]
         public async Task GetTopPageTest()
         {

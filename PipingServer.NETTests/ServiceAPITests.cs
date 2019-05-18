@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.ServiceModel;
 using System.Text;
@@ -25,53 +26,117 @@ namespace Piping.Tests
         [TestMethod, TestCategory("ShortTime")]
         public async Task PutAndOneGetTest()
         {
-            using var Source = new CancellationTokenSource();
-            using var Host = new SelfHost();
+            using var Source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var BaseUri = new Uri("http://localhost/" + nameof(PutAndOneGetTest));
-            var SendUri = new Uri(BaseUri, "./" + nameof(PutAndOneGetTest) + "/"+nameof(PutAndOneGetTest));
+            using var Host = new SelfHost();
             Host.Open(BaseUri);
+            var SendUri = new Uri(BaseUri, "./" + nameof(PutAndOneGetTest) + "/"+nameof(PutAndOneGetTest));
             var message = "Hello World.";
+            using var HostDispose = Source.Token.Register(() => Host.Dispose());
+            await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
+        }
+        [TestMethod, TestCategory("Example")]
+        public async Task PutAndOneGetOriginPipingServer()
+        {
+            using var Source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var SendUri = new Uri("https://ppng.ml/" + nameof(PutAndOneGetOriginPipingServer));
+            var message = "Hello World.";
+            await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
+        }
+        protected async Task PipingServerPutAndGetMessageSimple(Uri SendUri, string message, CancellationToken Token)
+        {
             var sender = Task.Run(async () =>
             {
                 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(message));
                 var request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "PUT";
-                request.ContentType = "application/octet-stream";
+                request.Method = "POST";
+                request.ContentType = "text/plain;charset=UTF-8";
                 request.ContentLength = stream.Length;
                 request.AllowWriteStreamBuffering = true;
                 // タイムアウト6h
                 request.Timeout = 360 * 60 * 1000;
                 request.ReadWriteTimeout = 360 * 60 * 1000;
-                using var requestStream = request.GetRequestStream();
-                await stream.CopyToAsync(requestStream, 1024, Source.Token);
-                var response = await request.GetResponseAsync();
-                using var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false, 1024, true);
-                string ReadToEnd;
-                Trace.WriteLine(ReadToEnd = await reader.ReadToEndAsync());
-                return ReadToEnd;
+                foreach (var (Key, Value) in request.Headers.AllKeys.Select(k => (k, request.Headers.Get(k))))
+                    Trace.WriteLine($"[SEND HEADER] : {Key} : {Value}");
+                Trace.WriteLine("[SENDER REQUEST] [START]");
+                try
+                {
+                    {
+                        using var requestStream = await request.GetRequestStreamAsync();
+                        using var requestStreamDispose = Token.Register(() => requestStream.Dispose());
+                        await stream.CopyToAsync(requestStream, 1024, Token);
+                        Trace.WriteLine("[SENT MESSAGE] : " + message);
+                    }
+                    foreach (var (Key, Value) in request.Headers.AllKeys.Select(k => (k, request.Headers.Get(k))))
+                        Trace.WriteLine($"[SENT HEADER] : {Key} : {Value}");
+                }
+                finally
+                {
+                    Trace.WriteLine("[SENDER REQUEST] [END]");
+                }
+                Trace.WriteLine("[SENDER RESPONSE] [START]");
+                try
+                {
+                    using var response = await request.GetResponseAsync();
+                    using var responseDispose = Token.Register(() => response.Dispose());
+                    foreach (var (Key, Value) in response.Headers.AllKeys.Select(k => (k, response.Headers.Get(k))))
+                        Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : {Value}");
+                    using var outstream = response.GetResponseStream();
+                    using var outstreamDispose = Token.Register(() => outstream.Dispose());
+                    using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
+                    string Line;
+                    string ReadToEnd = string.Empty;
+                    while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
+                    {
+                        Trace.WriteLine("[SENDER RESPONSE] : " + Line);
+                        ReadToEnd += Line;
+                    }
+                    return ReadToEnd;
+                }
+                finally
+                {
+                    Trace.WriteLine("[SENDER RESPONSE] [END]");
+                }
             });
             var receiver = Task.Run(async () =>
             {
-                using var stream = new MemoryStream();
                 var request = WebRequest.Create(SendUri) as HttpWebRequest;
                 request.Method = "GET";
                 request.AllowWriteStreamBuffering = false;
                 // タイムアウト6h
                 request.Timeout = 360 * 60 * 1000;
                 request.ReadWriteTimeout = 360 * 60 * 1000;
+
+                Trace.WriteLine("[RECEIVER RESPONSE] [START]");
                 try
                 {
-                    var response = await request.GetResponseAsync();
-                    using var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8, false, 1024, true);
-                    string ReadToEnd;
-                    Trace.WriteLine(ReadToEnd = await reader.ReadToEndAsync());
+                    using var response = await request.GetResponseAsync();
+                    using var responseDispose = Token.Register(() => response.Dispose());
+                    foreach (var (Key, Value) in response.Headers.AllKeys.Select(k => (k, response.Headers.Get(k))))
+                        Trace.WriteLine($"[RESPONSE HEADER] : {Key} : {Value}");
+                    using var stream = response.GetResponseStream();
+                    using var streamDispose = Token.Register(() => stream.Dispose());
+                    using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
+                    string Line;
+                    string ReadToEnd = string.Empty;
+                    while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
+                    {
+                        Trace.WriteLine("[RECEIVE MESSAGE] : " + Line);
+                        ReadToEnd += Line;
+                    }
                     return ReadToEnd;
-                }catch(WebException e)
+                }
+                catch (WebException e)
                 {
                     Trace.WriteLine(e.Status);
                     throw;
                 }
+                finally
+                {
+                    Trace.WriteLine("[RECEIVER RESPONSE] [END]");
+                }
             });
+            await Task.WhenAll(sender, receiver);
             Assert.AreEqual(message, await receiver);
         }
 

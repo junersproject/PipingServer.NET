@@ -35,6 +35,7 @@ namespace Piping
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {_Receivers} but ${_Receivers}.\n");
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
+            Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
             {
                 await writer.WriteLineAsync($"[INFO] Waiting for ${Receivers} receiver(s)...");
@@ -44,12 +45,12 @@ namespace Piping
             IsSetSenderComplete = true;
             var IsMultiForm = (Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
             var MultiFormTask = IsMultiForm ? GetPartStreamAsync(Sender, Token) : null;
+            var (Stream, ContentLength, ContentType, ContentDisposition) = IsMultiForm ? await MultiFormTask! : GetRequestStream(Sender);
             if (IsReady())
                 ReadyTaskSource.TrySetResult(true);
             else
                 await ReadyTask;
             IsEstablished = true;
-            var (Stream, ContentLength, ContentType, ContentDisposition) = IsMultiForm ? await MultiFormTask! : GetRequestStream(Sender);
             var Buffers = new List<BufferStream>();
             foreach (var Response in _Receivers)
             {
@@ -58,17 +59,24 @@ namespace Piping
                 Response.ResponseStream = Buffer;
                 Buffers.Add(Buffer);
             }
-            _ = PipingAsync(Stream, Buffers.ToArray(), 1024, Token);
-            return Sender.RequestStream;
+            await PipingAsync(Stream, Buffers.ToArray(), 1024, Token);
+            return Sender.ResponseStream;
         }
-        private static async Task PipingAsync(Stream RequestStream, IEnumerable<Stream> Buffers, int BufferSize, CancellationToken Token = default)
+        private static async Task PipingAsync(Stream RequestStream, IEnumerable<BufferStream> Buffers, int BufferSize, CancellationToken Token = default)
         {
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
-            while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
-                await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
-
+            try
+            {
+                while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
+                    await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
+            }
+            finally
+            {
+                foreach (var b in Buffers)
+                    b.CompleteAdding();
+            }
         }
         Task<(Stream Stream, long ContentLength, string ContentType, string ContentDisposition)> GetPartStreamAsync(ReqRes Sender, CancellationToken Token = default)
         {
@@ -79,8 +87,12 @@ namespace Piping
             sm.Run();
             return tcs.Task;
         }
-        (Stream Stream, long CountentLength, string ContentType, string ContentDisposition) GetRequestStream(ReqRes Sender)
-            => (Sender.RequestStream, Sender.Request.ContentLength, Sender.Request.ContentType, Sender.Request.Headers["content-disposition"]);
+        (Stream Stream, long? CountentLength, string? ContentType, string? ContentDisposition) GetRequestStream(ReqRes Sender)
+            => (
+                Sender.RequestStream, 
+                long.TryParse(Sender.Request.Headers.Get("Content-Length") ?? "", out var ContentLength) ? ContentLength : (long?)null, 
+                Sender.Request.Headers.Get("Content-Type"), 
+                Sender.Request.Headers.Get("Content-Disposition"));
         void SetResponse(ReqRes Response, long? ContentLength, string? ContentType, string? ContentDisposition)
         {
             if (ContentType != null)

@@ -1,14 +1,18 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static DebugUtils;
 
 namespace Piping.Tests
 {
@@ -27,7 +31,7 @@ namespace Piping.Tests
         [TestMethod, TestCategory("ShortTime")]
         public async Task PutAndOneGetTest()
         {
-            using var Source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
             var BaseUri = new Uri("http://localhost/" + nameof(PutAndOneGetTest));
             using var Host = new SelfHost();
             Host.Open(BaseUri);
@@ -44,13 +48,16 @@ namespace Piping.Tests
         {
             get
             {
-                yield return new object[]{ "https://ppng.ml/" };
+                yield return new object[] { "https://ppng.ml/" };
+                yield return new object[] { "https://piping.arukascloud.io/" };
+                yield return new object[] { "https://piping-92sr2pvuwg14.runkit.sh/" };
+
             }
         }
         [TestMethod, TestCategory("Example"),DynamicData(nameof(OriginPipingServerUrls))]
         public async Task PutAndOneGetOriginPipingServerTest(string pipingServerUrl)
         {
-            using var Source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
             var BaseUri = new Uri(pipingServerUrl);
             var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PutAndOneGetOriginPipingServerTest));
             var message = "Hello World.";
@@ -58,34 +65,32 @@ namespace Piping.Tests
             Trace.WriteLine($"TARGET URL: {SendUri}");
             var (_, Version) = await GetVersionAsync(BaseUri);
             Trace.WriteLine($"VERSION: {Version}");
-            await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
+            await PipingServerPutAndGetMessageSimple(SendUri, message, Token: Source.Token);
         }
-        protected async Task PipingServerPutAndGetMessageSimple(Uri SendUri, string message, CancellationToken Token)
+        protected async Task PipingServerPutAndGetMessageSimple(Uri SendUri, string message, CancellationToken Token = default)
         {
             var sender = Task.Run(async () =>
             {
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(message));
-                var request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "POST";
-                request.ContentType = "text/plain;charset=UTF-8";
-                request.ContentLength = stream.Length;
-                request.AllowWriteStreamBuffering = true;
-                // タイムアウト6h
-                request.Timeout = 360 * 60 * 1000;
-                request.ReadWriteTimeout = 360 * 60 * 1000;
-                foreach (var (Key, Value) in request.Headers.AllKeys.Select(k => (k, request.Headers.Get(k))))
-                    Trace.WriteLine($"[SEND HEADER] : {Key} : {Value}");
+                using var client = new HttpClient();
+                using var request = new HttpRequestMessage(HttpMethod.Put, SendUri)
+                {
+                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(message)),
+                };
+                request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("UTF-8"));
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
+
+                foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                    Trace.WriteLine($"[SEND HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                HttpResponseMessage response;
                 Trace.WriteLine("[SENDER REQUEST] [START]");
                 try
                 {
+                    response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Token);
                     {
-                        using var requestStream = await request.GetRequestStreamAsync();
-                        using var requestStreamDispose = Token.Register(() => requestStream.Dispose());
-                        await stream.CopyToAsync(requestStream, 1024, Token);
                         Trace.WriteLine("[SENT MESSAGE] : " + message);
                     }
-                    foreach (var (Key, Value) in request.Headers.AllKeys.Select(k => (k, request.Headers.Get(k))))
-                        Trace.WriteLine($"[SENT HEADER] : {Key} : {Value}");
+                    foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ",Value)}]");
                 }
                 finally
                 {
@@ -94,11 +99,9 @@ namespace Piping.Tests
                 Trace.WriteLine("[SENDER RESPONSE] [START]");
                 try
                 {
-                    using var response = await request.GetResponseAsync();
-                    using var responseDispose = Token.Register(() => response.Dispose());
-                    foreach (var (Key, Value) in response.Headers.AllKeys.Select(k => (k, response.Headers.Get(k))))
-                        Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : {Value}");
-                    using var outstream = response.GetResponseStream();
+                    foreach (var (Key, Value) in response.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                    using var outstream = await response.Content.ReadAsStreamAsync();
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
                     string Line;
@@ -117,21 +120,18 @@ namespace Piping.Tests
             });
             var receiver = Task.Run(async () =>
             {
-                var request = WebRequest.Create(SendUri) as HttpWebRequest;
-                request.Method = "GET";
-                request.AllowWriteStreamBuffering = false;
-                // タイムアウト6h
-                request.Timeout = 360 * 60 * 1000;
-                request.ReadWriteTimeout = 360 * 60 * 1000;
+                using var client = new HttpClient();
+                using var request = new HttpRequestMessage(HttpMethod.Get, SendUri);
+
 
                 Trace.WriteLine("[RECEIVER RESPONSE] [START]");
                 try
                 {
-                    using var response = await request.GetResponseAsync();
+                    using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Token);
                     using var responseDispose = Token.Register(() => response.Dispose());
-                    foreach (var (Key, Value) in response.Headers.AllKeys.Select(k => (k, response.Headers.Get(k))))
-                        Trace.WriteLine($"[RESPONSE HEADER] : {Key} : {Value}");
-                    using var stream = response.GetResponseStream();
+                    foreach (var (Key, Value) in response.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                    using var stream = await response.Content.ReadAsStreamAsync();
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
                     string Line;
@@ -164,11 +164,11 @@ namespace Piping.Tests
             var SendUri = new Uri(BaseUri, "./" + nameof(GetVersionTest) + "/version");
             using var Host = new SelfHost();
             Host.Open(BaseUri);
-            var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+            var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
-        public async Task<(WebHeaderCollection, string BodyText)> GetVersionAsync(Uri BaseUri) => await GetResponseAsync(new Uri(BaseUri.ToString().TrimEnd('/') + "/version"), "GET");
+        public async Task<(HttpResponseHeaders, string BodyText)> GetVersionAsync(Uri BaseUri) => await GetResponseAsync(new Uri(BaseUri.ToString().TrimEnd('/') + "/version"), HttpMethod.Get);
         [TestMethod, TestCategory("ShortTime")]
         public async Task GetTopPageTest()
         {
@@ -176,7 +176,7 @@ namespace Piping.Tests
             var SendUri = new Uri(BaseUri, "./" + nameof(GetTopPageTest) + "/");
             using var Host = new SelfHost();
             Host.Open(BaseUri);
-            var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+            var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
@@ -187,7 +187,7 @@ namespace Piping.Tests
             var SendUri = BaseUri;
             using var Host = new SelfHost();
             Host.Open(BaseUri);
-            var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+            var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
@@ -198,7 +198,7 @@ namespace Piping.Tests
             var SendUri = new Uri(BaseUri, "./" + nameof(GetHelpPageTest) + "/help");
             using var Host = new SelfHost();
             Host.Open(BaseUri);
-            var (Headers, BodyText) = await GetResponseAsync(SendUri, "GET");
+            var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
@@ -209,17 +209,12 @@ namespace Piping.Tests
         /// <param name="SendUri"></param>
         /// <param name="Method"></param>
         /// <returns></returns>
-        internal async Task<(WebHeaderCollection Headers, string BodyText)> GetResponseAsync(Uri SendUri, string Method)
+        internal async Task<(HttpResponseHeaders Headers, string BodyText)> GetResponseAsync(Uri SendUri, HttpMethod Method, CancellationToken Token = default)
         {
-            var request = WebRequest.Create(SendUri) as HttpWebRequest;
-            request.Method = Method;
-            request.AllowWriteStreamBuffering = true;
-            request.AllowReadStreamBuffering = false;
-            // タイムアウト6h
-            request.Timeout = 360 * 60 * 1000;
-            request.ReadWriteTimeout = 360 * 60 * 1000;
-            using var response = await request.GetResponseAsync();
-            using var resStream = response.GetResponseStream();
+            using var client = new HttpClient();
+            using var request = new HttpRequestMessage(Method, SendUri);
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead, Token);
+            using var resStream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(resStream, Encoding.UTF8, true);
             return (response.Headers, await reader.ReadToEndAsync());
         }

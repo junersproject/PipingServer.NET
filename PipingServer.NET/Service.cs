@@ -129,7 +129,6 @@ namespace Piping
             Response.StatusCode = HttpStatusCode.BadRequest;
             Response.StatusDescription = AndMessage;
             Response.ContentLength = 0;
-            Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(new byte[0]);
         }
 
@@ -211,7 +210,6 @@ namespace Piping
                 waiter.UnRegisterReceiver(rs);
                 return BadRequest(Response, e.Message);
             }
-            throw new NotImplementedException();
         }
         Task<Stream> IService.GetDownloadAsync() => DownloadAsync(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);
         public Task<Stream> GetDefaultPageAsync()
@@ -325,16 +323,6 @@ curl {url}/mypath | openssl aes-256-cbc -d";
             }
             Response.ContentLength = 0;
             return new MemoryStream(new byte[0]);
-        }
-        protected Pipe getPipeIfEstablished(UnestablishedPipe p)
-        {
-            if (p.Sender != null && p.Receivers.Count == p.ReceiversCount)
-                return new Pipe(p.Sender.ReqRes, p.Receivers.Select(v =>
-                {
-                    v.FireUnsubscribeClose();
-                    return v.ReqRes;
-                }));
-            return null;
         }
     }
 }

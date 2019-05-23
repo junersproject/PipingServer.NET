@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
-using System.ServiceModel.Web;
 using HttpMultipartParser;
 using System.Net;
 using System.Text;
@@ -60,6 +59,7 @@ namespace Piping
                 Buffers.Add(Buffer);
             }
             await PipingAsync(Stream, Buffers.ToArray(), 1024, Token);
+            ResponseTasksource.TrySetResult(true);
             return Sender.ResponseStream;
         }
         private static async Task PipingAsync(Stream RequestStream, IEnumerable<BufferStream> Buffers, int BufferSize, CancellationToken Token = default)

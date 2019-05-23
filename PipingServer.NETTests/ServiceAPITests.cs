@@ -71,7 +71,10 @@ namespace Piping.Tests
         {
             var sender = Task.Run(async () =>
             {
-                using var client = new HttpClient();
+                using var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromHours(6)
+                };
                 using var request = new HttpRequestMessage(HttpMethod.Put, SendUri)
                 {
                     Content = new ByteArrayContent(Encoding.UTF8.GetBytes(message)),
@@ -120,7 +123,10 @@ namespace Piping.Tests
             });
             var receiver = Task.Run(async () =>
             {
-                using var client = new HttpClient();
+                using var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromHours(6)
+                };
                 using var request = new HttpRequestMessage(HttpMethod.Get, SendUri);
 
 

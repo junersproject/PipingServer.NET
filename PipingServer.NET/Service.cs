@@ -51,6 +51,9 @@ namespace Piping
             if (sdb != null)
                 sdb.HttpHelpPageEnabled = false;
         }
+        /// <summary>
+        /// 待ち合わせ用 Dictionary
+        /// </summary>
         readonly Dictionary<string, SenderResponseWaiters> pathToUnestablishedPipe = new Dictionary<string, SenderResponseWaiters>();
         public Service()
         {
@@ -66,6 +69,9 @@ namespace Piping
                 {DefaultPath.Robots, GetRobotsAsync},
             };
         }
+        /// <summary>
+        /// 固定API
+        /// </summary>
         internal Dictionary<string, Func<Task<Stream>>> NAME_TO_RESERVED_PATH;
         
         internal static Uri GetBaseUri(IEnumerable<Uri> BaseAddresses, Uri RequestUri)

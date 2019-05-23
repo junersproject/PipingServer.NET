@@ -14,9 +14,7 @@ namespace Piping
     public class SenderResponseWaiters : IDisposable
     {
         TaskCompletionSource<bool> ReadyTaskSource = new TaskCompletionSource<bool>();
-        TaskCompletionSource<bool> ResponseTasksource = new TaskCompletionSource<bool>();
-        Task<bool> ReadyTask => ReadyTaskSource.Task;
-        Task<bool> ResponseTask => ResponseTasksource.Task;
+        TaskCompletionSource<bool> ResponseTaskSource = new TaskCompletionSource<bool>();
         public bool IsEstablished { private set; get; } = false;
         public bool IsSetSenderComplete { private set; get; } = false;
         ReqRes? Sender = null;
@@ -25,7 +23,7 @@ namespace Piping
         public bool ReceiversIsEmpty => !_Receivers.Any();
         public IReadOnlyCollection<ReqRes> Receivers { get; }
         int ReceiversCount = 1;
-        public SenderResponseWaiters(int ReceiversCount) 
+        public SenderResponseWaiters(int ReceiversCount)
             => (this.ReceiversCount, Receivers) = (ReceiversCount, _Receivers.AsReadOnly());
         public bool IsReady() => Sender != null && _Receivers.Count == ReceiversCount;
         public async Task<Stream> AddSenderAsync(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
@@ -48,7 +46,7 @@ namespace Piping
             if (IsReady())
                 ReadyTaskSource.TrySetResult(true);
             else
-                await ReadyTask;
+                await ReadyTaskSource.Task;
             IsEstablished = true;
             var Buffers = new List<BufferStream>();
             foreach (var Response in _Receivers)
@@ -59,7 +57,7 @@ namespace Piping
                 Buffers.Add(Buffer);
             }
             await PipingAsync(Stream, Buffers.ToArray(), 1024, Token);
-            ResponseTasksource.TrySetResult(true);
+            ResponseTaskSource.TrySetResult(true);
             return Sender.ResponseStream;
         }
         private static async Task PipingAsync(Stream RequestStream, IEnumerable<BufferStream> Buffers, int BufferSize, CancellationToken Token = default)
@@ -107,7 +105,7 @@ namespace Piping
             _Receivers.Add(Response);
             if (IsReady())
                 ReadyTaskSource.TrySetResult(true);
-            await ResponseTask;
+            await ResponseTaskSource.Task;
             return Response.ResponseStream;
         }
         #region IDisposable Support
@@ -119,12 +117,11 @@ namespace Piping
             {
                 if (disposing)
                 {
-                    // TODO: マネージ状態を破棄します (マネージ オブジェクト)。
+                    if (!ReadyTaskSource.Task.IsCompleted)
+                        ReadyTaskSource.TrySetCanceled();
+                    if (!ResponseTaskSource.Task.IsCompleted)
+                        ResponseTaskSource.TrySetCanceled();
                 }
-
-                // TODO: アンマネージ リソース (アンマネージ オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
-                // TODO: 大きなフィールドを null に設定します。
-
                 disposedValue = true;
             }
         }

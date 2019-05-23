@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Piping
 {
     internal class DisposableList<T> : List<T>, IDisposable
         where T : IDisposable
     {
+        public DisposableList() : base() { }
         public DisposableList(IEnumerable<T> collections) : base(collections) { }
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
@@ -16,7 +18,7 @@ namespace Piping
             {
                 if (disposing)
                 {
-                    foreach (var d in this)
+                    foreach (var d in ((IEnumerable<T>)this).Reverse())
                         d?.Dispose();
                     this.Clear();
                 }
@@ -33,5 +35,10 @@ namespace Piping
         }
         #endregion
 
+    }
+    internal class DisposableList : DisposableList<IDisposable>
+    {
+        public DisposableList() : base() { }
+        public DisposableList(IEnumerable<IDisposable> collections) : base(collections) { }
     }
 }

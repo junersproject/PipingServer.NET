@@ -77,10 +77,8 @@ namespace Piping.Tests
                 };
                 using var request = new HttpRequestMessage(HttpMethod.Put, SendUri)
                 {
-                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(message)),
+                    Content = new StringContent(message, Encoding.UTF8, "text/plain"),
                 };
-                request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("UTF-8"));
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
 
                 foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                     Trace.WriteLine($"[SEND HEADER] : {Key} : [{string.Join(", ", Value)}]");
@@ -92,11 +90,11 @@ namespace Piping.Tests
                     {
                         Trace.WriteLine("[SENT MESSAGE] : " + message);
                     }
-                    foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
-                        Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ",Value)}]");
                 }
                 finally
                 {
+                    foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     Trace.WriteLine("[SENDER REQUEST] [END]");
                 }
                 Trace.WriteLine("[SENDER RESPONSE] [START]");

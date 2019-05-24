@@ -33,9 +33,10 @@ namespace Piping
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
             Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
+            Sender.ResponseStream = new BufferStream();
             using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
             {
-                await writer.WriteLineAsync($"[INFO] Waiting for ${Receivers} receiver(s)...");
+                await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...");
                 await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
             }
             this.Sender = Sender;
@@ -48,32 +49,35 @@ namespace Piping
             else
                 await ReadyTaskSource.Task;
             IsEstablished = true;
-            var Buffers = new List<BufferStream>();
-            foreach (var Response in _Receivers)
-            {
+            var Buffers = new List<Stream>();
+            using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
+                await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
+            _ = PipingAsync(Sender, Receivers.Select(Response => {
                 SetResponse(Response, ContentLength, ContentType, ContentDisposition);
-                var Buffer = new BufferStream();
-                Response.ResponseStream = Buffer;
-                Buffers.Add(Buffer);
-            }
-            await PipingAsync(Stream, Buffers.ToArray(), 1024, Token);
+                return Response.ResponseStream;
+            }), 1024, Encoding, Token);
             ResponseTaskSource.TrySetResult(true);
             return Sender.ResponseStream;
         }
-        private static async Task PipingAsync(Stream RequestStream, IEnumerable<BufferStream> Buffers, int BufferSize, CancellationToken Token = default)
+        private static async Task PipingAsync(ReqRes Sender, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
             try
             {
-                while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
+                while ((bytesRead = await Sender.RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
+                using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
+                    await writer.WriteLineAsync($"[INFO] Sending successful!");
             }
             finally
             {
                 foreach (var b in Buffers)
-                    b.CompleteAdding();
+                    if (b is BufferStream _b)
+                        _b.CompleteAdding();
+                if (Sender.ResponseStream is BufferStream __b)
+                    __b.CompleteAdding();
             }
         }
         Task<(Stream Stream, long ContentLength, string ContentType, string ContentDisposition)> GetPartStreamAsync(ReqRes Sender, CancellationToken Token = default)
@@ -102,11 +106,22 @@ namespace Piping
         }
         public async Task<Stream> AddReceiverAsync(ReqRes Response, CancellationToken Token = default)
         {
-            _Receivers.Add(Response);
-            if (IsReady())
-                ReadyTaskSource.TrySetResult(true);
-            await ResponseTaskSource.Task;
-            return Response.ResponseStream;
+            try
+            {
+                Response.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                Response.Response.Headers.Add("Access-Control-Expose-Headers", "Content-Length, Content-Type");
+                Response.ResponseStream = new BufferStream();
+                _Receivers.Add(Response);
+                if (IsReady())
+                    ReadyTaskSource.TrySetResult(true);
+                await ResponseTaskSource.Task;
+                return Response.ResponseStream;
+            }
+            catch (Exception)
+            {
+                Response.ResponseStream?.Dispose();
+                throw;
+            }
         }
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには

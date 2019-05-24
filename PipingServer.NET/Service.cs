@@ -140,7 +140,6 @@ namespace Piping
 
         public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
         {
-            var output = new MemoryStream();
             Request ??= WebOperationContext.Current.IncomingRequest;
             Response ??= WebOperationContext.Current.OutgoingResponse;
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
@@ -168,7 +167,6 @@ namespace Piping
                     Request = Request,
                     RequestStream = InputStream,
                     Response = Response,
-                    ResponseStream = output,
                 }, Encoding, 1024);
             }catch(InvalidOperationException e)
             {

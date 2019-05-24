@@ -34,31 +34,39 @@ namespace Piping
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
             Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             Sender.ResponseStream = new BufferStream();
-            using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
-            {
-                await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...");
-                await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
-            }
             this.Sender = Sender;
-            IsSetSenderComplete = true;
-            var IsMultiForm = (Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
-            var MultiFormTask = IsMultiForm ? GetPartStreamAsync(Sender, Token) : null;
-            var (Stream, ContentLength, ContentType, ContentDisposition) = IsMultiForm ? await MultiFormTask! : GetRequestStream(Sender);
-            if (IsReady())
-                ReadyTaskSource.TrySetResult(true);
-            else
-                await ReadyTaskSource.Task;
-            IsEstablished = true;
-            var Buffers = new List<Stream>();
-            using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
-                await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
-            _ = PipingAsync(Sender, Receivers.Select(Response => {
-                SetResponse(Response, ContentLength, ContentType, ContentDisposition);
-                return Response.ResponseStream;
-            }), 1024, Encoding, Token);
-            ResponseTaskSource.TrySetResult(true);
+            _ = Task.Run(async () =>
+            {
+                Stream? Stream;
+                long? ContentLength;
+                string? ContentType;
+                string? ContentDisposition;
+                using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
+                {
+                    await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...");
+                    await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
+                    IsSetSenderComplete = true;
+                    var MultiFormTask = IsMultiForm(Sender.Request.Headers) ? GetPartStreamAsync(Sender, Token) : null;
+                    (Stream, ContentLength, ContentType, ContentDisposition) = MultiFormTask != null ? await MultiFormTask! : GetRequestStream(Sender);
+                    if (IsReady())
+                        ReadyTaskSource.TrySetResult(true);
+                    else
+                        await ReadyTaskSource.Task;
+                    IsEstablished = true;
+                    var Buffers = new List<Stream>();
+                    await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
+                }
+                _ = PipingAsync(Sender, Receivers.Select(Response =>
+                {
+                    SetResponse(Response, ContentLength, ContentType, ContentDisposition);
+                    return Response.ResponseStream;
+                }), 1024, Encoding, Token);
+                ResponseTaskSource.TrySetResult(true);
+            });
             return Sender.ResponseStream;
         }
+        private static bool IsMultiForm(WebHeaderCollection Headers)
+            => (Headers[HttpRequestHeader.ContentType] ?? string.Empty).IndexOf("multipart/form-data") > 0;
         private static async Task PipingAsync(ReqRes Sender, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
             var buffer = new byte[BufferSize];
@@ -68,8 +76,8 @@ namespace Piping
             {
                 while ((bytesRead = await Sender.RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
-                using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
-                    await writer.WriteLineAsync($"[INFO] Sending successful!");
+                using var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true);
+                await writer.WriteLineAsync($"[INFO] Sending successful!");
             }
             finally
             {

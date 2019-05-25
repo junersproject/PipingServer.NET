@@ -26,7 +26,7 @@ namespace Piping
         public SenderResponseWaiters(int ReceiversCount)
             => (this.ReceiversCount, Receivers) = (ReceiversCount, _Receivers.AsReadOnly());
         public bool IsReady() => Sender != null && _Receivers.Count == ReceiversCount;
-        public async Task<Stream> AddSenderAsync(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
+        public Stream AddSender(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
             if (IsSetSenderComplete)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {_Receivers} but ${_Receivers}.\n");
@@ -35,36 +35,41 @@ namespace Piping
             Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
             Sender.ResponseStream = new BufferStream();
             this.Sender = Sender;
-            _ = Task.Run(async () =>
+            _ = AddSenderAsync();
+            return Sender.ResponseStream;
+            async Task AddSenderAsync()
             {
+                var MultiFormTask = IsMultiForm(Sender.Request.Headers) ? GetPartStreamAsync(Sender, Token) : null;
                 Stream? Stream;
                 long? ContentLength;
                 string? ContentType;
                 string? ContentDisposition;
+                IEnumerable<Stream> Buffers;
                 using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
                 {
                     await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...");
                     await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
                     IsSetSenderComplete = true;
-                    var MultiFormTask = IsMultiForm(Sender.Request.Headers) ? GetPartStreamAsync(Sender, Token) : null;
-                    (Stream, ContentLength, ContentType, ContentDisposition) = MultiFormTask != null ? await MultiFormTask! : GetRequestStream(Sender);
                     if (IsReady())
                         ReadyTaskSource.TrySetResult(true);
                     else
                         await ReadyTaskSource.Task;
+                    (Stream, ContentLength, ContentType, ContentDisposition) = MultiFormTask != null ? await MultiFormTask! : GetRequestStream(Sender);
+                    await writer.WriteLineAsync($"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}");
                     IsEstablished = true;
-                    var Buffers = new List<Stream>();
+                    Buffers = Receivers.Select(Response =>
+                    {
+                        SetResponse(Response, ContentLength, ContentType, ContentDisposition);
+                        return Response.ResponseStream;
+                    });
                     await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
                 }
-                _ = PipingAsync(Sender, Receivers.Select(Response =>
-                {
-                    SetResponse(Response, ContentLength, ContentType, ContentDisposition);
-                    return Response.ResponseStream;
-                }), 1024, Encoding, Token);
+                _ = PipingAsync(Sender, Buffers, 1024, Encoding, Token);
                 ResponseTaskSource.TrySetResult(true);
-            });
-            return Sender.ResponseStream;
+            }
         }
+
+        
         private static bool IsMultiForm(WebHeaderCollection Headers)
             => (Headers[HttpRequestHeader.ContentType] ?? string.Empty).IndexOf("multipart/form-data") > 0;
         private static async Task PipingAsync(ReqRes Sender, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)

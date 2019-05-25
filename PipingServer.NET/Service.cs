@@ -38,7 +38,7 @@ namespace Piping
             var CloseTimeout = TimeSpan.FromHours(1);
             var MaxBufferSize = int.MaxValue;
             var MaxReceivedMessageSize = int.MaxValue;
-            config.AddServiceEndpoint(typeof(IService), new WebHttpBinding
+            var endpoint = config.AddServiceEndpoint(typeof(IService), new WebHttpBinding
             {
                 TransferMode = TransferMode,
                 SendTimeout = SendTimeout,
@@ -46,10 +46,13 @@ namespace Piping
                 CloseTimeout = CloseTimeout,
                 MaxBufferSize = MaxBufferSize,
                 MaxReceivedMessageSize = MaxReceivedMessageSize,
-            }, "").EndpointBehaviors.Add(new WebHttpBehavior());
-            var sdb = config.Description.Behaviors.Find<ServiceDebugBehavior>();
-            if (sdb != null)
-                sdb.HttpHelpPageEnabled = false;
+            }, "");
+            endpoint.EndpointBehaviors.Add(new WebHttpBehavior
+            {
+                AutomaticFormatSelectionEnabled = false,
+                HelpEnabled = false,
+                DefaultBodyStyle = WebMessageBodyStyle.Bare,
+            });
         }
         /// <summary>
         /// 待ち合わせ用 Dictionary
@@ -162,7 +165,7 @@ namespace Piping
                 return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                return await waiter.AddSenderAsync(Key, new ReqRes
+                return waiter.AddSender(Key, new ReqRes
                 {
                     Request = Request,
                     RequestStream = InputStream,

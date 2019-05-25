@@ -53,8 +53,6 @@
   <ItemGroup>
     <Compile Include="BufferStream.cs" />
     <Compile Include="BytesReadEventArgs.cs" />
-    <Compile Include="CacheOutputStream.cs" />
-    <Compile Include="CacheStream.cs" />
     <Compile Include="CloseRegisterStream.cs" />
     <Compile Include="DefaultPath.cs" />
     <Compile Include="Disposable.cs" />

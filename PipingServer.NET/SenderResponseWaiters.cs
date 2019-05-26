@@ -33,7 +33,7 @@ namespace Piping
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
             Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
-            Sender.ResponseStream = new BufferStream();
+            Sender.ResponseStream = new CompletableQueueStream();
             this.Sender = Sender;
             _ = AddSenderAsync();
             return Sender.ResponseStream;
@@ -87,9 +87,9 @@ namespace Piping
             finally
             {
                 foreach (var b in Buffers)
-                    if (b is BufferStream _b)
+                    if (b is CompletableQueueStream _b)
                         _b.CompleteAdding();
-                if (Sender.ResponseStream is BufferStream __b)
+                if (Sender.ResponseStream is CompletableQueueStream __b)
                     __b.CompleteAdding();
             }
         }
@@ -123,7 +123,7 @@ namespace Piping
             {
                 Response.Response.Headers.Add("Access-Control-Allow-Origin", "*");
                 Response.Response.Headers.Add("Access-Control-Expose-Headers", "Content-Length, Content-Type");
-                Response.ResponseStream = new BufferStream();
+                Response.ResponseStream = new CompletableQueueStream();
                 _Receivers.Add(Response);
                 if (IsReady())
                     ReadyTaskSource.TrySetResult(true);

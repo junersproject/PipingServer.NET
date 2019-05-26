@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Piping
 {
-    public class BufferStream : Stream
+    public class CompletableQueueStream : Stream
     {
         readonly BlockingCollection<byte[]> data;
         byte[] _currentBlock = null;
@@ -14,8 +14,8 @@ namespace Piping
         public bool IsAddingCompleted => data.IsAddingCompleted;
         public bool IsCompleted => data.IsCompleted;
         public void CompleteAdding() => data.CompleteAdding();
-        public BufferStream() =>data = new BlockingCollection<byte[]>();
-        public BufferStream(int boundedCapacity) => data = new BlockingCollection<byte[]>(boundedCapacity);
+        public CompletableQueueStream() =>data = new BlockingCollection<byte[]>();
+        public CompletableQueueStream(int boundedCapacity) => data = new BlockingCollection<byte[]>(boundedCapacity);
 
         public override bool CanRead => true;
 

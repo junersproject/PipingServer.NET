@@ -21,7 +21,7 @@ namespace Piping.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
             using (var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1)))
-            using (var Buffers = new DisposableList<BufferStream>(Enumerable.Range(0, 5).Select(v => new BufferStream())))
+            using (var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, 5).Select(v => new CompletableQueueStream())))
             using (var Piping = new PipingStream(Buffers))
             {
                 var Token = TokenSource.Token;
@@ -66,7 +66,7 @@ namespace Piping.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
             using (var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1)))
-            using (var Buffers = new DisposableList<BufferStream>(Enumerable.Range(0, 5).Select(v => new BufferStream())))
+            using (var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, 5).Select(v => new CompletableQueueStream())))
             using (var Piping = new PipingStream(Buffers))
             {
                 var Token = TokenSource.Token;
@@ -108,7 +108,7 @@ namespace Piping.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
             using (var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1)))
-            using (var Buffers = new DisposableList<BufferStream>(Enumerable.Range(0, 5).Select(v => new BufferStream())))
+            using (var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, 5).Select(v => new CompletableQueueStream())))
             using (var Piping = new PipingStream(Buffers))
             {
                 var Token = TokenSource.Token;

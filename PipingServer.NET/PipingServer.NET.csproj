@@ -51,7 +51,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BufferStream.cs" />
+    <Compile Include="CompletableQueueStream.cs" />
     <Compile Include="BytesReadEventArgs.cs" />
     <Compile Include="CloseRegisterStream.cs" />
     <Compile Include="DefaultPath.cs" />

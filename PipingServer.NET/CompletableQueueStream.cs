@@ -4,6 +4,9 @@ using System.IO;
 
 namespace Piping
 {
+    /// <summary>
+    /// Completable queue stream.
+    /// </summary>
     public class CompletableQueueStream : Stream
     {
         readonly BlockingCollection<byte[]> data;
@@ -21,7 +24,7 @@ namespace Piping
 
         public override bool CanSeek => false;
 
-        public override bool CanWrite => true;
+        public override bool CanWrite => !data.IsAddingCompleted;
 
         public override long Length => throw new NotSupportedException();
 
@@ -77,6 +80,11 @@ namespace Piping
             var localArray = new byte[count];
             Array.Copy(buffer, offset, localArray, 0, count);
             data.Add(localArray);
+        }
+        protected override void Dispose(bool disposing)
+        {
+            data.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

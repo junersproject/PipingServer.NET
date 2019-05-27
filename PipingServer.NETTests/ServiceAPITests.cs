@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.ServiceModel;
@@ -11,10 +12,18 @@ namespace Piping.Tests
     [TestClass()]
     public class ServiceAPITests : RequestTestBase
     {
-        [TestMethod, TestCategory("ShortTime")]
-        public void InstanceTest()
+        static IEnumerable<object[]> LocalPipingServerUrls
         {
-            var Uri = new Uri("http://localhost/InstanceTest");
+            get
+            {
+                yield return new object[] { "http://localhost", };
+                yield return new object[] { "https://localhost" };
+            }
+        }
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public void InstanceTest(string localPipingServerUrl)
+        {
+            var Uri = new Uri( localPipingServerUrl.TrimEnd('/') + "/InstanceTest");
             using var Host = new SelfHost();
             try { 
                 Host.Open(Uri);
@@ -24,11 +33,11 @@ namespace Piping.Tests
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
-        [TestMethod, TestCategory("ShortTime")]
-        public async Task PutAndOneGetTest()
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task PutAndOneGetTest(string localPipingServerUrl)
         {
             using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-            var BaseUri = new Uri("http://localhost/" + nameof(PutAndOneGetTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + nameof(PutAndOneGetTest));
             using var Host = new SelfHost();
             try
             {
@@ -47,10 +56,10 @@ namespace Piping.Tests
             }
         }
 
-        [TestMethod, TestCategory("ShortTime")]
-        public async Task GetVersionTest()
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task GetVersionTest(string localPipingServerUrl)
         {
-            var BaseUri = new Uri("http://localhost/" + nameof(GetVersionTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetVersionTest));
             var SendUri = new Uri(BaseUri, "./" + nameof(GetVersionTest) + "/version");
             using var Host = new SelfHost();
             try { 
@@ -63,10 +72,10 @@ namespace Piping.Tests
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
-        [TestMethod, TestCategory("ShortTime")]
-        public async Task GetTopPageTest()
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task GetTopPageTest(string localPipingServerUrl)
         {
-            var BaseUri = new Uri("http://localhost/" + nameof(GetTopPageTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetTopPageTest));
             var SendUri = new Uri(BaseUri, "./" + nameof(GetTopPageTest) + "/");
             using var Host = new SelfHost();
             try
@@ -80,10 +89,10 @@ namespace Piping.Tests
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
-        [TestMethod, TestCategory("ShortTime")]
-        public async Task GetTopPageTest2()
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task GetTopPageTest2(string localPipingServerUrl)
         {
-            var BaseUri = new Uri("http://localhost/" + nameof(GetTopPageTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetTopPageTest));
             var SendUri = BaseUri;
             using var Host = new SelfHost();
             try
@@ -98,10 +107,10 @@ namespace Piping.Tests
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
-        [TestMethod, TestCategory("ShortTime")]
-        public async Task GetHelpPageTest()
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task GetHelpPageTest(string localPipingServerUrl)
         {
-            var BaseUri = new Uri("http://localhost/" + nameof(GetHelpPageTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetHelpPageTest));
             var SendUri = new Uri(BaseUri, "./" + nameof(GetHelpPageTest) + "/help");
             using var Host = new SelfHost();
             try

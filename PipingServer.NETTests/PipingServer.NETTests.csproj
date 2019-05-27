@@ -61,10 +61,12 @@
   </Choose>
   <ItemGroup>
     <Compile Include="CloseRegisterStreamTests.cs" />
+    <Compile Include="OriginServiceAPIExample.cs" />
     <Compile Include="PipingStreamTests.cs" />
     <Compile Include="DebugUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestKeyTests.cs" />
+    <Compile Include="RequestTestBase.cs" />
     <Compile Include="ServiceAPITests.cs" />
     <Compile Include="ServiceTests.cs" />
   </ItemGroup>

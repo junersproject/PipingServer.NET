@@ -176,10 +176,11 @@ namespace Piping
         }
         protected Stream BadRequest(WebOperationContext Context, string AndMessage = null)
         {
+            var Encoding = Context.OutgoingResponse.BindingWriteEncoding;
             Context.OutgoingResponse.StatusCode = HttpStatusCode.BadRequest;
-            Context.OutgoingResponse.StatusDescription = AndMessage;
-            Context.OutgoingResponse.ContentLength = 0;
-            return new MemoryStream(new byte[0]);
+            var bytes = Encoding.GetBytes(AndMessage ?? " ");
+            Context.OutgoingResponse.ContentLength = bytes.Length;
+            return new MemoryStream(bytes);
         }
 
         public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, WebOperationContext Context = null)

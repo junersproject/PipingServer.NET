@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -48,7 +49,7 @@ namespace Piping.Tests
                 using var HostDispose = Source.Token.Register(() => Host.Dispose());
                 Trace.WriteLine($"BASE URL: {BaseUri}");
                 Trace.WriteLine($"TARGET URL: {SendUri}");
-                var (_, Version) = await GetVersionAsync(BaseUri);
+                var (_, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
                 await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
             }catch(AddressAccessDeniedException e)
@@ -65,7 +66,8 @@ namespace Piping.Tests
             using var Host = new SelfHost();
             try { 
                 Host.Open(BaseUri);
-                var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
             } catch (AddressAccessDeniedException e)
@@ -82,7 +84,8 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
                 //CollectionAssert.Contains((Headers.TryGetValues("Content-Type", out var Value) ? Value : Enumerable.Empty<string>()).ToArray(), "text/html", "Content-Type");
@@ -100,7 +103,8 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
             }
@@ -118,7 +122,8 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
             }
@@ -128,18 +133,40 @@ namespace Piping.Tests
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
-        public async Task GetOptionsTest(string localPipingServerUrl)
+        public async Task OptionsRootTest(string localPipingServerUrl)
         {
 
-            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetOptionsTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(OptionsRootTest));
             var SendUri = BaseUri;
             using var Host = new SelfHost();
             try
             {
                 Host.Open(BaseUri);
-                var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Options);
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Options);
+                Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
+            }
+            catch (AddressAccessDeniedException e)
+            {
+                throw new AssertInconclusiveException(e.Message, e);
+            }
+        }
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task PostRootTest(string localPipingServerUrl)
+        {
+
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(PostRootTest));
+            var SendUri = BaseUri;
+            using var Host = new SelfHost();
+            try
+            {
+                Host.Open(BaseUri);
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Post);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.BadRequest, Status);
             }
             catch (AddressAccessDeniedException e)
             {

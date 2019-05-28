@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using static DebugUtils;
@@ -29,7 +30,7 @@ namespace Piping.Tests
             var message = "Hello World.";
             Trace.WriteLine($"BASE URL: {BaseUri}");
             Trace.WriteLine($"TARGET URL: {SendUri}");
-            var (_, Version) = await GetVersionAsync(BaseUri);
+            var (_, _, Version) = await GetVersionAsync(BaseUri);
             Trace.WriteLine($"VERSION: {Version}");
             await PipingServerPutAndGetMessageSimple(SendUri, message, Token: Source.Token);
         }
@@ -38,7 +39,8 @@ namespace Piping.Tests
         {
             var BaseUri = new Uri(pipingServerUri);
             var SendUri = new Uri(BaseUri, "/version");
-            var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+            var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+            Trace.WriteLine(Status);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
@@ -47,7 +49,8 @@ namespace Piping.Tests
         public async Task GetTopPageExample(string pipingServerUri)
         {
             var BaseUri = new Uri(pipingServerUri);
-            var (Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
+            var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
+            Trace.WriteLine(Status);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
@@ -57,17 +60,29 @@ namespace Piping.Tests
         {
             var BaseUri = new Uri(pipingServerUri);
             var SendUri = new Uri(BaseUri, "/help");
-            var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+            var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+            Trace.WriteLine(Status);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task GetOptionsExample(string pipingServerUri)
+        public async Task OptionsRootExample(string pipingServerUri)
         {
             var BaseUri = new Uri(pipingServerUri);
-            var (Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
+            var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
+            Trace.WriteLine(Status);
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
+        }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
+        public async Task PostRootExample(string pipingServerUri)
+        {
+            var BaseUri = new Uri(pipingServerUri);
+            var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Post);
+            Trace.WriteLine(Status);
+            Trace.WriteLine(Headers);
+            Trace.WriteLine(BodyText);
+            Assert.AreEqual(HttpStatusCode.BadRequest, Status);
         }
     }
 }

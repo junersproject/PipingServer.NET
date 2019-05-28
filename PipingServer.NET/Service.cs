@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HttpMultipartParser;
+using System.ServiceModel.Channels;
 
 namespace Piping
 {
@@ -39,34 +40,61 @@ namespace Piping
             var MaxBufferSize = int.MaxValue;
             var MaxReceivedMessageSize = int.MaxValue;
             var HasSecure = false;
+            var HasNotSecure = false;
             foreach (var address in config.BaseAddresses) {
                 if (address.Scheme == "https")
                     HasSecure = true;
+                else if (address.Scheme == "http")
+                    HasNotSecure = true;
             }
-            var Mode = HasSecure ? WebHttpSecurityMode.Transport : WebHttpSecurityMode.None;
-            var ClientCredentialType = HasSecure ? HttpClientCredentialType.None : HttpClientCredentialType.Basic;
-            var endpoint = config.AddServiceEndpoint(typeof(IService), new WebHttpBinding
+            Binding binding = null;
+            if (HasSecure)
             {
-                TransferMode = TransferMode,
-                SendTimeout = SendTimeout,
-                OpenTimeout = OpenTimeout,
-                CloseTimeout = CloseTimeout,
-                MaxBufferSize = MaxBufferSize,
-                MaxReceivedMessageSize = MaxReceivedMessageSize,
-                Security =
+                var Mode = WebHttpSecurityMode.Transport;
+                var ClientCredentialType =HttpClientCredentialType.Basic;
+                var whb = new WebHttpBinding
                 {
-                    Mode = Mode,
-                    Transport =
+                    TransferMode = TransferMode,
+                    SendTimeout = SendTimeout,
+                    OpenTimeout = OpenTimeout,
+                    CloseTimeout = CloseTimeout,
+                    MaxBufferSize = MaxBufferSize,
+                    MaxReceivedMessageSize = MaxReceivedMessageSize,
+                    Security =
                     {
-                        ClientCredentialType = ClientCredentialType,
+                        Mode = Mode,
+                        Transport =
+                        {
+                            ClientCredentialType = ClientCredentialType,
+                        }
                     }
-                }
-            }, "");
+                };
+                binding = whb;
+            }
+            else if (HasNotSecure)
+            {
+                var whb = new WebHttpBinding
+                {
+                    TransferMode = TransferMode,
+                    SendTimeout = SendTimeout,
+                    OpenTimeout = OpenTimeout,
+                    CloseTimeout = CloseTimeout,
+                    MaxBufferSize = MaxBufferSize,
+                    MaxReceivedMessageSize = MaxReceivedMessageSize,
+                };
+                binding = whb;
+            }
+            if (!(binding is Binding _binding))
+                return;
+            var endpoint = config.AddServiceEndpoint(typeof(IService), _binding, "");
             endpoint.EndpointBehaviors.Add(new WebHttpBehavior
             {
                 AutomaticFormatSelectionEnabled = false,
                 HelpEnabled = false,
                 DefaultBodyStyle = WebMessageBodyStyle.Bare,
+                DefaultOutgoingRequestFormat = WebMessageFormat.Json,
+                DefaultOutgoingResponseFormat = WebMessageFormat.Json,
+                FaultExceptionEnabled = true,
             });
         }
         /// <summary>

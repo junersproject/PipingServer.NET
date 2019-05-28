@@ -261,7 +261,7 @@ namespace Piping
         }
         internal static string GetHelpPageText(Uri url, FileVersionInfo version)
         {
-            return $@"Help for piping - server {version}
+            return $@"Help for piping-server {version.ProductVersion}
 (Repository: https://github.com/nwtgck/piping-server)
 
 ======= Get  =======

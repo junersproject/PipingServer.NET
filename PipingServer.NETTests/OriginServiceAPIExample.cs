@@ -60,14 +60,35 @@ namespace Piping.Tests
         }
 
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task GetTopPageExample(string pipingServerUri)
+        [Description("piping-server の / を取得する")]
+        public async Task GetRootExample(string pipingServerUri)
         {
             try { 
-                var BaseUri = new Uri(pipingServerUri);
+                var BaseUri = new Uri(pipingServerUri.TrimEnd('/') + "/");
                 var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.OK, Status);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
+        }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
+        [Description("piping-server の ルート を取得する")]
+        public async Task GetRootExample2(string pipingServerUri)
+        {
+            try
+            {
+                var BaseUri = new Uri(pipingServerUri.TrimEnd('/'));
+                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.OK, Status);
             }
             catch (HttpRequestException e)
             {
@@ -77,7 +98,8 @@ namespace Piping.Tests
         }
 
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task GetHelpPageExample(string pipingServerUri)
+        [Description("piping-server の /help の取得を試みる。")]
+        public async Task GetHelpExample(string pipingServerUri)
         {
             try { 
                 var BaseUri = new Uri(pipingServerUri);
@@ -86,6 +108,7 @@ namespace Piping.Tests
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.OK, Status);
             }
             catch (HttpRequestException e)
             {
@@ -102,6 +125,7 @@ namespace Piping.Tests
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.OK, Status);
             }
             catch (HttpRequestException e)
             {

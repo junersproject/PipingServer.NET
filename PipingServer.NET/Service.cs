@@ -38,6 +38,13 @@ namespace Piping
             var CloseTimeout = TimeSpan.FromHours(1);
             var MaxBufferSize = int.MaxValue;
             var MaxReceivedMessageSize = int.MaxValue;
+            var HasSecure = false;
+            foreach (var address in config.BaseAddresses) {
+                if (address.Scheme == "https")
+                    HasSecure = true;
+            }
+            var Mode = HasSecure ? WebHttpSecurityMode.Transport : WebHttpSecurityMode.None;
+            var ClientCredentialType = HasSecure ? HttpClientCredentialType.None : HttpClientCredentialType.Basic;
             var endpoint = config.AddServiceEndpoint(typeof(IService), new WebHttpBinding
             {
                 TransferMode = TransferMode,
@@ -46,6 +53,14 @@ namespace Piping
                 CloseTimeout = CloseTimeout,
                 MaxBufferSize = MaxBufferSize,
                 MaxReceivedMessageSize = MaxReceivedMessageSize,
+                Security =
+                {
+                    Mode = Mode,
+                    Transport =
+                    {
+                        ClientCredentialType = ClientCredentialType,
+                    }
+                }
             }, "");
             endpoint.EndpointBehaviors.Add(new WebHttpBehavior
             {

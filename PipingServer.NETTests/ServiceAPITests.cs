@@ -17,7 +17,7 @@ namespace Piping.Tests
             get
             {
                 yield return new object[] { "http://localhost", };
-                yield return new object[] { "https://localhost" };
+                //yield return new object[] { "https://localhost" };
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
@@ -37,7 +37,7 @@ namespace Piping.Tests
         public async Task PutAndOneGetTest(string localPipingServerUrl)
         {
             using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + nameof(PutAndOneGetTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(PutAndOneGetTest));
             using var Host = new SelfHost();
             try
             {

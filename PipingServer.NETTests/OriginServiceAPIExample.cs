@@ -24,65 +24,115 @@ namespace Piping.Tests
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task PutAndOneGetExample(string pipingServerUrl)
         {
-            using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-            var BaseUri = new Uri(pipingServerUrl);
-            var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PutAndOneGetExample));
-            var message = "Hello World.";
-            Trace.WriteLine($"BASE URL: {BaseUri}");
-            Trace.WriteLine($"TARGET URL: {SendUri}");
-            var (_, _, Version) = await GetVersionAsync(BaseUri);
-            Trace.WriteLine($"VERSION: {Version}");
-            await PipingServerPutAndGetMessageSimple(SendUri, message, Token: Source.Token);
+            try
+            {
+                using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
+                var BaseUri = new Uri(pipingServerUrl);
+                var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PutAndOneGetExample));
+                var message = "Hello World.";
+                Trace.WriteLine($"BASE URL: {BaseUri}");
+                Trace.WriteLine($"TARGET URL: {SendUri}");
+                var (_, _, Version) = await GetVersionAsync(BaseUri);
+                Trace.WriteLine($"VERSION: {Version}");
+                await PipingServerPutAndGetMessageSimple(SendUri, message, Token: Source.Token);
+            }catch(HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task GetVersionExample(string pipingServerUri)
         {
-            var BaseUri = new Uri(pipingServerUri);
-            var SendUri = new Uri(BaseUri, "/version");
-            var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
-            Trace.WriteLine(Status);
-            Trace.WriteLine(Headers);
-            Trace.WriteLine(BodyText);
+            try { 
+                var BaseUri = new Uri(pipingServerUri);
+                var SendUri = new Uri(BaseUri, "/version");
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
         }
 
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task GetTopPageExample(string pipingServerUri)
         {
-            var BaseUri = new Uri(pipingServerUri);
-            var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
-            Trace.WriteLine(Status);
-            Trace.WriteLine(Headers);
-            Trace.WriteLine(BodyText);
+            try { 
+                var BaseUri = new Uri(pipingServerUri);
+                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
         }
 
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task GetHelpPageExample(string pipingServerUri)
         {
-            var BaseUri = new Uri(pipingServerUri);
-            var SendUri = new Uri(BaseUri, "/help");
-            var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
-            Trace.WriteLine(Status);
-            Trace.WriteLine(Headers);
-            Trace.WriteLine(BodyText);
+            try { 
+                var BaseUri = new Uri(pipingServerUri);
+                var SendUri = new Uri(BaseUri, "/help");
+                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task OptionsRootExample(string pipingServerUri)
         {
-            var BaseUri = new Uri(pipingServerUri);
-            var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
-            Trace.WriteLine(Status);
-            Trace.WriteLine(Headers);
-            Trace.WriteLine(BodyText);
+            try { 
+                var BaseUri = new Uri(pipingServerUri);
+                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task PostRootExample(string pipingServerUri)
         {
-            var BaseUri = new Uri(pipingServerUri);
-            var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Post);
-            Trace.WriteLine(Status);
-            Trace.WriteLine(Headers);
-            Trace.WriteLine(BodyText);
-            Assert.AreEqual(HttpStatusCode.BadRequest, Status);
+            try { 
+                var BaseUri = new Uri(pipingServerUri);
+                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Post);
+                Trace.WriteLine(Status);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.BadRequest, Status);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
+        }
+        private void ThrowIfCoundNotResolveRemoteName(HttpRequestException e)
+        {
+            if (e.HResult == -2146233088)
+            {
+                Trace.WriteLine(e);
+                throw new AssertInconclusiveException("リモート名の解決に失敗", e);
+            }
         }
     }
 }

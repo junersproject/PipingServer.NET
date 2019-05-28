@@ -5,11 +5,10 @@ namespace Piping
 {
     public class ReqRes
     {
-        public IncomingWebRequestContext Request = null;
+        public WebOperationContext Context { get; set; }
         public Stream RequestStream = null; 
-        public OutgoingWebResponseContext Response = null;
         public Stream ResponseStream = null;
         public void Deconstruct(out IncomingWebRequestContext Request, Stream RequestStream, OutgoingWebResponseContext Response, Stream ResponseStream)
-            => (Request, RequestStream, Response, ResponseStream) = (this.Request, this.RequestStream, this.Response, this.ResponseStream);
+            => (Request, RequestStream, Response, ResponseStream) = (this.Context.IncomingRequest, this.RequestStream, this.Context.OutgoingResponse, this.ResponseStream);
     }
 }

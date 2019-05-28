@@ -131,41 +131,38 @@ namespace Piping
         [OperationBehavior(ReleaseInstanceMode = ReleaseInstanceMode.None)]
         public Task<Stream> DefaultAsync(Stream inputStream)
         {
-            var Current = WebOperationContext.Current;
-            var Request = Current.IncomingRequest;
-            var Response = Current.OutgoingResponse;
-            var Method = Request.Method;
+            var Context = WebOperationContext.Current;
+            var Method = Context.IncomingRequest.Method;
             switch (Method)
             {
                 case "POST":
                 case "PUT":
-                    return UploadAsync(inputStream, GetRelativeUri(), Request, Response);
+                    return UploadAsync(inputStream, GetRelativeUri(), Context);
                 case "GET":
-                    return DownloadAsync(GetRelativeUri(), Response);
+                    return DownloadAsync(GetRelativeUri(), Context);
                 case "OPTIONS":
-                    return Task.FromResult(OptionsResponseGenerator(Response));
+                    return Task.FromResult(OptionsResponseGenerator(Context));
                 default:
-                    return Task.FromResult(NotImplemented(Response));
+                    return Task.FromResult(NotImplemented(Context));
             }
         }
-        protected Stream BadRequest(OutgoingWebResponseContext Response, string AndMessage = null)
+        protected Stream BadRequest(WebOperationContext Context, string AndMessage = null)
         {
-            Response.StatusCode = HttpStatusCode.BadRequest;
-            Response.StatusDescription = AndMessage;
-            Response.ContentLength = 0;
+            Context.OutgoingResponse.StatusCode = HttpStatusCode.BadRequest;
+            Context.OutgoingResponse.StatusDescription = AndMessage;
+            Context.OutgoingResponse.ContentLength = 0;
             return new MemoryStream(new byte[0]);
         }
 
-        public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, IncomingWebRequestContext Request = null, OutgoingWebResponseContext Response = null)
+        public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, WebOperationContext Context = null)
         {
-            Request ??= WebOperationContext.Current.IncomingRequest;
-            Response ??= WebOperationContext.Current.OutgoingResponse;
+            Context ??= WebOperationContext.Current;
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
-                return BadRequest(Response, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
+                return BadRequest(Context, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             var Key = new RequestKey(RelativeUri);
             // If the number of receivers is invalid
             if (Key.Receivers <= 0)
-                return BadRequest(Response, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
+                return BadRequest(Context, $"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
             if (EnableLog)
                 Console.WriteLine(pathToUnestablishedPipe.Select(v => $"{v.Key}:{v.Value}"));
 
@@ -177,41 +174,40 @@ namespace Piping
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             if (waiter.IsEstablished)
-                return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
+                return BadRequest(Context, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
                 return waiter.AddSender(Key, new ReqRes
                 {
-                    Request = Request,
+                    Context = Context,
                     RequestStream = InputStream,
-                    Response = Response,
                 }, Encoding, 1024);
             }catch(InvalidOperationException e)
             {
-                return BadRequest(Response, e.Message);
+                return BadRequest(Context, e.Message);
             }
         }
-        Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
-        Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current.IncomingRequest, WebOperationContext.Current.OutgoingResponse);
-        public async Task<Stream> DownloadAsync(string RelativeUri, OutgoingWebResponseContext Response = null)
+        Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current);
+        Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current);
+        public async Task<Stream> DownloadAsync(string RelativeUri, WebOperationContext Context = null)
         {
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
                 return await Generator();
-            Response ??= WebOperationContext.Current.OutgoingResponse;
+            Context ??= WebOperationContext.Current;
             var ResponseStream = new MemoryStream();
             var Key = new RequestKey(RelativeUri);
             if (Key.Receivers <= 0)
-                return BadRequest(Response, $"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
+                return BadRequest(Context, $"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
             if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
                 waiter = new SenderResponseWaiters(Key.Receivers);
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             if (waiter.IsEstablished)
-                return BadRequest(Response, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
+                return BadRequest(Context, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             var rs = new ReqRes
             {
-                Response = Response,
+                Context = Context,
             };
             try
             {
@@ -230,38 +226,37 @@ namespace Piping
             catch(Exception e)
             {
                 waiter.UnRegisterReceiver(rs);
-                return BadRequest(Response, e.Message);
+                return BadRequest(Context, e.Message);
             }
         }
-        Task<Stream> IService.GetDownloadAsync() => DownloadAsync(GetRelativeUri(), WebOperationContext.Current.OutgoingResponse);
+        Task<Stream> IService.GetDownloadAsync() => DownloadAsync(GetRelativeUri(), WebOperationContext.Current);
         public Task<Stream> GetDefaultPageAsync()
-            => Task.FromResult(DefaultPageResponseGenerator(WebOperationContext.Current.OutgoingResponse));
+            => Task.FromResult(DefaultPageResponseGenerator(WebOperationContext.Current));
         public Task<Stream> GetVersionAsync()
-            => Task.FromResult(VersionResponseGenerator(WebOperationContext.Current.OutgoingResponse));
+            => Task.FromResult(VersionResponseGenerator(WebOperationContext.Current));
         public Task<Stream> GetHelpAsync()
-            => Task.FromResult(HelpPageResponseGenerator(WebOperationContext.Current.OutgoingResponse));
+            => Task.FromResult(HelpPageResponseGenerator(WebOperationContext.Current));
         public Task<Stream> GetFaviconAsync()
-            => Task.FromResult(FileGetGenerator(DefaultPath.Favicon, WebOperationContext.Current.OutgoingResponse));
+            => Task.FromResult(FileGetGenerator(DefaultPath.Favicon, WebOperationContext.Current));
         public Task<Stream> GetRobotsAsync()
-            => Task.FromResult(FileGetGenerator(DefaultPath.Robots, WebOperationContext.Current.OutgoingResponse));
+            => Task.FromResult(FileGetGenerator(DefaultPath.Robots, WebOperationContext.Current));
         public Task<Stream> GetOptionsAsync()
-            => Task.FromResult(OptionsResponseGenerator(WebOperationContext.Current.OutgoingResponse));
-        protected Stream DefaultPageResponseGenerator(OutgoingWebResponseContext Response)
+            => Task.FromResult(OptionsResponseGenerator(WebOperationContext.Current));
+        protected Stream DefaultPageResponseGenerator(WebOperationContext Context)
         {
-            var Encoding = Response.BindingWriteEncoding;
+            var Encoding = Context.OutgoingResponse.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes(GetDefaultPage());
-            Response.ContentLength = Bytes.Length;
-            Response.ContentType = $"text/html;charset={Encoding.WebName}";
+            Context.OutgoingResponse.ContentLength = Bytes.Length;
+            Context.OutgoingResponse.ContentType = $"text/html; charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
         internal static string GetDefaultPage() => Properties.Resource.DefaultPage;
-        protected Stream HelpPageResponseGenerator(OutgoingWebResponseContext Response)
+        protected Stream HelpPageResponseGenerator(WebOperationContext Context)
         {
             var url = GetBaseUri();
-            var Encoding = Response.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes(GetHelpPageText(url, VERSION));
-            Response.ContentLength = Bytes.Length;
-            Response.ContentType = $"text/plain;charset={Encoding.WebName}";
+            Context.OutgoingResponse.ContentLength = Bytes.Length;
+            Context.OutgoingResponse.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
         internal static string GetHelpPageText(Uri url, FileVersionInfo version)
@@ -291,28 +286,28 @@ cat myfile | openssl aes-256-cbc | curl -T - {url}/mypath
 ## Get
 curl {url}/mypath | openssl aes-256-cbc -d";
         }
-        protected Stream VersionResponseGenerator(OutgoingWebResponseContext Response)
+        protected Stream VersionResponseGenerator(WebOperationContext Context)
         {
-            var Encoding = Response.BindingWriteEncoding;
+            var Encoding = Context.OutgoingResponse.BindingWriteEncoding;
             var Bytes = Encoding.GetBytes($"{VERSION.FileVersion}\n");
-            Response.ContentLength = Bytes.Length;
-            Response.ContentType = $"text/plain;charset={Encoding.WebName}";
+            Context.OutgoingResponse.ContentLength = Bytes.Length;
+            Context.OutgoingResponse.ContentType = $"text/plain;charset={Encoding.WebName}";
             return new MemoryStream(Bytes);
         }
-        protected Stream OptionsResponseGenerator(OutgoingWebResponseContext Response)
+        protected Stream OptionsResponseGenerator(WebOperationContext Context)
         {
-            Response.StatusCode = HttpStatusCode.OK;
-            Response.Headers.Add("Access-Control-Allow-Origin", "*");
-            Response.Headers.Add("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, OPTIONS");
-            Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Content-Disposition");
-            Response.Headers.Add("Access-Control-Max-Age", "86400");
-            Response.ContentLength = 0;
+            Context.OutgoingResponse.StatusCode = HttpStatusCode.OK;
+            Context.OutgoingResponse.Headers.Add("Access-Control-Allow-Origin", "*");
+            Context.OutgoingResponse.Headers.Add("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, OPTIONS");
+            Context.OutgoingResponse.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Content-Disposition");
+            Context.OutgoingResponse.Headers.Add("Access-Control-Max-Age", "86400");
+            Context.OutgoingResponse.ContentLength = 0;
             return new MemoryStream(new byte[0]);
         }
-        protected Stream NotImplemented(OutgoingWebResponseContext Response)
+        protected Stream NotImplemented(WebOperationContext Context)
         {
-            Response.StatusCode = HttpStatusCode.NotImplemented;
-            Response.ContentLength = 0;
+            Context.OutgoingResponse.StatusCode = HttpStatusCode.NotImplemented;
+            Context.OutgoingResponse.ContentLength = 0;
             return new MemoryStream(new byte[0]);
         }
         protected bool ExistsFile(string FileName)
@@ -320,30 +315,30 @@ curl {url}/mypath | openssl aes-256-cbc -d";
             var FilePath = Path.Combine(BasePath, FileName.TrimStart('/'));
             return File.Exists(FilePath);
         }
-        protected Stream FileGetGenerator(string FileName, OutgoingWebResponseContext Response)
+        protected Stream FileGetGenerator(string FileName, WebOperationContext Context)
         {
             var FilePath = Path.Combine(BasePath, FileName.TrimStart('/'));
             try
             {
                 var Bytes = File.ReadAllBytes(FilePath);
-                Response.StatusCode = HttpStatusCode.OK;
-                Response.ContentType = MimeMapping.GetMimeMapping(FilePath);
-                Response.ContentLength = Bytes.Length;
+                Context.OutgoingResponse.StatusCode = HttpStatusCode.OK;
+                Context.OutgoingResponse.ContentType = MimeMapping.GetMimeMapping(FilePath);
+                Context.OutgoingResponse.ContentLength = Bytes.Length;
                 return new MemoryStream(Bytes);
             }
             catch (FileNotFoundException)
             {
-                Response.StatusCode = HttpStatusCode.NotFound;
+                Context.OutgoingResponse.StatusCode = HttpStatusCode.NotFound;
             }
             catch (SecurityException)
             {
-                Response.StatusCode = HttpStatusCode.NotFound;
+                Context.OutgoingResponse.StatusCode = HttpStatusCode.NotFound;
             }
             catch (Exception)
             {
-                Response.StatusCode = HttpStatusCode.InternalServerError;
+                Context.OutgoingResponse.StatusCode = HttpStatusCode.InternalServerError;
             }
-            Response.ContentLength = 0;
+            Context.OutgoingResponse.ContentLength = 0;
             return new MemoryStream(new byte[0]);
         }
     }

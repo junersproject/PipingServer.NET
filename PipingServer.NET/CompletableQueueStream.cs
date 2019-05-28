@@ -19,14 +19,15 @@ namespace Piping
         public void CompleteAdding() => data.CompleteAdding();
         public CompletableQueueStream() =>data = new BlockingCollection<byte[]>();
         public CompletableQueueStream(int boundedCapacity) => data = new BlockingCollection<byte[]>(boundedCapacity);
-
+        public CompletableQueueStream(int? boundedCapacity = null, long? length = null)
+            => (data, this.length) = (boundedCapacity is int _boundedCapacity ? new BlockingCollection<byte[]>(_boundedCapacity) : new BlockingCollection<byte[]>(), length);
         public override bool CanRead => true;
 
         public override bool CanSeek => false;
 
         public override bool CanWrite => !data.IsAddingCompleted;
-
-        public override long Length => throw new NotSupportedException();
+        long? length = null;
+        public override long Length => length ?? throw new NotSupportedException();
 
         public override long Position { get => throw new NotSupportedException(); set => throw new NotImplementedException(); }
 

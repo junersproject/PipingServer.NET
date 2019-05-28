@@ -61,5 +61,13 @@ namespace Piping.Tests
             Trace.WriteLine(Headers);
             Trace.WriteLine(BodyText);
         }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
+        public async Task GetOptionsExample(string pipingServerUri)
+        {
+            var BaseUri = new Uri(pipingServerUri);
+            var (Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
+            Trace.WriteLine(Headers);
+            Trace.WriteLine(BodyText);
+        }
     }
 }

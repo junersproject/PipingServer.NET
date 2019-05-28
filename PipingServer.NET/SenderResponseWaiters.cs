@@ -32,14 +32,14 @@ namespace Piping
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {_Receivers} but ${_Receivers}.\n");
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
-            Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
+            Sender.Context.OutgoingRequest.ContentType = $"text/plain;charset={Encoding.WebName}";
             Sender.ResponseStream = new CompletableQueueStream();
             this.Sender = Sender;
             _ = AddSenderAsync();
             return Sender.ResponseStream;
             async Task AddSenderAsync()
             {
-                var MultiFormTask = IsMultiForm(Sender.Request.Headers) ? GetPartStreamAsync(Sender, Token) : null;
+                var MultiFormTask = IsMultiForm(Sender.Context.IncomingRequest.Headers) ? GetPartStreamAsync(Sender, Token) : null;
                 Stream? Stream;
                 long? ContentLength;
                 string? ContentType;
@@ -105,24 +105,24 @@ namespace Piping
         (Stream Stream, long? CountentLength, string? ContentType, string? ContentDisposition) GetRequestStream(ReqRes Sender)
             => (
                 Sender.RequestStream, 
-                long.TryParse(Sender.Request.Headers.Get("Content-Length") ?? "", out var ContentLength) ? ContentLength : (long?)null, 
-                Sender.Request.Headers.Get("Content-Type"), 
-                Sender.Request.Headers.Get("Content-Disposition"));
+                long.TryParse(Sender.Context.IncomingRequest.Headers.Get("Content-Length") ?? "", out var ContentLength) ? ContentLength : (long?)null, 
+                Sender.Context.IncomingRequest.Headers.Get("Content-Type"), 
+                Sender.Context.IncomingRequest.Headers.Get("Content-Disposition"));
         void SetResponse(ReqRes Response, long? ContentLength, string? ContentType, string? ContentDisposition)
         {
             if (ContentType != null)
-                Response.Response.ContentType = ContentType!;
+                Response.Context.OutgoingResponse.ContentType = ContentType!;
             if (ContentLength != null)
-                Response.Response.ContentLength = ContentLength.Value;
+                Response.Context.OutgoingResponse.ContentLength = ContentLength.Value;
             if (ContentDisposition != null)
-                Response.Response.Headers.Add("content-disposition", ContentDisposition!);
+                Response.Context.OutgoingResponse.Headers.Add("Content-Disposition", ContentDisposition!);
         }
         public async Task<Stream> AddReceiverAsync(ReqRes Response, CancellationToken Token = default)
         {
             try
             {
-                Response.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-                Response.Response.Headers.Add("Access-Control-Expose-Headers", "Content-Length, Content-Type");
+                Response.Context.OutgoingResponse.Headers.Add("Access-Control-Allow-Origin", "*");
+                Response.Context.OutgoingResponse.Headers.Add("Access-Control-Expose-Headers", "Content-Length, Content-Type");
                 Response.ResponseStream = new CompletableQueueStream();
                 _Receivers.Add(Response);
                 if (IsReady())

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -84,6 +85,7 @@ namespace Piping.Tests
                 var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
+                //CollectionAssert.Contains((Headers.TryGetValues("Content-Type", out var Value) ? Value : Enumerable.Empty<string>()).ToArray(), "text/html", "Content-Type");
             } catch (AddressAccessDeniedException e)
             {
                 throw new AssertInconclusiveException(e.Message, e);
@@ -117,6 +119,25 @@ namespace Piping.Tests
             {
                 Host.Open(BaseUri);
                 var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                Trace.WriteLine(Headers);
+                Trace.WriteLine(BodyText);
+            }
+            catch (AddressAccessDeniedException e)
+            {
+                throw new AssertInconclusiveException(e.Message, e);
+            }
+        }
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task GetOptionsTest(string localPipingServerUrl)
+        {
+
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetOptionsTest));
+            var SendUri = BaseUri;
+            using var Host = new SelfHost();
+            try
+            {
+                Host.Open(BaseUri);
+                var (Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Options);
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(BodyText);
             }

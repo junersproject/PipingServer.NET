@@ -61,6 +61,8 @@ namespace Piping.Tests
                 {
                     foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                         Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                    foreach (var (Key, Value) in request.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     Trace.WriteLine("[SENDER REQUEST] [END]");
                 }
                 Trace.WriteLine("[SENDER RESPONSE] [START]");
@@ -69,6 +71,8 @@ namespace Piping.Tests
                     foreach (var (Key, Value) in response.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                         Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstream = await response.Content.ReadAsStreamAsync();
+                    foreach (var (Key, Value) in response.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
                     string Line;
@@ -102,6 +106,8 @@ namespace Piping.Tests
                     foreach (var (Key, Value) in response.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                         Trace.WriteLine($"[RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var stream = await response.Content.ReadAsStreamAsync();
+                    foreach (var (Key, Value) in response.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
+                        Trace.WriteLine($"[RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
                     string Line;

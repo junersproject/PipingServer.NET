@@ -18,11 +18,11 @@ namespace Piping
 
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method = "POST", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Task<Stream> PostUploadAsync(Stream InputStream);
+        Stream PostUpload(Stream InputStream);
 
         [OperationContract]
         [WebInvoke(UriTemplate = "*", Method = "PUT", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        Task<Stream> PutUploadAsync(Stream InputStream);
+        Stream PutUpload(Stream InputStream);
 
         [OperationContract]
         [WebInvoke(UriTemplate = "help", Method = "GET")]

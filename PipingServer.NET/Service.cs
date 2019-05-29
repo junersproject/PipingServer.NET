@@ -165,7 +165,7 @@ namespace Piping
             {
                 case "POST":
                 case "PUT":
-                    return UploadAsync(inputStream, GetRelativeUri(), Context);
+                    return Task.FromResult(Upload(inputStream, GetRelativeUri(), Context));
                 case "GET":
                     return DownloadAsync(GetRelativeUri(), Context);
                 case "OPTIONS":
@@ -183,7 +183,7 @@ namespace Piping
             return new MemoryStream(bytes);
         }
 
-        public async Task<Stream> UploadAsync(Stream InputStream, string RelativeUri, WebOperationContext Context = null)
+        public Stream Upload(Stream InputStream, string RelativeUri, WebOperationContext Context = null)
         {
             Context ??= WebOperationContext.Current;
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
@@ -216,8 +216,8 @@ namespace Piping
                 return BadRequest(Context, e.Message);
             }
         }
-        Task<Stream> IService.PostUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current);
-        Task<Stream> IService.PutUploadAsync(Stream InputStream) => UploadAsync(InputStream, GetRelativeUri(), WebOperationContext.Current);
+        Stream IService.PostUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current);
+        Stream IService.PutUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current);
         public async Task<Stream> DownloadAsync(string RelativeUri, WebOperationContext Context = null)
         {
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))

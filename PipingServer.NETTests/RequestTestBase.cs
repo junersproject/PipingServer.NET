@@ -33,7 +33,7 @@ namespace Piping.Tests
             return (response.StatusCode, response.Headers, response.Content?.Headers, await reader.ReadToEndAsync());
         }
 
-        protected async Task PipingServerPutAndGetMessageSimple(Uri SendUri, string message, CancellationToken Token = default)
+        protected async Task PutAndGetTextMessageSimple(Uri SendUri, string message, CancellationToken Token = default)
         {
             var sender = Task.Run(async () =>
             {
@@ -62,7 +62,7 @@ namespace Piping.Tests
                     foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                         Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     foreach (var (Key, Value) in request.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
-                        Trace.WriteLine($"[SENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                        Trace.WriteLine($"[SENT CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     Trace.WriteLine("[SENDER REQUEST] [END]");
                 }
                 Trace.WriteLine("[SENDER RESPONSE] [START]");
@@ -72,7 +72,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstream = await response.Content.ReadAsStreamAsync();
                     foreach (var (Key, Value) in response.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
-                        Trace.WriteLine($"[SENDER'S RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                        Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
                     string Line;
@@ -107,7 +107,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var stream = await response.Content.ReadAsStreamAsync();
                     foreach (var (Key, Value) in response.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
-                        Trace.WriteLine($"[RESPONSE HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                        Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
                     string Line;

@@ -51,7 +51,7 @@ namespace Piping.Tests
                 Trace.WriteLine($"TARGET URL: {SendUri}");
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
-                await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
+                await PutAndGetTextMessageSimple(SendUri, message, Source.Token);
             }catch(AddressAccessDeniedException e)
             {
                 throw new AssertInconclusiveException(e.Message, e);
@@ -77,10 +77,10 @@ namespace Piping.Tests
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
-        public async Task GetTopPageTest(string localPipingServerUrl)
+        public async Task GetRootTest(string localPipingServerUrl)
         {
-            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetTopPageTest));
-            var SendUri = new Uri(BaseUri, "./" + nameof(GetTopPageTest) + "/");
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetRootTest));
+            var SendUri = new Uri(BaseUri, "./" + nameof(GetRootTest) + "/");
             using var Host = new SelfHost();
             try
             {
@@ -90,15 +90,16 @@ namespace Piping.Tests
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.OK, Status);
             } catch (AddressAccessDeniedException e)
             {
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
-        public async Task GetTopPageTest2(string localPipingServerUrl)
+        public async Task GetRootTest2(string localPipingServerUrl)
         {
-            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetTopPageTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetRootTest2));
             var SendUri = BaseUri;
             using var Host = new SelfHost();
             try

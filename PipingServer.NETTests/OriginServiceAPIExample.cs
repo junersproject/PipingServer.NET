@@ -34,7 +34,7 @@ namespace Piping.Tests
                 Trace.WriteLine($"TARGET URL: {SendUri}");
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
-                await PipingServerPutAndGetMessageSimple(SendUri, message, Token: Source.Token);
+                await PutAndGetTextMessageSimple(SendUri, message, Token: Source.Token);
             }catch(HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
@@ -52,6 +52,7 @@ namespace Piping.Tests
                 Trace.WriteLine(Headers);
                 Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
+                Assert.AreEqual(HttpStatusCode.OK, Status);
             }
             catch (HttpRequestException e)
             {

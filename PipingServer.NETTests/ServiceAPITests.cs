@@ -117,10 +117,10 @@ namespace Piping.Tests
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
-        public async Task GetHelpPageTest(string localPipingServerUrl)
+        public async Task GetHelpTest(string localPipingServerUrl)
         {
-            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetHelpPageTest));
-            var SendUri = new Uri(BaseUri, "./" + nameof(GetHelpPageTest) + "/help");
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(GetHelpTest));
+            var SendUri = new Uri(BaseUri, "./" + nameof(GetHelpTest) + "/help");
             using var Host = new SelfHost();
             try
             {

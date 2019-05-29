@@ -71,7 +71,7 @@ namespace Piping
 
         
         private static bool IsMultiForm(WebHeaderCollection Headers)
-            => (Headers[HttpRequestHeader.ContentType] ?? string.Empty).IndexOf("multipart/form-data") > 0;
+            => (Headers[HttpRequestHeader.ContentType] ?? string.Empty).IndexOf("multipart/form-data") == 0;
         private static async Task PipingAsync(ReqRes Sender, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
             var buffer = new byte[BufferSize];
@@ -98,7 +98,12 @@ namespace Piping
             var tcs = new TaskCompletionSource<(Stream, long, string, string)>();
             var sm = new StreamingMultipartFormDataParser(Sender.RequestStream);
             sm.FileHandler += (name, fileName, contentType, contentDisposition, buffer, bytes)
-                => tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, contentDisposition));
+                =>
+            {
+                tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, contentDisposition));
+            };
+            sm.ParameterHandler += (o) => { };
+            sm.StreamClosedHandler += () => { };
             sm.Run();
             return tcs.Task;
         }

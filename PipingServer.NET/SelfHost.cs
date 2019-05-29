@@ -5,7 +5,7 @@ using System.ServiceModel.Description;
 
 namespace Piping
 {
-    internal class SelfHost : IDisposable
+    public class SelfHost : IDisposable
     {
         ServiceHost Host;
 

@@ -26,54 +26,71 @@ namespace Piping
         public SenderResponseWaiters(int ReceiversCount)
             => (this.ReceiversCount, Receivers) = (ReceiversCount, _Receivers.AsReadOnly());
         public bool IsReady() => Sender != null && _Receivers.Count == ReceiversCount;
-        public async Task<Stream> AddSenderAsync(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
+        public Stream AddSender(RequestKey Key, ReqRes Sender, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
             if (IsSetSenderComplete)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {_Receivers} but ${_Receivers}.\n");
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
-            Sender.Response.ContentType = $"text/plain;charset={Encoding.WebName}";
-            using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
-            {
-                await writer.WriteLineAsync($"[INFO] Waiting for ${Receivers} receiver(s)...");
-                await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
-            }
+            Sender.Context.OutgoingRequest.ContentType = $"text/plain;charset={Encoding.WebName}";
+            Sender.ResponseStream = new CompletableQueueStream();
             this.Sender = Sender;
-            IsSetSenderComplete = true;
-            var IsMultiForm = (Sender.Request.Headers[HttpResponseHeader.ContentType] ?? "").IndexOf("multipart/form-data") > 0;
-            var MultiFormTask = IsMultiForm ? GetPartStreamAsync(Sender, Token) : null;
-            var (Stream, ContentLength, ContentType, ContentDisposition) = IsMultiForm ? await MultiFormTask! : GetRequestStream(Sender);
-            if (IsReady())
-                ReadyTaskSource.TrySetResult(true);
-            else
-                await ReadyTaskSource.Task;
-            IsEstablished = true;
-            var Buffers = new List<BufferStream>();
-            foreach (var Response in _Receivers)
-            {
-                SetResponse(Response, ContentLength, ContentType, ContentDisposition);
-                var Buffer = new BufferStream();
-                Response.ResponseStream = Buffer;
-                Buffers.Add(Buffer);
-            }
-            await PipingAsync(Stream, Buffers.ToArray(), 1024, Token);
-            ResponseTaskSource.TrySetResult(true);
+            _ = AddSenderAsync();
             return Sender.ResponseStream;
+            async Task AddSenderAsync()
+            {
+                var MultiFormTask = IsMultiForm(Sender.Context.IncomingRequest.Headers) ? GetPartStreamAsync(Sender, Token) : null;
+                Stream? Stream;
+                long? ContentLength;
+                string? ContentType;
+                string? ContentDisposition;
+                IEnumerable<Stream> Buffers;
+                using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
+                {
+                    await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...");
+                    await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
+                    IsSetSenderComplete = true;
+                    if (IsReady())
+                        ReadyTaskSource.TrySetResult(true);
+                    else
+                        await ReadyTaskSource.Task;
+                    (Stream, ContentLength, ContentType, ContentDisposition) = MultiFormTask != null ? await MultiFormTask! : GetRequestStream(Sender);
+                    await writer.WriteLineAsync($"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}");
+                    IsEstablished = true;
+                    Buffers = Receivers.Select(Response =>
+                    {
+                        SetResponse(Response, ContentLength, ContentType, ContentDisposition);
+                        return Response.ResponseStream;
+                    });
+                    await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
+                }
+                _ = PipingAsync(Sender, Buffers, 1024, Encoding, Token);
+                ResponseTaskSource.TrySetResult(true);
+            }
         }
-        private static async Task PipingAsync(Stream RequestStream, IEnumerable<BufferStream> Buffers, int BufferSize, CancellationToken Token = default)
+
+        
+        private static bool IsMultiForm(WebHeaderCollection Headers)
+            => (Headers[HttpRequestHeader.ContentType] ?? string.Empty).IndexOf("multipart/form-data") > 0;
+        private static async Task PipingAsync(ReqRes Sender, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
             try
             {
-                while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
+                while ((bytesRead = await Sender.RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
+                using var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true);
+                await writer.WriteLineAsync($"[INFO] Sending successful!");
             }
             finally
             {
                 foreach (var b in Buffers)
-                    b.CompleteAdding();
+                    if (b is CompletableQueueStream _b)
+                        _b.CompleteAdding();
+                if (Sender.ResponseStream is CompletableQueueStream __b)
+                    __b.CompleteAdding();
             }
         }
         Task<(Stream Stream, long ContentLength, string ContentType, string ContentDisposition)> GetPartStreamAsync(ReqRes Sender, CancellationToken Token = default)
@@ -88,25 +105,36 @@ namespace Piping
         (Stream Stream, long? CountentLength, string? ContentType, string? ContentDisposition) GetRequestStream(ReqRes Sender)
             => (
                 Sender.RequestStream, 
-                long.TryParse(Sender.Request.Headers.Get("Content-Length") ?? "", out var ContentLength) ? ContentLength : (long?)null, 
-                Sender.Request.Headers.Get("Content-Type"), 
-                Sender.Request.Headers.Get("Content-Disposition"));
+                long.TryParse(Sender.Context.IncomingRequest.Headers.Get("Content-Length") ?? "", out var ContentLength) ? ContentLength : (long?)null, 
+                Sender.Context.IncomingRequest.Headers.Get("Content-Type"), 
+                Sender.Context.IncomingRequest.Headers.Get("Content-Disposition"));
         void SetResponse(ReqRes Response, long? ContentLength, string? ContentType, string? ContentDisposition)
         {
             if (ContentType != null)
-                Response.Response.ContentType = ContentType!;
+                Response.Context.OutgoingResponse.ContentType = ContentType!;
             if (ContentLength != null)
-                Response.Response.ContentLength = ContentLength.Value;
+                Response.Context.OutgoingResponse.ContentLength = ContentLength.Value;
             if (ContentDisposition != null)
-                Response.Response.Headers.Add("content-disposition", ContentDisposition!);
+                Response.Context.OutgoingResponse.Headers.Add("Content-Disposition", ContentDisposition!);
         }
         public async Task<Stream> AddReceiverAsync(ReqRes Response, CancellationToken Token = default)
         {
-            _Receivers.Add(Response);
-            if (IsReady())
-                ReadyTaskSource.TrySetResult(true);
-            await ResponseTaskSource.Task;
-            return Response.ResponseStream;
+            try
+            {
+                Response.Context.OutgoingResponse.Headers.Add("Access-Control-Allow-Origin", "*");
+                Response.Context.OutgoingResponse.Headers.Add("Access-Control-Expose-Headers", "Content-Length, Content-Type");
+                Response.ResponseStream = new CompletableQueueStream();
+                _Receivers.Add(Response);
+                if (IsReady())
+                    ReadyTaskSource.TrySetResult(true);
+                await ResponseTaskSource.Task;
+                return Response.ResponseStream;
+            }
+            catch (Exception)
+            {
+                Response.ResponseStream?.Dispose();
+                throw;
+            }
         }
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには

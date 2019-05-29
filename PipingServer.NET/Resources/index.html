@@ -38,7 +38,7 @@
       var fileForm = document.getElementById("file_form");
       var secretPathInput = document.getElementById("secret_path");
       secretPathInput.onkeyup = function(){
-        fileForm.action = "/" + secretPathInput.value;
+        fileForm.action = "./" + secretPathInput.value;
       };
     })();
 

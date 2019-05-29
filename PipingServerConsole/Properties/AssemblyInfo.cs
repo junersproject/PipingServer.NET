@@ -2,35 +2,35 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-// アセンブリに関する一般情報は以下の属性セットを使用して制御されます。 
-// アセンブリに関連付けられている情報を変更するには、
-// これらの属性値を変更してください。
-[assembly: AssemblyTitle("PipingServer.NETTests")]
+// アセンブリに関する一般情報は以下の属性セットをとおして制御されます。
+// 制御されます。アセンブリに関連付けられている情報を変更するには、
+// これらの属性値を変更します。
+[assembly: AssemblyTitle("PipingServerConsole")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PipingServer.NETTests")]
+[assembly: AssemblyProduct("PipingServerConsole")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-// ComVisible を false に設定すると、その型はこのアセンブリ内で COM コンポーネントから
-// 参照不可能になります。COM からこのアセンブリ内の型にアクセスする場合は、 
-// その型の ComVisible 属性を true に設定してください。
+// ComVisible を false に設定すると、このアセンブリ内の型は COM コンポーネントから
+// 参照できなくなります。COM からこのアセンブリ内の型にアクセスする必要がある場合は、
+// その型の ComVisible 属性を true に設定します。
 [assembly: ComVisible(false)]
 
 // このプロジェクトが COM に公開される場合、次の GUID が typelib の ID になります
-[assembly: Guid("eba241e7-5321-46bb-8aef-589947bcff49")]
+[assembly: Guid("b72c47b1-61d2-4b16-bf1f-ba4ee28fc3e0")]
 
 // アセンブリのバージョン情報は次の 4 つの値で構成されています:
 //
 //      メジャー バージョン
 //      マイナー バージョン
 //      ビルド番号
-//      Revision
+//      リビジョン
 //
 // すべての値を指定するか、次を使用してビルド番号とリビジョン番号を既定に設定できます
 // 既定値にすることができます:
-//[アセンブリ: AssemblyVersion("1.0.*")]
+// [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("0.1.1.0")]
 [assembly: AssemblyFileVersion("0.1.1.0")]

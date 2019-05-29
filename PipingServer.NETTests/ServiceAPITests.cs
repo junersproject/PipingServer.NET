@@ -49,7 +49,7 @@ namespace Piping.Tests
                 using var HostDispose = Source.Token.Register(() => Host.Dispose());
                 Trace.WriteLine($"BASE URL: {BaseUri}");
                 Trace.WriteLine($"TARGET URL: {SendUri}");
-                var (_, _, Version) = await GetVersionAsync(BaseUri);
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
                 await PipingServerPutAndGetMessageSimple(SendUri, message, Source.Token);
             }catch(AddressAccessDeniedException e)
@@ -66,9 +66,10 @@ namespace Piping.Tests
             using var Host = new SelfHost();
             try { 
                 Host.Open(BaseUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
             } catch (AddressAccessDeniedException e)
             {
@@ -84,11 +85,11 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
-                //CollectionAssert.Contains((Headers.TryGetValues("Content-Type", out var Value) ? Value : Enumerable.Empty<string>()).ToArray(), "text/html", "Content-Type");
             } catch (AddressAccessDeniedException e)
             {
                 throw new AssertInconclusiveException(e.Message, e);
@@ -103,9 +104,10 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
             }
             catch (AddressAccessDeniedException e)
@@ -122,9 +124,10 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
             }
             catch (AddressAccessDeniedException e)
@@ -142,9 +145,10 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Options);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Options);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
             }
             catch (AddressAccessDeniedException e)
@@ -162,9 +166,10 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Post);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Post);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
                 Assert.AreEqual(HttpStatusCode.BadRequest, Status);
             }

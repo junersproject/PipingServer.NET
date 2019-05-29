@@ -15,7 +15,7 @@ namespace Piping.Tests
     public class RequestTestBase
     {
 
-        protected async Task<(HttpStatusCode StatusCode, HttpResponseHeaders, string BodyText)> GetVersionAsync(Uri BaseUri) => await GetResponseAsync(new Uri(BaseUri.ToString().TrimEnd('/') + "/version"), HttpMethod.Get);
+        protected async Task<(HttpStatusCode StatusCode, HttpResponseHeaders Headers, HttpContentHeaders Cheaders, string BodyText)> GetVersionAsync(Uri BaseUri) => await GetResponseAsync(new Uri(BaseUri.ToString().TrimEnd('/') + "/version"), HttpMethod.Get);
         /// <summary>
         /// 
         /// </summary>
@@ -23,14 +23,14 @@ namespace Piping.Tests
         /// <param name="SendUri"></param>
         /// <param name="Method"></param>
         /// <returns></returns>
-        protected async Task<(HttpStatusCode StatusCode, HttpResponseHeaders Headers, string BodyText)> GetResponseAsync(Uri SendUri, HttpMethod Method, CancellationToken Token = default)
+        protected async Task<(HttpStatusCode StatusCode, HttpResponseHeaders Headers, HttpContentHeaders Cheaders, string BodyText)> GetResponseAsync(Uri SendUri, HttpMethod Method, CancellationToken Token = default)
         {
             using var client = new HttpClient();
             using var request = new HttpRequestMessage(Method, SendUri);
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead, Token);
             using var resStream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(resStream, Encoding.UTF8, true);
-            return (response.StatusCode, response.Headers, await reader.ReadToEndAsync());
+            return (response.StatusCode, response.Headers, response.Content?.Headers, await reader.ReadToEndAsync());
         }
 
         protected async Task PipingServerPutAndGetMessageSimple(Uri SendUri, string message, CancellationToken Token = default)

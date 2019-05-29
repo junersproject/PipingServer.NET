@@ -32,7 +32,7 @@ namespace Piping.Tests
                 var message = "Hello World.";
                 Trace.WriteLine($"BASE URL: {BaseUri}");
                 Trace.WriteLine($"TARGET URL: {SendUri}");
-                var (_, _, Version) = await GetVersionAsync(BaseUri);
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
                 await PipingServerPutAndGetMessageSimple(SendUri, message, Token: Source.Token);
             }catch(HttpRequestException e)
@@ -47,9 +47,10 @@ namespace Piping.Tests
             try { 
                 var BaseUri = new Uri(pipingServerUri);
                 var SendUri = new Uri(BaseUri, "/version");
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
             }
             catch (HttpRequestException e)
@@ -65,9 +66,10 @@ namespace Piping.Tests
         {
             try { 
                 var BaseUri = new Uri(pipingServerUri.TrimEnd('/') + "/");
-                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
                 Assert.AreEqual(HttpStatusCode.OK, Status);
             }
@@ -84,9 +86,10 @@ namespace Piping.Tests
             try
             {
                 var BaseUri = new Uri(pipingServerUri.TrimEnd('/'));
-                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
                 Assert.AreEqual(HttpStatusCode.OK, Status);
             }
@@ -104,9 +107,10 @@ namespace Piping.Tests
             try { 
                 var BaseUri = new Uri(pipingServerUri);
                 var SendUri = new Uri(BaseUri, "/help");
-                var (Status, Headers, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
                 Assert.AreEqual(HttpStatusCode.OK, Status);
             }
@@ -121,9 +125,10 @@ namespace Piping.Tests
         {
             try { 
                 var BaseUri = new Uri(pipingServerUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
                 Assert.AreEqual(HttpStatusCode.OK, Status);
             }
@@ -138,9 +143,10 @@ namespace Piping.Tests
         {
             try { 
                 var BaseUri = new Uri(pipingServerUri);
-                var (Status, Headers, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Post);
+                var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Post);
                 Trace.WriteLine(Status);
                 Trace.WriteLine(Headers);
+                Trace.WriteLine(Cheaders);
                 Trace.WriteLine(BodyText);
                 Assert.AreEqual(HttpStatusCode.BadRequest, Status);
             }

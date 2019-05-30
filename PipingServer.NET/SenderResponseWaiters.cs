@@ -93,17 +93,27 @@ namespace Piping
                     __b.CompleteAdding();
             }
         }
-        Task<(Stream Stream, long ContentLength, string ContentType, string ContentDisposition)> GetPartStreamAsync(ReqRes Sender, CancellationToken Token = default)
+        Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(ReqRes Sender, CancellationToken Token = default)
         {
-            var tcs = new TaskCompletionSource<(Stream, long, string, string)>();
+            var tcs = new TaskCompletionSource<(Stream, long?, string?, string?)>();
             var sm = new StreamingMultipartFormDataParser(Sender.RequestStream);
             sm.FileHandler += (name, fileName, contentType, contentDisposition, buffer, bytes)
                 =>
             {
+                if (tcs.Task.IsCompleted)
+                    return;
                 tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, contentDisposition));
             };
-            sm.ParameterHandler += (o) => { };
-            sm.StreamClosedHandler += () => { };
+            sm.ParameterHandler += (p) => {
+                if (tcs.Task.IsCompleted)
+                    return;
+                byte[] bytes = sm.Encoding.GetBytes(p.Data);
+                tcs.TrySetResult((new MemoryStream(bytes), bytes.LongLength, $"text/plain; charset={sm.Encoding.WebName}", null));
+            };
+            sm.StreamClosedHandler += () =>
+            {
+                tcs.TrySetResult((new MemoryStream(new byte[0]), 0, null, null));
+            };
             sm.Run();
             return tcs.Task;
         }

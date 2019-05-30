@@ -66,7 +66,7 @@ namespace Piping.Tests
             try
             {
                 Host.Open(BaseUri);
-                var SendUri = new Uri(BaseUri, "./" + nameof(PutAndOneGetTest) + "/" + nameof(PutAndOneGetTest));
+                var SendUri = new Uri(BaseUri, "./" + nameof(PostAndOneGetMultipartTest) + "/" + nameof(PostAndOneGetMultipartTest));
                 var message1 = "Hello World.";
                 var message2 = "How are You?";
                 using var HostDispose = Source.Token.Register(() => Host.Dispose());

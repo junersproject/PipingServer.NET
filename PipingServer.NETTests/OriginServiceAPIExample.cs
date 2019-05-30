@@ -49,7 +49,7 @@ namespace Piping.Tests
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 var BaseUri = new Uri(pipingServerUrl);
-                var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PutAndOneGetExample));
+                var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PostAndOneGetMultipartExample));
                 var message1 = "Hello World.";
                 var message2 = "How Are You?";
                 Trace.WriteLine($"BASE URL: {BaseUri}");

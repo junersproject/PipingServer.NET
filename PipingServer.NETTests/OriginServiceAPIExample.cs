@@ -35,7 +35,30 @@ namespace Piping.Tests
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
                 await PutAndGetTextMessageSimple(SendUri, message, Token: Source.Token);
-            }catch(HttpRequestException e)
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
+        }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
+        public async Task PostAndOneGetMultipartExample(string pipingServerUrl)
+        {
+            try
+            {
+                using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
+                var BaseUri = new Uri(pipingServerUrl);
+                var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PutAndOneGetExample));
+                var message1 = "Hello World.";
+                var message2 = "How Are You?";
+                Trace.WriteLine($"BASE URL: {BaseUri}");
+                Trace.WriteLine($"TARGET URL: {SendUri}");
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
+                Trace.WriteLine($"VERSION: {Version}");
+                await PostAndGetMultipartTestMessageSimple(SendUri, message1, message2, Token: Source.Token);
+            }
+            catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
                 throw;

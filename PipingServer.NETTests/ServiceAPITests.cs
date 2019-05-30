@@ -57,6 +57,30 @@ namespace Piping.Tests
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task PostAndOneGetMultipartTest(string localPipingServerUrl)
+        {
+            using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(PostAndOneGetMultipartTest));
+            using var Host = new SelfHost();
+            try
+            {
+                Host.Open(BaseUri);
+                var SendUri = new Uri(BaseUri, "./" + nameof(PutAndOneGetTest) + "/" + nameof(PutAndOneGetTest));
+                var message1 = "Hello World.";
+                var message2 = "How are You?";
+                using var HostDispose = Source.Token.Register(() => Host.Dispose());
+                Trace.WriteLine($"BASE URL: {BaseUri}");
+                Trace.WriteLine($"TARGET URL: {SendUri}");
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
+                Trace.WriteLine($"VERSION: {Version}");
+                await PostAndGetMultipartTestMessageSimple(SendUri, message1, message2, Source.Token);
+            }
+            catch (AddressAccessDeniedException e)
+            {
+                throw new AssertInconclusiveException(e.Message, e);
+            }
+        }
 
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
         public async Task GetVersionTest(string localPipingServerUrl)

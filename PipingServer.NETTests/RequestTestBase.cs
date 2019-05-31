@@ -143,20 +143,19 @@ namespace Piping.Tests
                 {
                     Timeout = TimeSpan.FromHours(6)
                 };
-                var Context = new MultipartFormDataContent
-                {
-                    new StringContent(message1, Encoding.UTF8, "text/plain"){
-                        Headers = {
-                            ContentDisposition = new ContentDispositionHeaderValue("form-data"){
-                                Name = "input_text",
-                            },
-                        },
-                    },
-                    new StringContent(message2, Encoding.UTF8, "text/plain"),
-                };
                 using var request = new HttpRequestMessage(HttpMethod.Put, SendUri)
                 {
-                    Content = Context,
+                    Content = new MultipartFormDataContent
+                    {
+                        { new StringContent(message1, Encoding.UTF8, "text/plain"){
+                            Headers = {
+                                ContentDisposition = new ContentDispositionHeaderValue("form-data"){
+                                    Name = "input_text",
+                                },
+                            },
+                        }, "data1" },
+                        { new StringContent(message2, Encoding.UTF8, "text/plain"), "data2" },
+                    },
                 };
 
                 foreach (var (Key, Value) in request.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
@@ -166,12 +165,12 @@ namespace Piping.Tests
                 try
                 {
                     response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Token);
-                    using var stream = new MemoryStream();
-                    await Context.CopyToAsync(stream);
-                    using var reader = new StreamReader(stream);
-                    string Line;
-                    while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
-                        Trace.WriteLine($"[SENT MESSAGE] : {Line}");
+                    //using var stream = new MemoryStream();
+                    //await response.RequestMessage.Content.CopyToAsync(stream);
+                    //using var reader = new StreamReader(stream);
+                    //string Line;
+                    //while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
+                    //    Trace.WriteLine($"[SENT MESSAGE] : {Line}");
                 }
                 finally
                 {

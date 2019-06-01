@@ -134,7 +134,7 @@ namespace Piping.Tests
             await Task.WhenAll(sender, receiver);
             Assert.AreEqual(message, await receiver);
         }
-        protected async Task PostAndGetMultipartTestMessageSimple(Uri SendUri, string message1, string message2, CancellationToken Token = default)
+        protected async Task PostAndGetMultipartTestMessageSimple(Uri SendUri, string message1, CancellationToken Token = default)
         {
 
             var sender = Task.Run(async () =>
@@ -143,7 +143,7 @@ namespace Piping.Tests
                 {
                     Timeout = TimeSpan.FromHours(6)
                 };
-                using var request = new HttpRequestMessage(HttpMethod.Put, SendUri)
+                using var request = new HttpRequestMessage(HttpMethod.Post, SendUri)
                 {
                     Content = new MultipartFormDataContent
                     {
@@ -153,8 +153,7 @@ namespace Piping.Tests
                                     Name = "input_text",
                                 },
                             },
-                        }, "data1" },
-                        { new StringContent(message2, Encoding.UTF8, "text/plain"), "data2" },
+                        }, "input_text"},
                     },
                 };
 
@@ -165,12 +164,6 @@ namespace Piping.Tests
                 try
                 {
                     response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Token);
-                    //using var stream = new MemoryStream();
-                    //await response.RequestMessage.Content.CopyToAsync(stream);
-                    //using var reader = new StreamReader(stream);
-                    //string Line;
-                    //while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
-                    //    Trace.WriteLine($"[SENT MESSAGE] : {Line}");
                 }
                 finally
                 {

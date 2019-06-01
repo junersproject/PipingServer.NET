@@ -68,13 +68,12 @@ namespace Piping.Tests
                 Host.Open(BaseUri);
                 var SendUri = new Uri(BaseUri, "./" + nameof(PostAndOneGetMultipartTest) + "/" + nameof(PostAndOneGetMultipartTest));
                 var message1 = "Hello World.";
-                var message2 = "How are You?";
                 using var HostDispose = Source.Token.Register(() => Host.Dispose());
                 Trace.WriteLine($"BASE URL: {BaseUri}");
                 Trace.WriteLine($"TARGET URL: {SendUri}");
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
-                await PostAndGetMultipartTestMessageSimple(SendUri, message1, message2, Source.Token);
+                await PostAndGetMultipartTestMessageSimple(SendUri, message1, Source.Token);
             }
             catch (AddressAccessDeniedException e)
             {

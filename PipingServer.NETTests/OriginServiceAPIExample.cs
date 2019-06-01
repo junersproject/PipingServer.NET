@@ -51,12 +51,11 @@ namespace Piping.Tests
                 var BaseUri = new Uri(pipingServerUrl);
                 var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PostAndOneGetMultipartExample));
                 var message1 = "Hello World.";
-                var message2 = "How Are You?";
                 Trace.WriteLine($"BASE URL: {BaseUri}");
                 Trace.WriteLine($"TARGET URL: {SendUri}");
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
-                await PostAndGetMultipartTestMessageSimple(SendUri, message1, message2, Token: Source.Token);
+                await PostAndGetMultipartTestMessageSimple(SendUri, message1, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {

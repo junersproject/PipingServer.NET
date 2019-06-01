@@ -8,7 +8,6 @@ using System.Net;
 using System.Text;
 using System.Linq;
 
-#nullable enable
 namespace Piping
 {
     public class SenderResponseWaiters : IDisposable
@@ -60,7 +59,7 @@ namespace Piping
                     Buffers = Receivers.Select(Response =>
                     {
                         SetResponse(Response, ContentLength, ContentType, ContentDisposition);
-                        return Response.ResponseStream;
+                        return Response.ResponseStream!;
                     });
                     await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
                 }
@@ -79,7 +78,7 @@ namespace Piping
             int bytesRead;
             try
             {
-                while ((bytesRead = await Sender.RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
+                while ((bytesRead = await Sender.RequestStream!.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
                 using var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true);
                 await writer.WriteLineAsync($"[INFO] Sending successful!");
@@ -119,7 +118,7 @@ namespace Piping
         }
         (Stream Stream, long? CountentLength, string? ContentType, string? ContentDisposition) GetRequestStream(ReqRes Sender)
             => (
-                Sender.RequestStream, 
+                Sender.RequestStream!, 
                 long.TryParse(Sender.Context.IncomingRequest.Headers.Get("Content-Length") ?? "", out var ContentLength) ? ContentLength : (long?)null, 
                 Sender.Context.IncomingRequest.Headers.Get("Content-Type"), 
                 Sender.Context.IncomingRequest.Headers.Get("Content-Disposition"));

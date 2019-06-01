@@ -30,7 +30,7 @@ namespace Piping.Tests
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead, Token);
             using var resStream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(resStream, Encoding.UTF8, true);
-            return (response.StatusCode, response.Headers, response.Content?.Headers, await reader.ReadToEndAsync());
+            return (response.StatusCode, response.Headers, response.Content.Headers, await reader.ReadToEndAsync());
         }
 
         protected async Task PutAndGetTextMessageSimple(Uri SendUri, string message, CancellationToken Token = default)

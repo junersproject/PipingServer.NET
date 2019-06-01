@@ -10,7 +10,7 @@ namespace Piping
     public class CompletableQueueStream : Stream
     {
         readonly BlockingCollection<byte[]> data;
-        byte[] _currentBlock = null;
+        byte[] _currentBlock = Array.Empty<byte>();
         public int BoundedCapacity => data.BoundedCapacity;
         int _currentBlockIndex = 0;
         public int BufferedWrites => data.Count;
@@ -38,11 +38,9 @@ namespace Piping
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (_currentBlock == null || _currentBlockIndex == _currentBlock.Length)
-            {
+            if (_currentBlock.Length == 0 || _currentBlockIndex == _currentBlock.Length)
                 if (!GetNextBlock())
                     return 0;
-            }
             int minCount = Math.Min(count, _currentBlock.Length - _currentBlockIndex);
             Array.Copy(_currentBlock, _currentBlockIndex, buffer, offset, minCount);
             _currentBlockIndex += minCount;

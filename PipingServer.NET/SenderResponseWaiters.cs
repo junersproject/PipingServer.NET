@@ -32,19 +32,19 @@ namespace Piping
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
             Sender.Context.OutgoingRequest.ContentType = $"text/plain;charset={Encoding.WebName}";
-            Sender.ResponseStream = new CompletableQueueStream();
+            var ResponseStream = new CompletableQueueStream();
             this.Sender = Sender;
             _ = AddSenderAsync();
-            return Sender.ResponseStream;
+            return ResponseStream;
             async Task AddSenderAsync()
             {
                 var MultiFormTask = IsMultiForm(Sender.Context.IncomingRequest.Headers) ? GetPartStreamAsync(Sender, Token) : null;
-                Stream? Stream;
+                Stream Stream;
                 long? ContentLength;
                 string? ContentType;
                 string? ContentDisposition;
                 IEnumerable<Stream> Buffers;
-                using (var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true))
+                using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
                 {
                     await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...");
                     await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.");
@@ -63,7 +63,7 @@ namespace Piping
                     });
                     await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!");
                 }
-                _ = PipingAsync(Sender, Buffers, 1024, Encoding, Token);
+                _ = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
                 ResponseTaskSource.TrySetResult(true);
             }
         }
@@ -71,16 +71,16 @@ namespace Piping
         
         private static bool IsMultiForm(WebHeaderCollection Headers)
             => (Headers[HttpRequestHeader.ContentType] ?? string.Empty).IndexOf("multipart/form-data") == 0;
-        private static async Task PipingAsync(ReqRes Sender, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
+        private static async Task PipingAsync(Stream RequestStream, Stream InfomationStream, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
             try
             {
-                while ((bytesRead = await Sender.RequestStream!.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
+                while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
-                using var writer = new StreamWriter(Sender.ResponseStream, Encoding, BufferSize, true);
+                using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
                 await writer.WriteLineAsync($"[INFO] Sending successful!");
             }
             finally
@@ -88,7 +88,7 @@ namespace Piping
                 foreach (var b in Buffers)
                     if (b is CompletableQueueStream _b)
                         _b.CompleteAdding();
-                if (Sender.ResponseStream is CompletableQueueStream __b)
+                if (InfomationStream is CompletableQueueStream __b)
                     __b.CompleteAdding();
             }
         }
@@ -101,7 +101,8 @@ namespace Piping
             {
                 if (tcs.Task.IsCompleted)
                     return;
-                tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, contentDisposition));
+                var _ContentDisposition = string.IsNullOrEmpty(fileName) ? null : $"{contentDisposition};filename='{fileName.Replace("'", "\\'")}';filename*=utf-8''{System.Web.HttpUtility.UrlEncode(fileName).Replace("+","%20")}";
+                tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, _ContentDisposition));
             };
             sm.ParameterHandler += (p) => {
                 if (tcs.Task.IsCompleted)

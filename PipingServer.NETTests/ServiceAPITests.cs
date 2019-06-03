@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.ServiceModel;
+using System.Text;
 using System.Threading.Tasks;
 using static DebugUtils;
 
@@ -58,15 +59,15 @@ namespace Piping.Tests
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
-        public async Task PostAndOneGetMultipartTest(string localPipingServerUrl)
+        public async Task PostAndOneGetTextMultipartTest(string localPipingServerUrl)
         {
             using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(PostAndOneGetMultipartTest));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(PostAndOneGetTextMultipartTest));
             using var Host = new SelfHost();
             try
             {
                 Host.Open(BaseUri);
-                var SendUri = new Uri(BaseUri, "./" + nameof(PostAndOneGetMultipartTest) + "/" + nameof(PostAndOneGetMultipartTest));
+                var SendUri = new Uri(BaseUri, "./" + nameof(PostAndOneGetTextMultipartTest) + "/" + nameof(PostAndOneGetTextMultipartTest));
                 var message1 = "Hello World.";
                 using var HostDispose = Source.Token.Register(() => Host.Dispose());
                 Trace.WriteLine($"BASE URL: {BaseUri}");
@@ -74,6 +75,31 @@ namespace Piping.Tests
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
                 await PostAndGetMultipartTestMessageSimple(SendUri, message1, Source.Token);
+            }
+            catch (AddressAccessDeniedException e)
+            {
+                throw new AssertInconclusiveException(e.Message, e);
+            }
+        }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(LocalPipingServerUrls))]
+        public async Task PostAndOneGetFileMultipartTest(string localPipingServerUrl)
+        {
+            using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
+            var BaseUri = new Uri(localPipingServerUrl.TrimEnd('/') + "/" + nameof(PostAndOneGetTextMultipartTest));
+            using var Host = new SelfHost();
+            try
+            {
+                Host.Open(BaseUri);
+                var SendUri = new Uri(BaseUri, "./" + nameof(PostAndOneGetTextMultipartTest) + "/" + nameof(PostAndOneGetTextMultipartTest));
+                var message = "Hello World.";
+                Trace.WriteLine($"BASE URL: {BaseUri}");
+                Trace.WriteLine($"TARGET URL: {SendUri}");
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
+                Trace.WriteLine($"VERSION: {Version}");
+                var FileName = "test.txt";
+                var MediaType = "text/plain";
+                var FileData = Encoding.UTF8.GetBytes(message);
+                await PostAndGetMultipartTestFileSimple(SendUri, FileName, MediaType, FileData, Source.Token);
             }
             catch (AddressAccessDeniedException e)
             {

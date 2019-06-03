@@ -81,7 +81,7 @@ namespace Piping.Tests
                 throw new AssertInconclusiveException(e.Message, e);
             }
         }
-        [TestMethod, TestCategory("Example"), DynamicData(nameof(LocalPipingServerUrls))]
+        [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(LocalPipingServerUrls))]
         public async Task PostAndOneGetFileMultipartTest(string localPipingServerUrl)
         {
             using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));

@@ -102,7 +102,7 @@ namespace Piping
                 if (tcs.Task.IsCompleted)
                     return;
                 var _ContentDisposition = string.IsNullOrEmpty(fileName) ? null : $"{contentDisposition};filename='{fileName.Replace("'", "\\'")}';filename*=utf-8''{System.Web.HttpUtility.UrlEncode(fileName).Replace("+","%20")}";
-                tcs.TrySetResult((new MemoryStream(buffer), buffer.LongLength, contentType, _ContentDisposition));
+                tcs.TrySetResult((new MemoryStream(buffer, 0, bytes), buffer.LongLength, contentType, _ContentDisposition));
             };
             sm.ParameterHandler += (p) => {
                 if (tcs.Task.IsCompleted)

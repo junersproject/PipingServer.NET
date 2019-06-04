@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</RepoRoot>
+    <PathMap>$(RepoRoot)=.</PathMap>
+  </PropertyGroup>
+</Project>

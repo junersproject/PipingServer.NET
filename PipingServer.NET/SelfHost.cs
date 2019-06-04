@@ -7,7 +7,7 @@ namespace Piping
 {
     public class SelfHost : IDisposable
     {
-        ServiceHost Host;
+        ServiceHost? Host;
 
         public void Open(params Uri[] baseAddress)
         {

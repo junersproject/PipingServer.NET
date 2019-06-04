@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using static DebugUtils;
 
@@ -35,7 +36,53 @@ namespace Piping.Tests
                 var (_, _, _, Version) = await GetVersionAsync(BaseUri);
                 Trace.WriteLine($"VERSION: {Version}");
                 await PutAndGetTextMessageSimple(SendUri, message, Token: Source.Token);
-            }catch(HttpRequestException e)
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
+        }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
+        public async Task PostAndOneGetTextMultipartExample(string pipingServerUrl)
+        {
+            try
+            {
+                using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
+                var BaseUri = new Uri(pipingServerUrl);
+                var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PostAndOneGetTextMultipartExample));
+                var message1 = "Hello World.";
+                Trace.WriteLine($"BASE URL: {BaseUri}");
+                Trace.WriteLine($"TARGET URL: {SendUri}");
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
+                Trace.WriteLine($"VERSION: {Version}");
+                await PostAndGetMultipartTestMessageSimple(SendUri, message1, Token: Source.Token);
+            }
+            catch (HttpRequestException e)
+            {
+                ThrowIfCoundNotResolveRemoteName(e);
+                throw;
+            }
+        }
+        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
+        public async Task PostAndOneGetFileMultipartExample(string pipingServerUrl)
+        {
+            try
+            {
+                using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
+                var BaseUri = new Uri(pipingServerUrl);
+                var SendUri = new Uri(BaseUri.ToString().TrimEnd('/') + "/" + nameof(PostAndOneGetFileMultipartExample));
+                var message = "Hello World.";
+                Trace.WriteLine($"BASE URL: {BaseUri}");
+                Trace.WriteLine($"TARGET URL: {SendUri}");
+                var (_, _, _, Version) = await GetVersionAsync(BaseUri);
+                Trace.WriteLine($"VERSION: {Version}");
+                var FileName = "test.txt";
+                var MediaType = "text/plain";
+                var FileData = Encoding.UTF8.GetBytes(message);
+                await PostAndGetMultipartTestFileSimple(SendUri, FileName, MediaType, FileData, Source.Token);
+            }
+            catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
                 throw;

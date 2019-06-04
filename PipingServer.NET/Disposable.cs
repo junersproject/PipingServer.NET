@@ -1,10 +1,9 @@
 ﻿using System;
-
 namespace Piping
 {
     internal class Disposable : IDisposable
     {
-        Action Action;
+        Action? Action;
         Disposable(Action Action) => this.Action = Action;
         public static IDisposable Create(Action Action) => new Disposable(Action ?? throw new ArgumentNullException(nameof(Action)));
 

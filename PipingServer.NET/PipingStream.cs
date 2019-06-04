@@ -7,7 +7,7 @@ namespace Piping
 {
     public class PipingStream : Stream
     {
-        IDisposable[] Disposables;
+        readonly IDisposable[] Disposables;
         public PipingStream(params Stream[] outputStreams) : this((IEnumerable<Stream>)outputStreams) { }
         public PipingStream(IEnumerable<Stream> outputStreams) : base()
         {
@@ -22,7 +22,6 @@ namespace Piping
             }).ToArray();
         }
         public event EventHandler<BytesReadEventArgs> BytesRead;
-        public Stream[] OutputStreams { get; private set; }
         public override void Flush() { }
         public override long Seek(long offset, SeekOrigin origin)
             => throw new InvalidOperationException("Cannot seek in " + nameof(PipingStream));

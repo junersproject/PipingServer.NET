@@ -73,7 +73,7 @@ namespace Piping.Console
     }
     internal class Disposable : IDisposable
     {
-        Action Action;
+        readonly Action Action;
         Disposable(Action Action) => this.Action = Action;
         public static IDisposable Create(Action Action) => new Disposable(Action ?? throw new ArgumentNullException(nameof(Action)));
 
@@ -86,13 +86,12 @@ namespace Piping.Console
             {
                 if (disposing)
                 {
-                    try
-                    {
-                        Action?.Invoke();
-                    }
-                    catch { }
-                    Action = null;
                 }
+                try
+                {
+                    Action?.Invoke();
+                }
+                catch { }
                 disposedValue = true;
             }
         }

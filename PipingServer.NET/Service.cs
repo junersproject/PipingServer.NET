@@ -47,7 +47,7 @@ namespace Piping
                 else if (address.Scheme == "http")
                     HasNotSecure = true;
             }
-            Binding binding = null;
+            Binding? binding = null;
             if (HasSecure)
             {
                 var Mode = WebHttpSecurityMode.Transport;
@@ -174,18 +174,17 @@ namespace Piping
                     return Task.FromResult(NotImplemented(Context));
             }
         }
-        protected Stream BadRequest(WebOperationContext Context, string AndMessage = null)
+        protected Stream BadRequest(WebOperationContext Context, string AndMessage)
         {
             var Encoding = Context.OutgoingResponse.BindingWriteEncoding;
             Context.OutgoingResponse.StatusCode = HttpStatusCode.BadRequest;
-            var bytes = Encoding.GetBytes(AndMessage ?? " ");
+            var bytes = Encoding.GetBytes(AndMessage);
             Context.OutgoingResponse.ContentLength = bytes.Length;
             return new MemoryStream(bytes);
         }
 
-        public Stream Upload(Stream InputStream, string RelativeUri, WebOperationContext Context = null)
+        public Stream Upload(Stream InputStream, string RelativeUri, WebOperationContext Context)
         {
-            Context ??= WebOperationContext.Current;
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
                 return BadRequest(Context, $"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             var Key = new RequestKey(RelativeUri);
@@ -206,11 +205,7 @@ namespace Piping
                 return BadRequest(Context, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                return waiter.AddSender(Key, new ReqRes
-                {
-                    Context = Context,
-                    RequestStream = InputStream,
-                }, Encoding, 1024);
+                return waiter.AddSender(Key, new ReqRes(Context){ RequestStream = InputStream }, Encoding, 1024);
             }catch(InvalidOperationException e)
             {
                 return BadRequest(Context, e.Message);
@@ -218,11 +213,10 @@ namespace Piping
         }
         Stream IService.PostUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current);
         Stream IService.PutUpload(Stream InputStream) => Upload(InputStream, GetRelativeUri(), WebOperationContext.Current);
-        public async Task<Stream> DownloadAsync(string RelativeUri, WebOperationContext Context = null)
+        public async Task<Stream> DownloadAsync(string RelativeUri, WebOperationContext Context)
         {
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
                 return await Generator();
-            Context ??= WebOperationContext.Current;
             var ResponseStream = new MemoryStream();
             var Key = new RequestKey(RelativeUri);
             if (Key.Receivers <= 0)
@@ -234,10 +228,7 @@ namespace Piping
             }
             if (waiter.IsEstablished)
                 return BadRequest(Context, $"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
-            var rs = new ReqRes
-            {
-                Context = Context,
-            };
+            var rs = new ReqRes(Context);
             try
             {
                 var stream = new CloseRegisterStream(await waiter.AddReceiverAsync(rs));

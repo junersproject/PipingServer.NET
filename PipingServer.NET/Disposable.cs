@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace Piping
 {
     internal class Disposable : IDisposable

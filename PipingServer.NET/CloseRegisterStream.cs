@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -71,7 +70,6 @@ namespace Piping
         }
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
             => origin.CopyToAsync(destination, bufferSize, cancellationToken);
-        public override ObjRef CreateObjRef(Type requestedType) => origin.CreateObjRef(requestedType);
         public override int EndRead(IAsyncResult asyncResult) => origin.EndRead(asyncResult);
         public override void EndWrite(IAsyncResult asyncResult) => origin.EndWrite(asyncResult);
         public override bool Equals(object obj) => origin.Equals(obj);

@@ -17,7 +17,7 @@ namespace Piping
         public bool IsAddingCompleted => data.IsAddingCompleted;
         public bool IsCompleted => data.IsCompleted;
         public void CompleteAdding() => data.CompleteAdding();
-        public CompletableQueueStream() =>data = new BlockingCollection<byte[]>();
+        public CompletableQueueStream() => data = new BlockingCollection<byte[]>();
         public CompletableQueueStream(int boundedCapacity) => data = new BlockingCollection<byte[]>(boundedCapacity);
         public CompletableQueueStream(int? boundedCapacity = null, long? length = null)
             => (data, this.length) = (boundedCapacity is int _boundedCapacity ? new BlockingCollection<byte[]>(_boundedCapacity) : new BlockingCollection<byte[]>(), length);

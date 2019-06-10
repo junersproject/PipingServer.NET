@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Http;
 using HttpMultipartParser;
 using Microsoft.Extensions.Primitives;
+using Piping.Streams;
 
 namespace Piping
 {

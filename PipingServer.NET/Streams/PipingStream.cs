@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Piping
+namespace Piping.Streams
 {
     public class PipingStream : Stream
     {

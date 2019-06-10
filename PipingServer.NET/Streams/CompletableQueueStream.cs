@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 
-namespace Piping
+namespace Piping.Streams
 {
     /// <summary>
     /// Completable queue stream.

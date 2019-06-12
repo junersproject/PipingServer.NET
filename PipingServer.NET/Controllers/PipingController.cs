@@ -6,12 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Piping.Attributes;
 using Piping.Streams;
 
 namespace Piping.Controllers
 {
     [Route("")]
     [ApiController]
+    [DisableFormValueModelBinding]
     public class PipingController : ControllerBase
     {
         readonly ILogger<PipingController> logger;
@@ -40,6 +42,8 @@ namespace Piping.Controllers
         [HttpPost("/{**RelativeUri}")]
         public IActionResult Upload(string RelativeUri)
         {
+            if (HttpContext.Request.Body.CanSeek)
+                HttpContext.Request.Body.Seek(0, SeekOrigin.Begin);
             RelativeUri = "/" + RelativeUri.TrimStart('/').ToLower();
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
                 return BadRequest($"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");

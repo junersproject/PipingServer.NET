@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Piping.Streams
 {
@@ -9,6 +11,8 @@ namespace Piping.Streams
     /// </summary>
     public class CompletableQueueStream : Stream
     {
+        readonly bool isWritableMode = true;
+        public static CompletableQueueStream Empty { get; } = new CompletableQueueStream(false);
         readonly BlockingCollection<byte[]> data;
         byte[] _currentBlock = Array.Empty<byte>();
         public int BoundedCapacity => data.BoundedCapacity;
@@ -19,15 +23,13 @@ namespace Piping.Streams
         public void CompleteAdding() => data.CompleteAdding();
         public CompletableQueueStream() => data = new BlockingCollection<byte[]>();
         public CompletableQueueStream(int boundedCapacity) => data = new BlockingCollection<byte[]>(boundedCapacity);
-        public CompletableQueueStream(int? boundedCapacity = null, long? length = null)
-            => (data, this.length) = (boundedCapacity is int _boundedCapacity ? new BlockingCollection<byte[]>(_boundedCapacity) : new BlockingCollection<byte[]>(), length);
-        public override bool CanRead => true;
+        private CompletableQueueStream(bool isWritableMode) : this(1) => this.isWritableMode = isWritableMode;
+        public override bool CanRead => isWritableMode;
 
         public override bool CanSeek => false;
 
-        public override bool CanWrite => !data.IsAddingCompleted;
-        long? length = null;
-        public override long Length => length ?? throw new NotSupportedException();
+        public override bool CanWrite => isWritableMode && !data.IsAddingCompleted;
+        public override long Length => throw new NotSupportedException();
 
         public override long Position { get => throw new NotSupportedException(); set => throw new NotImplementedException(); }
 
@@ -38,6 +40,8 @@ namespace Piping.Streams
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (!CanRead)
+                throw new InvalidOperationException();
             if (_currentBlock.Length == 0 || _currentBlockIndex == _currentBlock.Length)
                 if (!GetNextBlock())
                     return 0;
@@ -51,15 +55,15 @@ namespace Piping.Streams
         /// Loads the next block in to <see cref="_currentBlock"/>
         /// </summary>
         /// <returns>True if the next block was retrieved.</returns>
-        private bool GetNextBlock()
+        private bool GetNextBlock(CancellationToken Token = default)
         {
-            if (!data.TryTake(out _currentBlock))
+            if (!data.TryTake(out _currentBlock, Timeout.Infinite, Token))
             {
                 if (data.IsCompleted)
                     return false;
                 try
                 {
-                    _currentBlock = data.Take();
+                    _currentBlock = data.Take(Token);
                 }
                 catch (InvalidOperationException)
                 {
@@ -76,6 +80,8 @@ namespace Piping.Streams
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (!CanWrite)
+                throw new InvalidOperationException();
             var localArray = new byte[count];
             Array.Copy(buffer, offset, localArray, 0, count);
             data.Add(localArray);

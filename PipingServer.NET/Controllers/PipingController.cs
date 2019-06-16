@@ -63,8 +63,7 @@ namespace Piping.Controllers
                 return BadRequest($"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                var ResponseStream = waiter.AddSender(Key, HttpContext, Encoding, 1024);
-                return new FileStreamResult(ResponseStream, HttpContext.Response.Headers["Content-Type"]);
+                return waiter.AddSender(Key, HttpContext, Encoding, 1024);
             }catch(InvalidOperationException e)
             {
                 return BadRequest(e.Message);
@@ -72,13 +71,12 @@ namespace Piping.Controllers
         }
 
         [HttpGet("/{**RelativeUri}")]
-        public async Task<IActionResult> DownloadAsync(string RelativeUri)
+        public async Task<IActionResult?> DownloadAsync(string RelativeUri)
         {
             var Context = HttpContext;
             RelativeUri = "/" + RelativeUri.TrimStart('/').ToLower();
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
                 return Generator();
-            var ResponseStream = new MemoryStream();
             var Key = new RequestKey(RelativeUri);
             if (Key.Receivers <= 0)
                 return BadRequest($"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
@@ -91,23 +89,56 @@ namespace Piping.Controllers
                 return BadRequest($"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                var stream = new CloseRegisterStream(await waiter.AddReceiverAsync(Context));
-                stream.Closed += (obj, args) =>
+                var Result = await waiter.AddReceiverAsync(Context);
+                Result.OnFinally += (self, args) =>
                 {
-                    waiter.UnRegisterReceiver(Context);
+                    waiter.UnRegisterReceiver(Result);
                     if (waiter.ReceiversIsEmpty)
                     {
                         pathToUnestablishedPipe.Remove(Key.LocalPath);
                         waiter.Dispose();
                     }
                 };
-                return File(stream, Context.Response.Headers["Content-Type"]);
+                return Result;
             }
             catch (Exception e)
             {
-                waiter.UnRegisterReceiver(Context);
                 return BadRequest(e.Message);
             }
+        }
+        [HttpGet("/test")]
+        public IActionResult TestAsync()
+        {
+            var Context = HttpContext;
+            var Token = Context.RequestAborted;
+            var Stream = new CompletableQueueStream();
+            var Result = new CompletableStreamResult()
+            {
+                Stream = Stream,
+                ContentType = $"text/plain; charset={Encoding.WebName}",
+            };
+            Task.Run(async() =>
+            {;
+                foreach (var number in Enumerable.Range(1, 500))
+                {
+                    using var writer = new StreamWriter(Context.Response.Body, Encoding, 1024, true);
+                    await writer.WriteLineAsync($"[info] call number {number} {DateTime.Now:yyyy/MM/dd hh:mm:ss}".AsMemory(), Token);
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(1), Token);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        return;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                }
+                Stream.CompleteAdding();
+            });
+            return Result;
         }
         [HttpGet("/")]
         public IActionResult Index() => Content(Properties.Resources.index, $"text/html; charset={Encoding.WebName}", Encoding);

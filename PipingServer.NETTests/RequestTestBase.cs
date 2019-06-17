@@ -334,10 +334,9 @@ namespace Piping.Tests
                     var buffer = new byte[1024];
                     var Bytes = new List<byte>();
                     int Count;
-                    while (0 < (Count = await stream.ReadAsync(buffer,0, buffer.Length, Token)))
+                    while (0 < (Count = await stream.ReadAsync(buffer, 0, buffer.Length, Token)))
                     {
-                        Trace.WriteLine($"[RECEIVE BYTES] : {string.Join(" ",buffer.
-                            (Count).Select(v => $"{v:X2}"))}");
+                        Trace.WriteLine($"[RECEIVE BYTES] : {string.Join(" ", buffer.Take(Count).Select(v => $"{v:X2}"))}");
                         Bytes.AddRange(buffer.Take(Count));
                     }
                     return (Bytes.ToArray(), ContentType, FileName);

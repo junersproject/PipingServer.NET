@@ -19,9 +19,10 @@ namespace Piping
         public bool IsEstablished { private set; get; } = false;
         public bool IsSetSenderComplete { private set; get; } = false;
         List<CompletableStreamResult> Receivers = new List<CompletableStreamResult>();
-        public bool UnRegisterReceiver(CompletableStreamResult Receiver) => Receivers.Remove(Receiver);
-        public bool ReceiversIsEmpty => !Receivers.Any();
+        public bool ReceiversIsEmpty => ReceiversCount <= 0;
         int ReceiversCount = 1;
+        public void DecrementReceivers() => ReceiversCount--;
+        public Waiters() { }
         public Waiters(int ReceiversCount)
             => (this.ReceiversCount) = (ReceiversCount);
         public bool IsReady() => IsSetSenderComplete && Receivers.Count == ReceiversCount;
@@ -41,30 +42,37 @@ namespace Piping
             var ResponseStream = Result.Stream;
             _ = Task.Run(async () =>
             {
-                using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
+                try
                 {
-                    await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...".AsMemory(), Token);
-                    await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.".AsMemory(), Token);
+                    using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
+                    {
+                        await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...".AsMemory(), Token);
+                        await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.".AsMemory(), Token);
+                    }
+                    if (IsReady())
+                        ReadyTaskSource.TrySetResult(true);
+                    else
+                        await ReadyTaskSource.Task;
+                    var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
+                    using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
+                        await writer.WriteLineAsync($"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}");
+                    IsEstablished = true;
+                    var Buffers = Receivers.Select(Response =>
+                    {
+                        Response.ContentLength = ContentLength;
+                        Response.ContentType = ContentType;
+                        Response.ContentDisposition = ContentDisposition;
+                        return Response.Stream;
+                    });
+                    using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
+                        await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!".AsMemory(), Token);
+                    _ = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
+                    ResponseTaskSource.TrySetResult(true);
+                } catch(Exception e) {
+                    ResponseTaskSource.TrySetException(e);
+                } finally {
+                    Receivers.Clear();
                 }
-                if (IsReady())
-                    ReadyTaskSource.TrySetResult(true);
-                else
-                    await ReadyTaskSource.Task;
-                var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
-                using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
-                    await writer.WriteLineAsync($"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}");
-                IsEstablished = true;
-                var Buffers = Receivers.Select(Response =>
-                {
-                    Response.ContentLength = ContentLength;
-                    Response.ContentType = ContentType;
-                    Response.ContentDisposition = ContentDisposition;
-                    return Response.Stream;
-                });
-                using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
-                    await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!".AsMemory(), Token);
-                _ = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
-                ResponseTaskSource.TrySetResult(true);
             });
             return Result;
         }
@@ -127,33 +135,25 @@ namespace Piping
                 Request.ContentType,
                 Request.Headers["Content-Disposition"] == StringValues.Empty ? null : string.Join(" ", Request.Headers["Content-Disposition"])
             );
-        void SetResponse(HttpResponse Response, long? ContentLength, string? ContentType, string? ContentDisposition)
-        {
-            if (ContentType is string _ContentType)
-                Response.ContentType = _ContentType!;
-            if (ContentLength is long _ContentLength)
-                Response.ContentLength = _ContentLength;
-            if (ContentDisposition is string _ContentDisposition)
-                Response.Headers["Content-Disposition"] = _ContentDisposition;
-        }
         public async Task<CompletableStreamResult> AddReceiverAsync(HttpResponse Response, CancellationToken Token = default)
         {
-            var Result = new CompletableStreamResult
-            {
-                Stream = new CompletableQueueStream(),
-                AccessControlAllowOrigin = "*",
-                AccessControlExposeHeaders = "Content-Length, Content-Type",
-            };
             try
             {
+                var Result = new CompletableStreamResult
+                {
+                    Stream = new CompletableQueueStream(),
+                    AccessControlAllowOrigin = "*",
+                    AccessControlExposeHeaders = "Content-Length, Content-Type",
+                };
                 Receivers.Add(Result);
                 if (IsReady())
                     ReadyTaskSource.TrySetResult(true);
                 await ResponseTaskSource.Task;
                 return Result;
-            }catch(Exception)
+            }
+            catch (Exception)
             {
-                UnRegisterReceiver(Result);
+                DecrementReceivers();
                 throw;
             }
         }

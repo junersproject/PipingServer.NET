@@ -92,7 +92,7 @@ namespace Piping.Controllers
                 var Result = await waiter.AddReceiverAsync(Context);
                 Result.OnFinally += (self, args) =>
                 {
-                    waiter.UnRegisterReceiver(Result);
+                    waiter.DecrementReceivers();
                     if (waiter.ReceiversIsEmpty)
                     {
                         pathToUnestablishedPipe.Remove(Key.LocalPath);

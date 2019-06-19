@@ -13,11 +13,20 @@ namespace Piping.Streams
         {
             Disposables = outputStreams.Select(stream =>
             {
+                IDisposable? disposable = null;
                 BytesRead += action;
-                return Disposable.Create(() => BytesRead -= action);
+                disposable = Disposable.Create(() => BytesRead -= action);
+                return disposable!;
                 void action(object self, BytesReadEventArgs args)
                 {
-                    stream.Write(args.Buffer, 0, args.Buffer.Length);
+                    try
+                    {
+                        stream.Write(args.Buffer.Span);
+                    }
+                    catch (Exception)
+                    {
+                        disposable?.Dispose();
+                    }
                 }
             }).ToArray();
         }

@@ -17,6 +17,7 @@ namespace Piping.Controllers
     public class PipingController : ControllerBase
     {
         readonly ILogger<PipingController> logger;
+        readonly ILoggerFactory loggerFactory;
         const string DICTIONARY = "DICTIONARY";
         /// <summary>
         /// グローバル辞書
@@ -25,9 +26,10 @@ namespace Piping.Controllers
         internal Version GetVersion() => GetType().Assembly.GetName().Version;
         internal IReadOnlyDictionary<string, Func<IActionResult>> NAME_TO_RESERVED_PATH;
         private Encoding Encoding = new UTF8Encoding(false);
-        public PipingController(ILogger<PipingController> logger, IWaiterDictionary pathToUnestablishedPipe)
+        public PipingController(ILoggerFactory loggerFactory, IWaiterDictionary pathToUnestablishedPipe)
         {
-            this.logger = logger;
+            this.loggerFactory = loggerFactory;
+            logger = loggerFactory.CreateLogger<PipingController>();
             this.pathToUnestablishedPipe = pathToUnestablishedPipe;
             NAME_TO_RESERVED_PATH = new Dictionary<string, Func<IActionResult>>
             {
@@ -50,13 +52,13 @@ namespace Piping.Controllers
             var Key = new RequestKey(RelativeUri);
             if (Key.Receivers <= 0)
                 return BadRequest($"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
-            logger?.LogTrace(string.Join(" ",pathToUnestablishedPipe.Select(v => $"{ v.Key }:{v.Value}")));
+            logger?.LogInformation(string.Join(" ",pathToUnestablishedPipe.Select(v => $"{ v.Key }:{v.Value}")));
 
             // If the path connection is connecting
             // Get unestablished pipe
             if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
-                waiter = new Waiters(Key.Receivers);
+                waiter = new Waiters(Key.Receivers, loggerFactory);
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             if (waiter.IsEstablished)
@@ -82,7 +84,7 @@ namespace Piping.Controllers
                 return BadRequest($"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
             if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
-                waiter = new Waiters(Key.Receivers);
+                waiter = new Waiters(Key.Receivers, loggerFactory);
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             if (waiter.IsEstablished)
@@ -93,17 +95,22 @@ namespace Piping.Controllers
                 Result.OnFinally += (self, args) =>
                 {
                     waiter.DecrementReceivers();
-                    if (waiter.ReceiversIsEmpty)
-                    {
-                        pathToUnestablishedPipe.Remove(Key.LocalPath);
-                        waiter.Dispose();
-                    }
+                    Remove();
                 };
                 return Result;
             }
             catch (Exception e)
             {
+                Remove();
                 return BadRequest(e.Message);
+            }
+            void Remove()
+            {
+                if (waiter.ReceiversIsEmpty)
+                {
+                    pathToUnestablishedPipe.Remove(Key.LocalPath);
+                    waiter.Dispose();
+                }
             }
         }
         [HttpGet("/test")]
@@ -112,15 +119,18 @@ namespace Piping.Controllers
             var Context = HttpContext;
             var Token = Context.RequestAborted;
             var Stream = new CompletableQueueStream();
-            var Result = new CompletableStreamResult()
+            var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
             {
                 Stream = Stream,
                 ContentType = $"text/plain; charset={Encoding.WebName}",
             };
             Task.Run(async() =>
             {;
+                using var l = logger.BeginLogInformationScope("async TaskAsync Run");
                 foreach (var number in Enumerable.Range(1, 500))
                 {
+                    if (Token.IsCancellationRequested)
+                        return;
                     using var writer = new StreamWriter(Context.Response.Body, Encoding, 1024, true);
                     await writer.WriteLineAsync($"[info] call number {number} {DateTime.Now:yyyy/MM/dd hh:mm:ss}".AsMemory(), Token);
                     try

@@ -9,11 +9,14 @@ using Microsoft.AspNetCore.Http;
 using HttpMultipartParser;
 using Microsoft.Extensions.Primitives;
 using Piping.Streams;
+using Microsoft.Extensions.Logging;
 
 namespace Piping
 {
     public class Waiters : IWaiters
     {
+        readonly ILoggerFactory loggerFactory;
+        readonly ILogger<Waiters> logger;
         TaskCompletionSource<bool> ReadyTaskSource => new TaskCompletionSource<bool>();
         TaskCompletionSource<bool> ResponseTaskSource => new TaskCompletionSource<bool>();
         public bool IsEstablished { private set; get; } = false;
@@ -22,17 +25,19 @@ namespace Piping
         public bool ReceiversIsEmpty => ReceiversCount <= 0;
         int ReceiversCount = 1;
         public void DecrementReceivers() => ReceiversCount--;
-        public Waiters() { }
-        public Waiters(int ReceiversCount)
-            => (this.ReceiversCount) = (ReceiversCount);
+        public Waiters(ILoggerFactory loggerFactory)
+            => (this.loggerFactory, logger) = (loggerFactory, loggerFactory.CreateLogger<Waiters>());
+        public Waiters(int ReceiversCount, ILoggerFactory loggerFactory)
+            => (this.ReceiversCount, this.loggerFactory, this.logger) = (ReceiversCount, loggerFactory, loggerFactory.CreateLogger<Waiters>());
         public bool IsReady() => IsSetSenderComplete && Receivers.Count == ReceiversCount;
         public CompletableStreamResult AddSender(RequestKey Key, HttpRequest Request, HttpResponse Response, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
+            using var l = logger.BeginLogInformationScope(nameof(AddSender));
             if (IsSetSenderComplete)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {Receivers.Count} but ${Receivers}.\n");
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
-            var Result = new CompletableStreamResult
+            var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
             {
                 Stream = new CompletableQueueStream(),
                 ContentType = $"text/plain;charset={Encoding.WebName}",
@@ -42,6 +47,7 @@ namespace Piping
             var ResponseStream = Result.Stream;
             _ = Task.Run(async () =>
             {
+                using var l = logger.BeginLogInformationScope("async " + nameof(AddSender) + " Run");
                 try
                 {
                     using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
@@ -68,9 +74,13 @@ namespace Piping
                         await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!".AsMemory(), Token);
                     _ = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
                     ResponseTaskSource.TrySetResult(true);
-                } catch(Exception e) {
+                }
+                catch (Exception e)
+                {
                     ResponseTaskSource.TrySetException(e);
-                } finally {
+                }
+                finally
+                {
                     Receivers.Clear();
                 }
             });
@@ -80,8 +90,9 @@ namespace Piping
             => IsMultiForm(Request.Headers) ? await GetPartStreamAsync(Request.Body, Encoding, BufferSize, Token) : GetRequestStream(Request);
         private static bool IsMultiForm(IHeaderDictionary Headers)
             => (Headers["Content-Type"].Any(v => v.ToLower().IndexOf("multipart/form-data") == 0));
-        private static async Task PipingAsync(Stream RequestStream, Stream InfomationStream, IEnumerable<Stream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
+        private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
+            using var l = logger.BeginLogInformationScope(nameof(PipingAsync));
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
@@ -91,15 +102,12 @@ namespace Piping
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
                 using (var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true))
                     await writer.WriteLineAsync("[INFO] Sending successful!".AsMemory(), Token);
-                await InfomationStream.FlushAsync(Token);
             }
             finally
             {
                 foreach (var b in Buffers)
-                    if (b is CompletableQueueStream _b)
-                        _b.CompleteAdding();
-                if (InfomationStream is CompletableQueueStream __b)
-                    __b.CompleteAdding();
+                    b.CompleteAdding();
+                InfomationStream.CompleteAdding();
             }
         }
         Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(Stream Stream, Encoding Encoding, int bufferSize, CancellationToken Token = default)
@@ -137,9 +145,10 @@ namespace Piping
             );
         public async Task<CompletableStreamResult> AddReceiverAsync(HttpResponse Response, CancellationToken Token = default)
         {
+            using var l = logger.BeginLogInformationScope(nameof(AddReceiverAsync));
             try
             {
-                var Result = new CompletableStreamResult
+                var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
                 {
                     Stream = new CompletableQueueStream(),
                     AccessControlAllowOrigin = "*",

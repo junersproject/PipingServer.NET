@@ -42,7 +42,7 @@ namespace Piping.Controllers
         }
         [HttpPut("/{**RelativeUri}")]
         [HttpPost("/{**RelativeUri}")]
-        public IActionResult Upload(string RelativeUri)
+        public async Task<IActionResult> UploadAsync(string RelativeUri)
         {
             if (HttpContext.Request.Body.CanSeek)
                 HttpContext.Request.Body.Seek(0, SeekOrigin.Begin);
@@ -65,7 +65,7 @@ namespace Piping.Controllers
                 return BadRequest($"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                return waiter.AddSender(Key, HttpContext, Encoding, 1024);
+                return await waiter.AddSenderAsync(Key, HttpContext, Encoding, 1024);
             }catch(InvalidOperationException e)
             {
                 return BadRequest(e.Message);

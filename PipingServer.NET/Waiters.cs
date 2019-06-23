@@ -30,11 +30,12 @@ namespace Piping
         public Waiters(int ReceiversCount, ILoggerFactory loggerFactory)
             => (this.ReceiversCount, this.loggerFactory, this.logger) = (ReceiversCount, loggerFactory, loggerFactory.CreateLogger<Waiters>());
         public bool IsReady() => IsSetSenderComplete && Receivers.Count == ReceiversCount;
-        public CompletableStreamResult AddSender(RequestKey Key, HttpRequest Request, HttpResponse Response, Encoding Encoding, int BufferSize, CancellationToken Token = default)
+        public async Task<CompletableStreamResult> AddSenderAsync(RequestKey Key, HttpRequest Request, HttpResponse Response, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
-            using var l = logger.BeginLogInformationScope(nameof(AddSender));
+            string message;
+            using var l = logger.BeginLogInformationScope(nameof(AddSenderAsync));
             if (IsSetSenderComplete)
-                throw new InvalidOperationException($"[ERROR] The number of receivers should be {Receivers.Count} but ${Receivers}.\n");
+                throw new InvalidOperationException($"[ERROR] The number of receivers should be {ReceiversCount} but ${Receivers.Count}.\n");
             if (Key.Receivers != ReceiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
             var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
@@ -45,23 +46,29 @@ namespace Piping
             IsSetSenderComplete = true;
             var DataTask = GetDataAsync(Request, Encoding, BufferSize, Token);
             var ResponseStream = Result.Stream;
+
+            message = $"[INFO] Waiting for {ReceiversCount} receiver(s)...";
+            logger.LogInformation(message);
+            await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
+            message = $"[INFO] {Receivers.Count} receiver(s) has/have been connected.";
+            logger.LogInformation(message);
+            await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
+            
             _ = Task.Run(async () =>
             {
-                using var l = logger.BeginLogInformationScope("async " + nameof(AddSender) + " Run");
+                using var l = logger.BeginLogInformationScope("async " + nameof(AddSenderAsync) + " Run");
                 try
                 {
-                    using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
-                    {
-                        await writer.WriteLineAsync($"[INFO] Waiting for ${ReceiversCount} receiver(s)...".AsMemory(), Token);
-                        await writer.WriteLineAsync($"[INFO] {Receivers.Count} receiver(s) has/have been connected.".AsMemory(), Token);
-                    }
                     if (IsReady())
                         ReadyTaskSource.TrySetResult(true);
                     else
-                        await ReadyTaskSource.Task;
+                        using (Token.Register(() => ReadyTaskSource.TrySetCanceled(Token)))
+                            await ReadyTaskSource.Task;
                     var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
-                    using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
-                        await writer.WriteLineAsync($"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}");
+                    message = $"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}";
+                    logger.LogInformation(message);
+                    await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
+
                     IsEstablished = true;
                     var Buffers = Receivers.Select(Response =>
                     {
@@ -70,13 +77,17 @@ namespace Piping
                         Response.ContentDisposition = ContentDisposition;
                         return Response.Stream;
                     });
-                    using (var writer = new StreamWriter(ResponseStream, Encoding, BufferSize, true))
-                        await writer.WriteLineAsync($"[INFO] Start sending with {Receivers.Count} receiver(s)!".AsMemory(), Token);
-                    _ = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
+                    message = $"[INFO] Start sending with {Receivers.Count} receiver(s)!";
+                    logger.LogInformation(message);
+                    await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
+
+                    var PipingTask = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
                     ResponseTaskSource.TrySetResult(true);
+                    await PipingTask;
                 }
                 catch (Exception e)
                 {
+                    logger.LogError(e,nameof(AddSenderAsync));
                     ResponseTaskSource.TrySetException(e);
                 }
                 finally
@@ -100,8 +111,11 @@ namespace Piping
             {
                 while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
                     await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
-                using (var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true))
-                    await writer.WriteLineAsync("[INFO] Sending successful!".AsMemory(), Token);
+                var Message = "[INFO] Sending successful!";
+                logger.LogInformation(Message);
+                await SendMessageAsync(InfomationStream, Encoding, BufferSize, Message);
+                using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
+                
             }
             finally
             {
@@ -165,6 +179,11 @@ namespace Piping
                 DecrementReceivers();
                 throw;
             }
+        }
+        private async Task SendMessageAsync(Stream Stream, Encoding Encoding, int BufferSize, string Message, CancellationToken Token = default)
+        {
+            using var writer = new StreamWriter(Stream, Encoding, BufferSize, true);
+            await writer.WriteLineAsync(Message.AsMemory(), Token);
         }
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには

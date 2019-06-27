@@ -10,6 +10,7 @@ using HttpMultipartParser;
 using Microsoft.Extensions.Primitives;
 using Piping.Streams;
 using Microsoft.Extensions.Logging;
+using System.Numerics;
 
 namespace Piping
 {
@@ -19,25 +20,55 @@ namespace Piping
         readonly ILogger<Waiters> logger;
         TaskCompletionSource<bool> ReadyTaskSource => new TaskCompletionSource<bool>();
         TaskCompletionSource<bool> ResponseTaskSource => new TaskCompletionSource<bool>();
+        /// <summary>
+        /// 待ち合わせが完了しているかどうか
+        /// </summary>
         public bool IsEstablished { private set; get; } = false;
+        /// <summary>
+        /// Sender が設定済み
+        /// </summary>
         public bool IsSetSenderComplete { private set; get; } = false;
+        /// <summary>
+        /// Receivers が設定済み
+        /// </summary>
+        public bool IsSetReceiversComplete => IsEstablished ? true : Receivers.Count == _receiversCount;
         List<CompletableStreamResult> Receivers = new List<CompletableStreamResult>();
-        public bool ReceiversIsEmpty => ReceiversCount <= 0;
-        int ReceiversCount = 1;
-        public void DecrementReceivers() => ReceiversCount--;
+        /// <summary>
+        /// Receivers が空
+        /// </summary>
+        public bool ReceiversIsEmpty => _receiversCount <= 0;
+        int _receiversCount = 1;
+        public int ReceiversCount
+        {
+            get => _receiversCount;
+            set
+            {
+                // 完了してたらNG
+                if (IsEstablished
+                    || IsSetSenderComplete
+                    || IsSetReceiversComplete)
+                    throw new InvalidOperationException();
+                if (value <= 0)
+                    throw new ArgumentException($"{nameof(ReceiversCount)} is 1 or letter.");
+                _receiversCount = value;
+                if (_receiversCount == Receivers.Count)
+                    ReadyTaskSource.TrySetResult(true);
+            }
+        }
+        public void DecrementReceivers() => _receiversCount--;
         public Waiters(ILoggerFactory loggerFactory)
             => (this.loggerFactory, logger) = (loggerFactory, loggerFactory.CreateLogger<Waiters>());
         public Waiters(int ReceiversCount, ILoggerFactory loggerFactory)
-            => (this.ReceiversCount, this.loggerFactory, this.logger) = (ReceiversCount, loggerFactory, loggerFactory.CreateLogger<Waiters>());
-        public bool IsReady() => IsSetSenderComplete && Receivers.Count == ReceiversCount;
+            => (this._receiversCount, this.loggerFactory, this.logger) = (ReceiversCount, loggerFactory, loggerFactory.CreateLogger<Waiters>());
+        public bool IsReady() => IsSetSenderComplete && Receivers.Count == _receiversCount;
         public async Task<CompletableStreamResult> AddSenderAsync(RequestKey Key, HttpRequest Request, HttpResponse Response, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
             string message;
             using var l = logger.BeginLogInformationScope(nameof(AddSenderAsync));
             if (IsSetSenderComplete)
-                throw new InvalidOperationException($"[ERROR] The number of receivers should be {ReceiversCount} but ${Receivers.Count}.\n");
-            if (Key.Receivers != ReceiversCount)
-                throw new InvalidOperationException($"[ERROR] The number of receivers should be ${ReceiversCount} but {Key.Receivers}.");
+                throw new InvalidOperationException($"[ERROR] The number of receivers should be {_receiversCount} but ${Receivers.Count}.\n");
+            if (Key.Receivers != _receiversCount)
+                throw new InvalidOperationException($"[ERROR] The number of receivers should be ${_receiversCount} but {Key.Receivers}.");
             var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
             {
                 Stream = new CompletableQueueStream(),
@@ -47,7 +78,7 @@ namespace Piping
             var DataTask = GetDataAsync(Request, Encoding, BufferSize, Token);
             var ResponseStream = Result.Stream;
 
-            message = $"[INFO] Waiting for {ReceiversCount} receiver(s)...";
+            message = $"[INFO] Waiting for {_receiversCount} receiver(s)...";
             logger.LogInformation(message);
             await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
             message = $"[INFO] {Receivers.Count} receiver(s) has/have been connected.";
@@ -107,11 +138,15 @@ namespace Piping
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
+            var byteCounter = 0L;
             try
             {
                 while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
-                    await Stream.WriteAsync(buffer, 0, bytesRead, Token).ConfigureAwait(false);
-                var Message = "[INFO] Sending successful!";
+                {
+                    await Stream.WriteAsync(buffer.AsMemory().Slice(0, bytesRead), Token).ConfigureAwait(false);
+                    byteCounter += bytesRead;
+                }
+                var Message = $"[INFO] Sending successful! {byteCounter} bytes.";
                 logger.LogInformation(Message);
                 await SendMessageAsync(InfomationStream, Encoding, BufferSize, Message);
                 using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);

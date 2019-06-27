@@ -59,9 +59,7 @@ namespace Piping
                     while (!Token.IsCancellationRequested
                         && (length = await Stream.ReadAsync(buffer, Token)) > 0)
                     {
-                        logger.LogInformation(nameof(ExecuteResultAsync) + " OUTPUT");
                         await Response.Body.WriteAsync(buffer.Slice(0, length), Token);
-                        await Response.Body.FlushAsync(Token);
                     }
                 }
             }

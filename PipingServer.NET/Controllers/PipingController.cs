@@ -131,8 +131,8 @@ namespace Piping.Controllers
                 {
                     if (Token.IsCancellationRequested)
                         return;
-                    using var writer = new StreamWriter(Context.Response.Body, Encoding, 1024, true);
-                    await writer.WriteLineAsync($"[info] call number {number} {DateTime.Now:yyyy/MM/dd hh:mm:ss}".AsMemory(), Token);
+                    using (var writer = new StreamWriter(Context.Response.Body, Encoding, 1024, true))
+                        await writer.WriteLineAsync($"[info] call number {number} {DateTime.Now:yyyy/MM/dd hh:mm:ss}".AsMemory(), Token);
                     try
                     {
                         await Task.Delay(TimeSpan.FromSeconds(1), Token);

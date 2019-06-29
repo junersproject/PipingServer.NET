@@ -94,7 +94,7 @@ namespace Piping.Controllers
                 var Result = await waiter.AddReceiverAsync(Context);
                 Result.OnFinally += (self, args) =>
                 {
-                    waiter.DecrementReceivers();
+                    waiter.RemoveReceiver(Result);
                     Remove();
                 };
                 return Result;

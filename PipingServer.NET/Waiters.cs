@@ -38,6 +38,9 @@ namespace Piping
         /// </summary>
         public bool ReceiversIsEmpty => _receiversCount <= 0;
         int _receiversCount = 1;
+        /// <summary>
+        /// 受け取り数
+        /// </summary>
         public int ReceiversCount
         {
             get => _receiversCount;
@@ -55,7 +58,12 @@ namespace Piping
                     ReadyTaskSource.TrySetResult(true);
             }
         }
-        public void DecrementReceivers() => _receiversCount--;
+        /// <summary>
+        /// 設定した Receiver を削除する
+        /// </summary>
+        /// <param name="Result"></param>
+        /// <returns></returns>
+        public bool RemoveReceiver(CompletableStreamResult Result) => Receivers.Remove(Result);
         public Waiters(ILoggerFactory loggerFactory)
             => (this.loggerFactory, logger) = (loggerFactory, loggerFactory.CreateLogger<Waiters>());
         public Waiters(int ReceiversCount, ILoggerFactory loggerFactory)
@@ -195,15 +203,16 @@ namespace Piping
         public async Task<CompletableStreamResult> AddReceiverAsync(HttpResponse Response, CancellationToken Token = default)
         {
             using var l = logger.BeginLogInformationScope(nameof(AddReceiverAsync));
+            var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
+            {
+                Stream = new CompletableQueueStream(),
+                AccessControlAllowOrigin = "*",
+                AccessControlExposeHeaders = "Content-Length, Content-Type",
+            };
+            using var r = Token.Register(() => RemoveReceiver(Result));
+            Receivers.Add(Result);
             try
             {
-                var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
-                {
-                    Stream = new CompletableQueueStream(),
-                    AccessControlAllowOrigin = "*",
-                    AccessControlExposeHeaders = "Content-Length, Content-Type",
-                };
-                Receivers.Add(Result);
                 if (IsReady())
                     ReadyTaskSource.TrySetResult(true);
                 await ResponseTaskSource.Task;
@@ -211,7 +220,7 @@ namespace Piping
             }
             catch (Exception)
             {
-                DecrementReceivers();
+                RemoveReceiver(Result);
                 throw;
             }
         }

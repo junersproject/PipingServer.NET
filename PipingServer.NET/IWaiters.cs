@@ -12,7 +12,8 @@ namespace Piping
         bool IsEstablished { get; }
         bool IsSetSenderComplete { get; }
         bool ReceiversIsEmpty { get; }
-        void DecrementReceivers();
+        int ReceiversCount { get; set; }
+        bool RemoveReceiver(CompletableStreamResult Result);
         public Task<CompletableStreamResult> AddReceiverAsync(HttpContext Receiver) => AddReceiverAsync(Receiver.Response, Receiver.RequestAborted);
         Task<CompletableStreamResult> AddReceiverAsync(HttpResponse Receiver, CancellationToken Token = default);
         public Task<CompletableStreamResult> AddSenderAsync(RequestKey Key, HttpContext Context, Encoding Encoding, int BufferSize) => AddSenderAsync(Key, Context.Request, Context.Response, Encoding, BufferSize, Context.RequestAborted);

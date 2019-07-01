@@ -200,7 +200,7 @@ namespace Piping
                 Request.ContentType,
                 Request.Headers["Content-Disposition"] == StringValues.Empty ? null : string.Join(" ", Request.Headers["Content-Disposition"])
             );
-        public async Task<CompletableStreamResult> AddReceiverAsync(HttpResponse Response, CancellationToken Token = default)
+        public async Task<CompletableStreamResult> AddReceiverAsync(CancellationToken Token = default)
         {
             using var l = logger.BeginLogInformationScope(nameof(AddReceiverAsync));
             var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())

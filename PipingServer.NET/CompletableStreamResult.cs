@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Piping.Streams;
 
@@ -12,7 +14,20 @@ namespace Piping
     {
         readonly ILogger<CompletableStreamResult> logger;
         public CompletableQueueStream Stream { get; set; } = CompletableQueueStream.Empty;
-        public event EventHandler OnFinally; 
+        public event EventHandler OnFinally;
+        public void FireFinally(ActionContext? context = null)
+        {
+            try
+            {
+                OnFinally?.Invoke(context, new EventArgs());
+            }
+            catch (Exception)
+            {
+
+            }
+            foreach (var d in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
+                OnFinally -= d;
+        }
         public int? StatusCode { get; set; }
         public long? ContentLength { get; set; } = null;
         public string? ContentType { get; set; } = null;
@@ -24,7 +39,7 @@ namespace Piping
             => this.logger = logger;
         public CompletableStreamResult(ILogger<CompletableStreamResult> logger, CompletableQueueStream? Stream = null, long? ContentLength = null, string? ContentType = null, string? ContentDisposition = null)
             => (this.logger, this.Stream, this.ContentLength, this.ContentType, this.ContentDisposition) = (logger, Stream ?? CompletableQueueStream.Empty, ContentLength, ContentType, ContentDisposition);
-        protected void SetHeader(HttpResponse Response)
+        protected void _setHeader(HttpResponse Response)
         {
             using var l = logger.BeginLogInformationScope(nameof(SetHeader));
             if (StatusCode is int _StatusCode)
@@ -42,49 +57,23 @@ namespace Piping
             if (ContentDisposition is string _ContentDisposition)
                 Response.Headers["Content-Disposition"] = _ContentDisposition;
         }
-        public async Task ExecuteResultAsync(ActionContext context)
+        public void SetHeader(HttpResponse Response)
         {
-            using var l = logger.BeginLogInformationScope(nameof(ExecuteResultAsync));
-            var Token = context.HttpContext.RequestAborted;
-            var Response = context.HttpContext.Response;
-            try
+            Response.OnStarting(status =>
             {
-                using var lt = logger.BeginLogInformationScope(nameof(ExecuteResultAsync) + " try Scope");
-                SetHeader(Response);
-                var buffer = new Memory<byte>();
-                int length;
-                using (Stream)
-                {
-                    using var sl = logger.BeginLogInformationScope(nameof(ExecuteResultAsync) + " StreamScope");
-                    while (!Token.IsCancellationRequested
-                        && (length = await Stream.ReadAsync(buffer, Token)) > 0)
-                    {
-                        await Response.Body.WriteAsync(buffer.Slice(0, length), Token);
-                    }
-                }
-            }
-            catch (OperationCanceledException e)
-            {
-                logger.LogInformation(e.Message, e);
-            }
-            catch (Exception e)
-            {
-                logger.LogWarning(e.Message, e);
-                throw;
-            }
-            finally
-            {
-                try
-                {
-                    OnFinally?.Invoke(context, new EventArgs());
-                }
-                catch (Exception)
-                {
-                    
-                }
-                foreach (var d in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
-                    OnFinally -= d;
-            }
+                _setHeader((HttpResponse)status);
+                return Task.FromResult(0);
+            }, Response);
+        }
+        public Task ExecuteResultAsync(ActionContext context)
+        {
+            if (context == null)
+                throw new ArgumentNullException(nameof(context));
+
+
+            var executor = context.HttpContext.RequestServices.GetRequiredService<IActionResultExecutor<CompletableStreamResult>>();
+
+            return executor.ExecuteAsync(context, this);
         }
     }
 }

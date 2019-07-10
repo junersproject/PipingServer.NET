@@ -16,9 +16,19 @@ namespace Piping.Streams.Tests
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
             using var stream = new CompletableQueueStream();
+            var Tasks = new[] { Task.Run(() => stream.Read(buffer, 0, buffer.Length)) };
             using var TokenSource = new CancellationTokenSource(Time);
             Assert.ThrowsException<OperationCanceledException>(
-                () => Task.WaitAny(new[] { Task.Run(() => stream.Read(buffer, 0, buffer.Length)) }, TokenSource.Token));
+                () => {
+                    try
+                    {
+                        Task.WaitAny(Tasks, TokenSource.Token);
+                    }catch(Exception e)
+                    {
+                        System.Diagnostics.Trace.WriteLine(e);
+                        throw;
+                    }
+                });
         }
         [TestMethod, TestCategory("ShortTime")]
         public void StartReadTest1()
@@ -34,9 +44,10 @@ namespace Piping.Streams.Tests
             Assert.AreEqual(buffer.Length, ReadBytes);
             ReadBytes = stream.Read(buffer, 0, buffer.Length);
             Assert.AreEqual(buffer.Length, ReadBytes);
+            var Tasks = new[] { Task.Run(() => stream.Read(buffer, 0, buffer.Length)) };
             using (var TokenSource = new CancellationTokenSource(Time))
                 Assert.ThrowsException<OperationCanceledException>(
-                () => Task.WaitAny(new[] { Task.Run(() => stream.Read(buffer, 0, buffer.Length)) }, TokenSource.Token));
+                () => Task.WaitAny(Tasks, TokenSource.Token));
             stream.Write(data, 0, data.Length);
             Assert.AreEqual(buffer.Length, ReadBytes);
             ReadBytes = stream.Read(buffer, 0, buffer.Length);
@@ -49,8 +60,16 @@ namespace Piping.Streams.Tests
             var Time = TimeSpan.FromMilliseconds(100);
             using var stream = new CompletableQueueStream();
             using var TokenSource = CreateTokenSource(Time);
+            var Tasks = new[] { Task.Run(() => stream.Read(buffer)) };
             Assert.ThrowsException<OperationCanceledException>(
-                () => Task.WaitAny(new[] { Task.Run(() => stream.Read(buffer.AsSpan())) }, TokenSource.Token));
+                () => {
+                    try {
+                        Task.WaitAny(Tasks, TokenSource.Token);
+                    } catch (Exception e) {
+                        System.Diagnostics.Trace.WriteLine(e);
+                        throw;
+                    }
+                });
         }
         [TestMethod, TestCategory("ShortTime")]
         public void StartReadTest2()
@@ -118,7 +137,8 @@ namespace Piping.Streams.Tests
             stream.CompleteAdding();
             Assert.AreEqual(false, stream.CanWrite);
             using (var TokenSource = new CancellationTokenSource(Time))
-                await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () => await stream.WriteAsync(data, TokenSource.Token));
+                await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+                    async () => await stream.WriteAsync(data, TokenSource.Token));
         }
         [TestMethod, TestCategory("ShortTime")]
         public void StoppedReadAsyncTest1()

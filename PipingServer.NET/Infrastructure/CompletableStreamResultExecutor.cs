@@ -27,7 +27,7 @@ namespace Piping.Infrastructure
             var Token = context.HttpContext.RequestAborted;
             try
             {
-                var buffer = new Memory<byte>();
+                var buffer = new byte[1024].AsMemory();
                 int length;
                 using (result.Stream)
                 {

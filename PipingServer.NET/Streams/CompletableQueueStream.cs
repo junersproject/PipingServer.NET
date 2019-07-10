@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -14,17 +16,15 @@ namespace Piping.Streams
     {
         readonly bool isWritableMode = true;
         public static CompletableQueueStream Empty { get; } = new CompletableQueueStream(false);
-        readonly Channel<ReadOnlyMemory<byte>> data;
-        ReadOnlyMemory<byte> _currentBlock = ReadOnlyMemory<byte>.Empty;
-        int _currentBlockIndex = 0;
+        readonly Pipe data;
         public bool IsAddingCompleted { get; private set; } = false;
         public void CompleteAdding(){
-            data.Writer.TryComplete();
+            data.Writer.Complete();
             IsAddingCompleted = true;
         }
-        public CompletableQueueStream() => data = Channel.CreateUnbounded<ReadOnlyMemory<byte>>();
-        public CompletableQueueStream(int boundedCapacity) => data = Channel.CreateBounded<ReadOnlyMemory<byte>>(boundedCapacity);
-        private CompletableQueueStream(bool isWritableMode) : this(1) => this.isWritableMode = isWritableMode;
+        public CompletableQueueStream() :this(PipeOptions.Default) { }
+        public CompletableQueueStream(PipeOptions options) => data = new Pipe(options);
+        private CompletableQueueStream(bool isWritableMode) : this(new PipeOptions()) => this.isWritableMode = isWritableMode;
         public override bool CanRead => isWritableMode;
 
         public override bool CanSeek => false;
@@ -41,15 +41,20 @@ namespace Piping.Streams
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken Token = default)
         {
-            if (!CanRead)
-                throw new InvalidOperationException();
-            if (_currentBlock.IsEmpty || _currentBlockIndex == _currentBlock.Length)
-                if (!await GetNextBlockAsync(Token).ConfigureAwait(false))
-                    return 0;
-            var minCount = Math.Min(buffer.Length, _currentBlock.Length - _currentBlockIndex);
-            _currentBlock.Slice(_currentBlockIndex, minCount).CopyTo(buffer);
-            _currentBlockIndex += minCount;
-            return minCount;
+            var Read = await data.Reader.ReadAsync(Token);
+            var Sequence = Read.Buffer;
+            if (Read.IsCompleted && Sequence.Length == 0)
+                return 0;
+            if (Sequence.Length > buffer.Length)
+                Sequence = Sequence.Slice(buffer.Length);
+            else if (Sequence.Length < buffer.Length)
+                buffer = buffer.Slice((int)Sequence.Length);
+            Sequence.CopyTo(buffer.Span);
+            if (Read.Buffer.Length > buffer.Length)
+                data.Reader.AdvanceTo(Read.Buffer.Slice(buffer.Length).Start);
+            else 
+                data.Reader.AdvanceTo(Read.Buffer.End);
+            return buffer.Length;
         }
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken Token)
             => await ReadAsync(buffer.AsMemory().Slice(offset, count), Token).ConfigureAwait(false);
@@ -57,45 +62,30 @@ namespace Piping.Streams
         {
             if (!CanRead)
                 throw new InvalidOperationException();
-            if (_currentBlock.IsEmpty || _currentBlockIndex == _currentBlock.Length)
-                if (!GetNextBlockAsync().Result)
-                    return 0;
-            var minCount = Math.Min(buffer.Length, _currentBlock.Length - _currentBlockIndex);
-            _currentBlock.Span.Slice(_currentBlockIndex, minCount).CopyTo(buffer);
-            _currentBlockIndex += minCount;
-            return minCount;
+            var Read = data.Reader.ReadAsync().Result;
+            var Sequence = Read.Buffer;
+            if (Sequence.Length < buffer.Length)
+                buffer = buffer.Slice((int)Sequence.Length);
+            else if (Sequence.Length > buffer.Length)
+                Sequence = Sequence.Slice(buffer.Length);
+            Sequence.CopyTo(buffer);
+            if (Read.Buffer.Length > buffer.Length)
+                data.Reader.AdvanceTo(Read.Buffer.Slice(buffer.Length).Start);
+            else
+                data.Reader.AdvanceTo(Read.Buffer.End);
+            return buffer.Length;
         }
         public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan().Slice(offset, count));
-        /// <summary>
-        /// Loads the next block in to <see cref="_currentBlock"/>
-        /// </summary>
-        /// <returns>True if the next block was retrieved.</returns>
-        private async ValueTask<bool> GetNextBlockAsync(CancellationToken Token = default)
-        {
-            if (await data.Reader.WaitToReadAsync(Token))
-            {
-                if (!data.Reader.TryRead(out _currentBlock))
-                    return false;
-            }
-            else
-                return false;
-            _currentBlockIndex = 0;
-            return true;
-        }
-
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
         public override void SetLength(long value) => throw new NotSupportedException();
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-        { 
+        {
             if (!CanWrite)
                 throw new InvalidOperationException();
-            var localArray = new byte[buffer.Length];
-            if (await data.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false))
-            {
-                buffer.CopyTo(localArray);
-                data.Writer.TryWrite(localArray);
-            }
+            var result = await data.Writer.WriteAsync(buffer, cancellationToken);
+            if (result.IsCanceled)
+                throw new OperationCanceledException(cancellationToken);
         }
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             => await WriteAsync(buffer.AsMemory().Slice(offset, count), cancellationToken).ConfigureAwait(false);
@@ -103,17 +93,14 @@ namespace Piping.Streams
         {
             if (!CanWrite)
                 throw new InvalidOperationException();
-            var localArray = new byte[buffer.Length];
-            if (data.Writer.WaitToWriteAsync().Result)
-            {
-                buffer.CopyTo(localArray);
-                data.Writer.TryWrite(localArray);
-            }
+            var span = data.Writer.GetSpan(buffer.Length);
+            buffer.CopyTo(span);
+            data.Writer.Advance(buffer.Length);
         }
         public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan().Slice(offset, count));
         protected override void Dispose(bool disposing)
         {
-            data.Writer.TryComplete(new ObjectDisposedException("Disposed"));
+            data.Writer.Complete(new ObjectDisposedException("Disposed"));
             base.Dispose(disposing);
         }
     }

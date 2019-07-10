@@ -79,6 +79,7 @@ namespace Piping
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${_receiversCount} but {Key.Receivers}.");
             var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
             {
+                Identity = "Sender",
                 Stream = new CompletableQueueStream(),
                 ContentType = $"text/plain;charset={Encoding.WebName}",
             };
@@ -205,6 +206,7 @@ namespace Piping
             using var l = logger.BeginLogInformationScope(nameof(AddReceiverAsync));
             var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
             {
+                Identity = "Receiver",
                 Stream = new CompletableQueueStream(),
                 AccessControlAllowOrigin = "*",
                 AccessControlExposeHeaders = "Content-Length, Content-Type",

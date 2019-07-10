@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -23,7 +21,7 @@ namespace Piping.Infrastructure
                 throw new ArgumentNullException(nameof(result));
             var Response = context.HttpContext.Response;
             result.SetHeader(Response);
-            using var l = logger.BeginLogInformationScope(nameof(ExecuteAsync));
+            using var l = logger.BeginLogInformationScope(nameof(ExecuteAsync)+ " : " + result.Identity);
             var Token = context.HttpContext.RequestAborted;
             try
             {
@@ -31,7 +29,7 @@ namespace Piping.Infrastructure
                 int length;
                 using (result.Stream)
                 {
-                    using var sl = logger.BeginLogInformationScope(nameof(ExecuteAsync) + " StreamScope");
+                    using var sl = logger.BeginLogInformationScope(nameof(ExecuteAsync) + " : " + result.Identity + " StreamScope");
                     try
                     {
                         while (!Token.IsCancellationRequested

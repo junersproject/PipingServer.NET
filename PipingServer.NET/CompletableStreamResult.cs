@@ -12,6 +12,7 @@ namespace Piping
 {
     public class CompletableStreamResult : IActionResult
     {
+        public string Identity = string.Empty;
         readonly ILogger<CompletableStreamResult> logger;
         public CompletableQueueStream Stream { get; set; } = CompletableQueueStream.Empty;
         public event EventHandler OnFinally;

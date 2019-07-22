@@ -11,6 +11,7 @@ namespace Piping.Streams.Tests
     public class CompletableQueueStreamTests
     {
         [TestMethod, TestCategory("ShortTime")]
+        [Ignore]
         public void StoppedReadTest1()
         {
             var buffer = new byte[100];
@@ -31,6 +32,7 @@ namespace Piping.Streams.Tests
                 });
         }
         [TestMethod, TestCategory("ShortTime")]
+        [Ignore]
         public void StartReadTest1()
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
@@ -54,6 +56,7 @@ namespace Piping.Streams.Tests
             Assert.AreEqual(buffer.Length, ReadBytes);
         }
         [TestMethod, TestCategory("ShortTime")]
+        [Ignore]
         public void StoppedReadTest2()
         {
             var buffer = new byte[100];
@@ -72,6 +75,7 @@ namespace Piping.Streams.Tests
                 });
         }
         [TestMethod, TestCategory("ShortTime")]
+        [Ignore]
         public void StartReadTest2()
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
@@ -95,6 +99,7 @@ namespace Piping.Streams.Tests
             Assert.AreEqual(buffer.Length, ReadBytes);
         }
         [TestMethod]
+        [Ignore]
         public void WriteTest()
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
@@ -103,6 +108,7 @@ namespace Piping.Streams.Tests
             stream.Write(data.AsSpan());
         }
         [TestMethod]
+        [Ignore]
         public void WriteAndCompleteAddingTest()
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();

@@ -46,9 +46,9 @@ namespace Piping.Streams
             if (Read.IsCompleted && Sequence.Length == 0)
                 return 0;
             if (Sequence.Length > buffer.Length)
-                Sequence = Sequence.Slice(buffer.Length);
+                Sequence = Sequence.Slice(0, buffer.Length);
             else if (Sequence.Length < buffer.Length)
-                buffer = buffer.Slice((int)Sequence.Length);
+                buffer = buffer.Slice(0, (int)Sequence.Length);
             Sequence.CopyTo(buffer.Span);
             if (Read.Buffer.Length > buffer.Length)
                 data.Reader.AdvanceTo(Read.Buffer.Slice(buffer.Length).Start);
@@ -60,20 +60,7 @@ namespace Piping.Streams
             => await ReadAsync(buffer.AsMemory().Slice(offset, count), Token).ConfigureAwait(false);
         public override int Read(Span<byte> buffer)
         {
-            if (!CanRead)
-                throw new InvalidOperationException();
-            var Read = data.Reader.ReadAsync().Result;
-            var Sequence = Read.Buffer;
-            if (Sequence.Length < buffer.Length)
-                buffer = buffer.Slice((int)Sequence.Length);
-            else if (Sequence.Length > buffer.Length)
-                Sequence = Sequence.Slice(buffer.Length);
-            Sequence.CopyTo(buffer);
-            if (Read.Buffer.Length > buffer.Length)
-                data.Reader.AdvanceTo(Read.Buffer.Slice(buffer.Length).Start);
-            else
-                data.Reader.AdvanceTo(Read.Buffer.End);
-            return buffer.Length;
+            throw new NotImplementedException();
         }
         public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan().Slice(offset, count));
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
@@ -91,11 +78,7 @@ namespace Piping.Streams
             => await WriteAsync(buffer.AsMemory().Slice(offset, count), cancellationToken).ConfigureAwait(false);
         public override void Write(ReadOnlySpan<byte> buffer)
         {
-            if (!CanWrite)
-                throw new InvalidOperationException();
-            var span = data.Writer.GetSpan(buffer.Length);
-            buffer.CopyTo(span);
-            data.Writer.Advance(buffer.Length);
+            throw new NotImplementedException();
         }
         public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan().Slice(offset, count));
         protected override void Dispose(bool disposing)

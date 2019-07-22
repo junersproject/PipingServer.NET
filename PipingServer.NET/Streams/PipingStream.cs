@@ -2,6 +2,8 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Piping.Streams
 {
@@ -17,11 +19,11 @@ namespace Piping.Streams
                 BytesRead += action;
                 disposable = Disposable.Create(() => BytesRead -= action);
                 return disposable!;
-                void action(object self, BytesReadEventArgs args)
+                async void action(object self, BytesReadEventArgs args)
                 {
                     try
                     {
-                        stream.Write(args.Buffer.Span);
+                        await stream.WriteAsync(args.Buffer);
                     }
                     catch (Exception)
                     {
@@ -43,6 +45,13 @@ namespace Piping.Streams
             BytesRead?.Invoke(this, new BytesReadEventArgs(tmp));
         }
         public override void Write(byte[] buffer, int offset, int count) => PipeToOutputStream(buffer, offset, count);
+        public async override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() =>
+            {
+                BytesRead?.Invoke(this, new BytesReadEventArgs(buffer));
+            });
+        }
         public override bool CanRead => false;
         public override bool CanSeek => false;
         public override bool CanWrite => true;

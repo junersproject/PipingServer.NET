@@ -228,8 +228,8 @@ namespace Piping
         }
         private async Task SendMessageAsync(Stream Stream, Encoding Encoding, int BufferSize, string Message, CancellationToken Token = default)
         {
-            using var writer = new StreamWriter(Stream, Encoding, BufferSize, true);
-            await writer.WriteLineAsync(Message.AsMemory(), Token);
+            var buffer = Encoding.GetBytes(Message + Environment.NewLine).AsMemory();
+            await Stream.WriteAsync(buffer, Token);
         }
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには

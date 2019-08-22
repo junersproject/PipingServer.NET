@@ -23,7 +23,7 @@ namespace Piping.Controllers
         /// グローバル辞書
         /// </summary>
         private IWaiterDictionary pathToUnestablishedPipe { get; }
-        internal Version GetVersion() => GetType().Assembly.GetName().Version;
+        internal Version GetVersion() => GetType()?.Assembly?.GetName()?.Version ?? throw new InvalidOperationException();
         internal IReadOnlyDictionary<string, Func<IActionResult>> NAME_TO_RESERVED_PATH;
         private Encoding Encoding = new UTF8Encoding(false);
         public PipingController(ILoggerFactory loggerFactory, IWaiterDictionary pathToUnestablishedPipe)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,12 +21,12 @@ namespace Piping
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<IWaiterDictionary,WaiterDictionary>();
-            services.AddMvc();
+            services.AddControllers();
             services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -38,13 +39,12 @@ namespace Piping
             }
 
             app.UseHttpsRedirection();
-
-            app.UseRouting(routes =>
-            {
-                routes.MapApplication();
-            });
-
+            app.UseRouting();
             app.UseAuthorization();
+            app.UseEndpoints(routes =>
+            {
+                routes.MapControllers();
+            });
         }
     }
 }

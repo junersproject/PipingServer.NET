@@ -17,7 +17,7 @@ namespace Piping
             LocalPath = relativeUri.LocalPath.ToLower();
         }
         public override int GetHashCode() => LocalPath.GetHashCode();
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is RequestKey other ? other.LocalPath == LocalPath : false;
         }

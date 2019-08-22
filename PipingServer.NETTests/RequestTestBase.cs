@@ -77,7 +77,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -113,7 +113,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -185,7 +185,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -221,7 +221,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -292,7 +292,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {

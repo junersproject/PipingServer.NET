@@ -19,7 +19,7 @@ namespace Piping.Streams
                 BytesRead += action;
                 disposable = Disposable.Create(() => BytesRead -= action);
                 return disposable!;
-                async void action(object self, BytesReadEventArgs args)
+                async void action(object? self, BytesReadEventArgs args)
                 {
                     try
                     {
@@ -32,7 +32,7 @@ namespace Piping.Streams
                 }
             }).ToArray();
         }
-        public event EventHandler<BytesReadEventArgs> BytesRead;
+        public event EventHandler<BytesReadEventArgs>? BytesRead;
         public override void Flush() { }
         public override long Seek(long offset, SeekOrigin origin)
             => throw new InvalidOperationException("Cannot seek in " + nameof(PipingStream));

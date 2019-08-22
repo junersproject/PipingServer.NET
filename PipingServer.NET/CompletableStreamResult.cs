@@ -15,7 +15,7 @@ namespace Piping
         public string Identity = string.Empty;
         readonly ILogger<CompletableStreamResult> logger;
         public CompletableQueueStream Stream { get; set; } = CompletableQueueStream.Empty;
-        public event EventHandler OnFinally;
+        public event EventHandler? OnFinally;
         public void FireFinally(ActionContext? context = null)
         {
             try

@@ -168,31 +168,18 @@ namespace Piping
                 InfomationStream.CompleteAdding();
             }
         }
-        Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(Stream Stream, Encoding Encoding, int bufferSize, CancellationToken Token = default)
+        async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(Stream Stream, Encoding Encoding, int bufferSize, CancellationToken Token = default)
         {
-            var tcs = new TaskCompletionSource<(Stream, long?, string?, string?)>();
-            var sm = new StreamingMultipartFormDataParser(Stream, Encoding, bufferSize);
-            sm.FileHandler += (name, fileName, contentType, contentDisposition, buffer, bytes)
-                =>
+            var enumerable = new AsyncMutiPartFormDataEnumerable(Stream, Encoding, bufferSize);
+            await foreach (var (headers, stream) in enumerable)
             {
-                if (tcs.Task.IsCompleted)
-                    return;
-                var _ContentDisposition = string.IsNullOrEmpty(fileName) ? null : $"{contentDisposition};filename='{fileName.Replace("'", "\\'")}';filename*=utf-8''{System.Web.HttpUtility.UrlEncode(fileName).Replace("+", "%20")}";
-                tcs.TrySetResult((new MemoryStream(buffer, 0, bytes), buffer.LongLength, contentType, _ContentDisposition));
-            };
-            sm.ParameterHandler += (p) =>
-            {
-                if (tcs.Task.IsCompleted)
-                    return;
-                byte[] bytes = sm.Encoding.GetBytes(p.Data);
-                tcs.TrySetResult((new MemoryStream(bytes), bytes.LongLength, $"text/plain; charset={sm.Encoding.WebName}", null));
-            };
-            sm.StreamClosedHandler += () =>
-            {
-                tcs.TrySetResult((new MemoryStream(new byte[0]), 0, null, null));
-            };
-            sm.Run();
-            return tcs.Task;
+                var _Stream = stream;
+                var ContentLength = headers.ContentLength;
+                var ContentType = (string)headers["Content-Type"];
+                var ContentDisposition = (string)headers["Content-Disposition"];
+                return (_Stream, ContentLength, ContentType, ContentDisposition);
+            }
+            throw new InvalidOperationException("source is empty");
         }
         (Stream Stream, long? CountentLength, string? ContentType, string? ContentDisposition) GetRequestStream(HttpRequest Request)
             => (

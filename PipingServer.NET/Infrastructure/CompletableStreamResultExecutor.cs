@@ -35,12 +35,12 @@ namespace Piping.Infrastructure
                         while (!Token.IsCancellationRequested
                             && (length = await result.Stream.ReadAsync(buffer, Token)) > 0)
                         {
-                            await Response.BodyPipe.WriteAsync(buffer.Slice(0, length), Token);
+                            await Response.BodyWriter.WriteAsync(buffer.Slice(0, length), Token);
                         }
                     }
                     finally
                     {
-                        Response.BodyPipe.Complete();
+                        Response.BodyWriter.Complete();
                     }
 
                 }

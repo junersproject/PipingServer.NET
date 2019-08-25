@@ -33,8 +33,8 @@ namespace Piping
             if (this.Boundary == string.Empty)
             {
                 throw new NotImplementedException();
-
-            } else
+            }
+            else
             {
                 // TODO -- が追加された形か確認すること
                 Boundary = Encoding.GetBytes(this.Boundary).AsMemory();
@@ -43,6 +43,7 @@ namespace Piping
                 // TODO Boundary の比較方法考える
 
             }
+            
             // TODO Content-Type 等のヘッダーの取得
             // TODO Boundary が出るまでbody部の取得
             // TODO Boundary の末尾指定が来たら終了
@@ -50,6 +51,10 @@ namespace Piping
             //var Header = new HeaderDictionary();
             //await Task.Delay(TimeSpan.FromMilliseconds(1));
             //yield return (Header, Stream);
+            throw new NotImplementedException();
+        }
+        Task<(Memory<byte> Memory, int ReadCount)> ReadLineAsync()
+        {
             throw new NotImplementedException();
         }
     }

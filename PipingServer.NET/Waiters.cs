@@ -6,11 +6,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
-using HttpMultipartParser;
 using Microsoft.Extensions.Primitives;
 using Piping.Streams;
 using Microsoft.Extensions.Logging;
-using System.Numerics;
 
 namespace Piping
 {
@@ -138,7 +136,7 @@ namespace Piping
             return Result;
         }
         private async ValueTask<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetDataAsync(HttpRequest Request, Encoding Encoding, int BufferSize, CancellationToken Token = default)
-            => IsMultiForm(Request.Headers) ? await GetPartStreamAsync(Request.Body, Encoding, BufferSize, Token) : GetRequestStream(Request);
+            => IsMultiForm(Request.Headers) ? await GetPartStreamAsync(Request.Headers, Request.Body, Token) : GetRequestStream(Request);
         private static bool IsMultiForm(IHeaderDictionary Headers)
             => (Headers["Content-Type"].Any(v => v.ToLower().IndexOf("multipart/form-data") == 0));
         private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
@@ -168,9 +166,9 @@ namespace Piping
                 InfomationStream.CompleteAdding();
             }
         }
-        async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(Stream Stream, Encoding Encoding, int bufferSize, CancellationToken Token = default)
+        async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(IHeaderDictionary Headers, Stream Stream, CancellationToken Token = default)
         {
-            var enumerable = new AsyncMutiPartFormDataEnumerable(Stream, Encoding, bufferSize);
+            var enumerable = new AsyncMutiPartFormDataEnumerable(Headers, Stream);
             await foreach (var (headers, stream) in enumerable)
             {
                 var _Stream = stream;

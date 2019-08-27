@@ -26,9 +26,7 @@ namespace Piping.Tests
                 yield return new object[]
                 {
                     "test",
-                    new HeaderDictionary{
-                        {"Content-Type", "multipart/form-data" },
-                    },
+                    new HeaderDictionary(),
                     new string[0],
                 };
                 yield return new object[]
@@ -39,7 +37,7 @@ namespace Piping.Tests
                     + "a & b\r\n"
                     + "--------------------------do348x35ddd9489e3--\r\n",
                     new HeaderDictionary{
-                        {"Content-Type", "multipart/form-data" },
+                        {"Content-Type", "multipart/form-data; boundary=------------------------do348x35ddd9489e3" },
                     },
                     new []
                     {
@@ -59,7 +57,7 @@ namespace Piping.Tests
                     + "HELLO\r\n"
                     + "--------------------------do348x35ddd9489e3--\r\n",
                     new HeaderDictionary{
-                        {"Content-Type", "multipart/form-data" },
+                        {"Content-Type", "multipart/form-data; boundary=------------------------do348x35ddd9489e3" },
                     },
                     new []
                     {

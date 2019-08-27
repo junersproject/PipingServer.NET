@@ -22,7 +22,7 @@ namespace Piping
             => (this.Headers, this.Stream, this.MultipartBoundaryLengthLimit) = (Headers ?? new HeaderDictionary(), Stream ?? Stream.Null, MultipartBoundaryLengthLimit);
         public async IAsyncEnumerator<(IHeaderDictionary Headers, Stream Stream)> GetAsyncEnumerator(CancellationToken Token = default)
         {
-            if (string.IsNullOrEmpty(Headers["ContentType"]))
+            if (string.IsNullOrEmpty(Headers["Content-Type"]))
                 yield break;
             if (Stream == Stream.Null || !Stream.CanRead)
                 yield break;

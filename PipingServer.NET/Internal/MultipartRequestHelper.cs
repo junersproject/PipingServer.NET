@@ -61,7 +61,7 @@ namespace FileUploadSample
                 throw new ArgumentNullException(nameof(Stream));
             if (!Stream.CanRead)
                 yield break;
-            var ContentType = Headers["ContentType"];
+            var ContentType = Headers["Content-Type"];
             if (!IsMultipartContentType(ContentType))
                 throw new ArgumentException($"Expected a multipart request, but got {ContentType}");
             

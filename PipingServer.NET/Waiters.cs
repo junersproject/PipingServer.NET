@@ -9,13 +9,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Piping.Streams;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Piping
 {
     public class Waiters : IWaiters
     {
-        readonly ILoggerFactory loggerFactory;
-        readonly ILogger<Waiters> logger;
+        readonly IServiceProvider Services;
+        readonly ILogger<Waiters> Logger;
         TaskCompletionSource<bool> ReadyTaskSource => new TaskCompletionSource<bool>();
         TaskCompletionSource<bool> ResponseTaskSource => new TaskCompletionSource<bool>();
         /// <summary>
@@ -35,11 +36,11 @@ namespace Piping
         /// Receivers が空
         /// </summary>
         public bool ReceiversIsEmpty => _receiversCount <= 0;
-        int _receiversCount = 1;
+        int? _receiversCount = 1;
         /// <summary>
         /// 受け取り数
         /// </summary>
-        public int ReceiversCount
+        public int? ReceiversCount
         {
             get => _receiversCount;
             set
@@ -62,39 +63,38 @@ namespace Piping
         /// <param name="Result"></param>
         /// <returns></returns>
         public bool RemoveReceiver(CompletableStreamResult Result) => Receivers.Remove(Result);
-        public Waiters(ILoggerFactory loggerFactory)
-            => (this.loggerFactory, logger) = (loggerFactory, loggerFactory.CreateLogger<Waiters>());
-        public Waiters(int ReceiversCount, ILoggerFactory loggerFactory)
-            => (this._receiversCount, this.loggerFactory, this.logger) = (ReceiversCount, loggerFactory, loggerFactory.CreateLogger<Waiters>());
+        public Waiters(IServiceProvider Services, ILogger<Waiters> Logger)
+            => (this.Services, this.Logger) = (Services, Logger);
         public bool IsReady() => IsSetSenderComplete && Receivers.Count == _receiversCount;
         public async Task<CompletableStreamResult> AddSenderAsync(RequestKey Key, HttpRequest Request, HttpResponse Response, Encoding Encoding, int BufferSize, CancellationToken Token = default)
         {
             string message;
-            using var l = logger.BeginLogInformationScope(nameof(AddSenderAsync));
+            if (ReceiversCount is null)
+                ReceiversCount = Key.Receivers;
+            using var l = Logger.BeginLogInformationScope(nameof(AddSenderAsync));
             if (IsSetSenderComplete)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be {_receiversCount} but ${Receivers.Count}.\n");
             if (Key.Receivers != _receiversCount)
                 throw new InvalidOperationException($"[ERROR] The number of receivers should be ${_receiversCount} but {Key.Receivers}.");
-            var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
-            {
-                Identity = "Sender",
-                Stream = new CompletableQueueStream(),
-                ContentType = $"text/plain;charset={Encoding.WebName}",
-            };
+            var Result = Services.GetRequiredService<CompletableStreamResult>();
+            Result.Identity = "Sender";
+            Result.Stream = new CompletableQueueStream();
+            Result.ContentType = $"text/plain;charset={Encoding.WebName}";
+
             IsSetSenderComplete = true;
             var DataTask = GetDataAsync(Request, Encoding, BufferSize, Token);
             var ResponseStream = Result.Stream;
 
             message = $"[INFO] Waiting for {_receiversCount} receiver(s)...";
-            logger.LogInformation(message);
+            Logger.LogInformation(message);
             await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
             message = $"[INFO] {Receivers.Count} receiver(s) has/have been connected.";
-            logger.LogInformation(message);
+            Logger.LogInformation(message);
             await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
             
             _ = Task.Run(async () =>
             {
-                using var l = logger.BeginLogInformationScope("async " + nameof(AddSenderAsync) + " Run");
+                using var l = Logger.BeginLogInformationScope("async " + nameof(AddSenderAsync) + " Run");
                 try
                 {
                     if (IsReady())
@@ -104,7 +104,7 @@ namespace Piping
                             await ReadyTaskSource.Task;
                     var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
                     message = $"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}";
-                    logger.LogInformation(message);
+                    Logger.LogInformation(message);
                     await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
 
                     IsEstablished = true;
@@ -116,7 +116,7 @@ namespace Piping
                         return Response.Stream;
                     });
                     message = $"[INFO] Start sending with {Receivers.Count} receiver(s)!";
-                    logger.LogInformation(message);
+                    Logger.LogInformation(message);
                     await SendMessageAsync(ResponseStream, Encoding, BufferSize, message);
 
                     var PipingTask = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
@@ -125,7 +125,7 @@ namespace Piping
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e,nameof(AddSenderAsync));
+                    Logger.LogError(e,nameof(AddSenderAsync));
                     ResponseTaskSource.TrySetException(e);
                 }
                 finally
@@ -141,7 +141,7 @@ namespace Piping
             => (Headers["Content-Type"].Any(v => v.ToLower().IndexOf("multipart/form-data") == 0));
         private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
-            using var l = logger.BeginLogInformationScope(nameof(PipingAsync));
+            using var l = Logger.BeginLogInformationScope(nameof(PipingAsync));
             var buffer = new byte[BufferSize];
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
@@ -154,7 +154,7 @@ namespace Piping
                     byteCounter += bytesRead;
                 }
                 var Message = $"[INFO] Sending successful! {byteCounter} bytes.";
-                logger.LogInformation(Message);
+                Logger.LogInformation(Message);
                 await SendMessageAsync(InfomationStream, Encoding, BufferSize, Message);
                 using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
                 
@@ -186,16 +186,18 @@ namespace Piping
                 Request.ContentType,
                 Request.Headers["Content-Disposition"] == StringValues.Empty ? null : string.Join(" ", Request.Headers["Content-Disposition"])
             );
-        public async Task<CompletableStreamResult> AddReceiverAsync(CancellationToken Token = default)
+        public async Task<CompletableStreamResult> AddReceiverAsync(RequestKey Key, CancellationToken Token = default)
         {
-            using var l = logger.BeginLogInformationScope(nameof(AddReceiverAsync));
-            var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
-            {
-                Identity = "Receiver",
-                Stream = new CompletableQueueStream(),
-                AccessControlAllowOrigin = "*",
-                AccessControlExposeHeaders = "Content-Length, Content-Type",
-            };
+            using var l = Logger.BeginLogInformationScope(nameof(AddReceiverAsync));
+
+            if (ReceiversCount is null)
+                ReceiversCount = Key.Receivers;
+            var Result = Services.GetRequiredService<CompletableStreamResult>();
+            Result.Identity = "Receiver";
+            Result.Stream = new CompletableQueueStream();
+            Result.AccessControlAllowOrigin = "*";
+            Result.AccessControlExposeHeaders = "Content-Length, Content-Type";
+            
             using var r = Token.Register(() => RemoveReceiver(Result));
             Receivers.Add(Result);
             try

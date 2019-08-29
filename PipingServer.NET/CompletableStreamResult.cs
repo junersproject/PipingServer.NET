@@ -40,40 +40,11 @@ namespace Piping
             => this.logger = logger;
         public CompletableStreamResult(ILogger<CompletableStreamResult> logger, CompletableQueueStream? Stream = null, long? ContentLength = null, string? ContentType = null, string? ContentDisposition = null)
             => (this.logger, this.Stream, this.ContentLength, this.ContentType, this.ContentDisposition) = (logger, Stream ?? CompletableQueueStream.Empty, ContentLength, ContentType, ContentDisposition);
-        protected void _setHeader(HttpResponse Response)
-        {
-            using var l = logger.BeginLogInformationScope(nameof(SetHeader));
-            if (StatusCode is int _StatusCode)
-                Response.StatusCode = _StatusCode;
-            if (AccessControlAllowOrigin is string _AccessControlAllowOrigin)
-                Response.Headers["Access-Control-Allow-Origin"] = _AccessControlAllowOrigin;
-            if (AccessControlExposeHeaders is string _AccessControlExposeHeaders)
-                Response.Headers["Access-Control-Expose-Headers"] = _AccessControlExposeHeaders;
-            if (ContentLength is long _ContentLength)
-                Response.ContentLength = _ContentLength;
-            else
-                Response.ContentLength = null;
-            if (ContentType is string _ContentType)
-                Response.ContentType = _ContentType;
-            if (ContentDisposition is string _ContentDisposition)
-                Response.Headers["Content-Disposition"] = _ContentDisposition;
-        }
-        public void SetHeader(HttpResponse Response)
-        {
-            Response.OnStarting(status =>
-            {
-                _setHeader((HttpResponse)status);
-                return Task.FromResult(0);
-            }, Response);
-        }
         public Task ExecuteResultAsync(ActionContext context)
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
-
-
             var executor = context.HttpContext.RequestServices.GetRequiredService<IActionResultExecutor<CompletableStreamResult>>();
-
             return executor.ExecuteAsync(context, this);
         }
     }

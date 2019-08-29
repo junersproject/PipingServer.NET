@@ -23,6 +23,8 @@ namespace Piping
             services.AddSingleton<IWaiterDictionary,WaiterDictionary>();
             services.AddControllers();
             services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
+            services.AddTransient<IWaiters, Waiters>();
+            services.AddTransient<CompletableStreamResult>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

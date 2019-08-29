@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Piping.Attributes;
 using Piping.Streams;
@@ -28,9 +30,9 @@ namespace Piping.Controllers
         private Encoding Encoding = new UTF8Encoding(false);
         public PipingController(ILoggerFactory loggerFactory, IWaiterDictionary pathToUnestablishedPipe)
         {
-            this.loggerFactory = loggerFactory;
+            this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             logger = loggerFactory.CreateLogger<PipingController>();
-            this.pathToUnestablishedPipe = pathToUnestablishedPipe;
+            this.pathToUnestablishedPipe = pathToUnestablishedPipe ?? throw new ArgumentNullException(nameof(pathToUnestablishedPipe));
             NAME_TO_RESERVED_PATH = new Dictionary<string, Func<IActionResult>>
             {
                 { DefaultPath.Root, Index},
@@ -58,7 +60,7 @@ namespace Piping.Controllers
             // Get unestablished pipe
             if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
-                waiter = new Waiters(Key.Receivers, loggerFactory);
+                waiter = HttpContext.RequestServices.GetRequiredService<IWaiters>();
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             if (waiter.IsEstablished)
@@ -84,14 +86,14 @@ namespace Piping.Controllers
                 return BadRequest($"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
             if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
             {
-                waiter = new Waiters(Key.Receivers, loggerFactory);
+                waiter = HttpContext.RequestServices.GetRequiredService<IWaiters>();
                 pathToUnestablishedPipe[Key.LocalPath] = waiter;
             }
             if (waiter.IsEstablished)
                 return BadRequest($"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                var Result = await waiter.AddReceiverAsync(Context);
+                var Result = await waiter.AddReceiverAsync(Key, Context);
                 Result.OnFinally += (self, args) =>
                 {
                     waiter.RemoveReceiver(Result);

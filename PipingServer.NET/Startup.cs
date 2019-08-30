@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Piping.Infrastructure;
+using Piping.Models;
 
 namespace Piping
 {
@@ -20,10 +21,9 @@ namespace Piping
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IWaiterDictionary,WaiterDictionary>();
             services.AddControllers();
             services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
-            services.AddTransient<IWaiters, Waiters>();
+            services.AddSingleton<IWaiters, Waiters>();
             services.AddTransient<CompletableStreamResult>();
         }
 

@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Piping.Attributes;
-using Piping.Streams;
+using Piping.Models;
 
 namespace Piping.Controllers
 {
@@ -18,21 +14,13 @@ namespace Piping.Controllers
     [DisableFormValueModelBinding]
     public class PipingController : ControllerBase
     {
-        readonly ILogger<PipingController> logger;
-        readonly ILoggerFactory loggerFactory;
-        const string DICTIONARY = "DICTIONARY";
-        /// <summary>
-        /// グローバル辞書
-        /// </summary>
-        private IWaiterDictionary pathToUnestablishedPipe { get; }
+        readonly IWaiters Waiters;
         internal Version GetVersion() => GetType()?.Assembly?.GetName()?.Version ?? throw new InvalidOperationException();
         internal IReadOnlyDictionary<string, Func<IActionResult>> NAME_TO_RESERVED_PATH;
         private Encoding Encoding = new UTF8Encoding(false);
-        public PipingController(ILoggerFactory loggerFactory, IWaiterDictionary pathToUnestablishedPipe)
+        public PipingController(IWaiters Waiters)
         {
-            this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-            logger = loggerFactory.CreateLogger<PipingController>();
-            this.pathToUnestablishedPipe = pathToUnestablishedPipe ?? throw new ArgumentNullException(nameof(pathToUnestablishedPipe));
+            this.Waiters = Waiters;
             NAME_TO_RESERVED_PATH = new Dictionary<string, Func<IActionResult>>
             {
                 { DefaultPath.Root, Index},
@@ -44,30 +32,18 @@ namespace Piping.Controllers
         }
         [HttpPut("/{**RelativeUri}")]
         [HttpPost("/{**RelativeUri}")]
-        public async Task<IActionResult> UploadAsync(string RelativeUri)
+        public IActionResult Upload(string RelativeUri)
         {
-            if (HttpContext.Request.Body.CanSeek)
-                HttpContext.Request.Body.Seek(0, SeekOrigin.Begin);
             RelativeUri = "/" + RelativeUri.TrimStart('/').ToLower();
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out _))
                 return BadRequest($"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
             var Key = new RequestKey(RelativeUri);
-            if (Key.Receivers <= 0)
-                return BadRequest($"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
-            logger?.LogInformation(string.Join(" ",pathToUnestablishedPipe.Select(v => $"{ v.Key }:{v.Value}")));
-
+            
             // If the path connection is connecting
             // Get unestablished pipe
-            if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
-            {
-                waiter = HttpContext.RequestServices.GetRequiredService<IWaiters>();
-                pathToUnestablishedPipe[Key.LocalPath] = waiter;
-            }
-            if (waiter.IsEstablished)
-                return BadRequest($"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                return await waiter.AddSenderAsync(Key, HttpContext, Encoding, 1024);
+                return Waiters.AddSender(Key, HttpContext, Encoding, 1024);
             }catch(InvalidOperationException e)
             {
                 return BadRequest(e.Message);
@@ -75,82 +51,21 @@ namespace Piping.Controllers
         }
 
         [HttpGet("/{**RelativeUri}")]
-        public async Task<IActionResult?> DownloadAsync(string RelativeUri)
+        public IActionResult Download(string RelativeUri)
         {
             var Context = HttpContext;
             RelativeUri = "/" + RelativeUri.TrimStart('/').ToLower();
             if (NAME_TO_RESERVED_PATH.TryGetValue(RelativeUri, out var Generator))
                 return Generator();
             var Key = new RequestKey(RelativeUri);
-            if (Key.Receivers <= 0)
-                return BadRequest($"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
-            if (!pathToUnestablishedPipe.TryGetValue(Key.LocalPath, out var waiter))
-            {
-                waiter = HttpContext.RequestServices.GetRequiredService<IWaiters>();
-                pathToUnestablishedPipe[Key.LocalPath] = waiter;
-            }
-            if (waiter.IsEstablished)
-                return BadRequest($"[ERROR] Connection on '{RelativeUri}' has been established already.\n");
             try
             {
-                var Result = await waiter.AddReceiverAsync(Key, Context);
-                Result.OnFinally += (self, args) =>
-                {
-                    waiter.RemoveReceiver(Result);
-                    Remove();
-                };
-                return Result;
+                return Waiters.AddReceiver(Key, Context);
             }
             catch (Exception e)
             {
-                Remove();
                 return BadRequest(e.Message);
             }
-            void Remove()
-            {
-                if (waiter.ReceiversIsEmpty)
-                {
-                    pathToUnestablishedPipe.Remove(Key.LocalPath);
-                    waiter.Dispose();
-                }
-            }
-        }
-        [HttpGet("/test")]
-        public IActionResult TestAsync()
-        {
-            var Context = HttpContext;
-            var Token = Context.RequestAborted;
-            var Stream = new CompletableQueueStream();
-            var Result = new CompletableStreamResult(loggerFactory.CreateLogger<CompletableStreamResult>())
-            {
-                Stream = Stream,
-                ContentType = $"text/plain; charset={Encoding.WebName}",
-            };
-            Task.Run(async() =>
-            {;
-                using var l = logger.BeginLogInformationScope("async TaskAsync Run");
-                foreach (var number in Enumerable.Range(1, 500))
-                {
-                    if (Token.IsCancellationRequested)
-                        return;
-                    using (var writer = new StreamWriter(Context.Response.Body, Encoding, 1024, true))
-                        await writer.WriteLineAsync($"[info] call number {number} {DateTime.Now:yyyy/MM/dd hh:mm:ss}".AsMemory(), Token);
-                    try
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(1), Token);
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        return;
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return;
-                    }
-                }
-                Stream.CompleteAdding();
-            });
-            return Result;
         }
         [HttpGet("/")]
         public IActionResult Index() => Content(Properties.Resources.index, $"text/html; charset={Encoding.WebName}", Encoding);

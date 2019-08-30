@@ -13,7 +13,6 @@ namespace Piping
     public class CompletableStreamResult : IActionResult
     {
         public string Identity = string.Empty;
-        readonly ILogger<CompletableStreamResult> logger;
         public CompletableQueueStream Stream { get; set; } = CompletableQueueStream.Empty;
         public event EventHandler? OnFinally;
         public void FireFinally(ActionContext? context = null)
@@ -36,10 +35,8 @@ namespace Piping
         public string? AccessControlAllowOrigin { get; set; } = null;
         public string? AccessControlExposeHeaders { get; set; } = null;
         public int BufferSize { get; set; } = 1024;
-        public CompletableStreamResult(ILogger<CompletableStreamResult> logger)
-            => this.logger = logger;
-        public CompletableStreamResult(ILogger<CompletableStreamResult> logger, CompletableQueueStream? Stream = null, long? ContentLength = null, string? ContentType = null, string? ContentDisposition = null)
-            => (this.logger, this.Stream, this.ContentLength, this.ContentType, this.ContentDisposition) = (logger, Stream ?? CompletableQueueStream.Empty, ContentLength, ContentType, ContentDisposition);
+        public Task HeaderIsSetCompletedTask { get; set; } = Task.CompletedTask;
+        public CompletableStreamResult() { }
         public Task ExecuteResultAsync(ActionContext context)
         {
             if (context == null)

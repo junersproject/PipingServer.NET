@@ -16,7 +16,7 @@ namespace Piping.Infrastructure
         }
         protected void SetHeader(CompletableStreamResult Result, HttpResponse Response)
         {
-            using var l = logger.BeginLogInformationScope(nameof(SetHeader));
+            using var l = logger.BeginLogInformationScope(nameof(SetHeader) + " : " + Result.Identity);
             if (Result.StatusCode is int _StatusCode)
                 Response.StatusCode = _StatusCode;
             if (Result.AccessControlAllowOrigin is string _AccessControlAllowOrigin)
@@ -34,13 +34,14 @@ namespace Piping.Infrastructure
         }
         public async Task ExecuteAsync(ActionContext context, CompletableStreamResult result)
         {
+            using var l = logger.BeginLogInformationScope(nameof(ExecuteAsync) + " : " + result.Identity);
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
             var Response = context.HttpContext.Response;
+            await result.HeaderIsSetCompletedTask;
             SetHeader(result, Response);
-            using var l = logger.BeginLogInformationScope(nameof(ExecuteAsync)+ " : " + result.Identity);
             var Token = context.HttpContext.RequestAborted;
             try
             {

@@ -76,7 +76,9 @@ namespace Piping.Streams
             => await WriteAsync(buffer.AsMemory().Slice(offset, count), cancellationToken).ConfigureAwait(false);
         public override void Write(ReadOnlySpan<byte> buffer)
         {
-            throw new NotImplementedException();
+            if (!CanWrite)
+                throw new InvalidOperationException();
+            data.Writer.Write(buffer);
         }
         public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan().Slice(offset, count));
         protected override void Dispose(bool disposing)

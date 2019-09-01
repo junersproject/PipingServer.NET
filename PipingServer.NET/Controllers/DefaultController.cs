@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Piping.Controllers
 {
@@ -9,9 +10,11 @@ namespace Piping.Controllers
     public class DefaultController : ControllerBase
     {
         readonly Encoding Encoding;
-        public DefaultController(Encoding Encoding)
+        readonly ILogger<DefaultController> Logger;
+        public DefaultController(ILogger<DefaultController> Logger, Encoding? Encoding = default)
         {
-            this.Encoding = Encoding;
+            this.Logger = Logger;
+            this.Encoding = Encoding ?? new UTF8Encoding(false);
         }
         internal Version GetVersion() => GetType()?.Assembly?.GetName()?.Version ?? throw new InvalidOperationException();
         /// <summary>
@@ -95,7 +98,9 @@ curl {url}/mypath | openssl aes-256-cbc -d";
         public IActionResult ErrorAccess()
         {
             var RelativeUri = HttpContext.Request.Path;
-            return BadRequest($"[ERROR] Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')\n");
+            var Message = $"Cannot send to a reserved path '{RelativeUri}'. (e.g. '/mypath123')";
+            Logger.LogError(Message);
+            return BadRequest($"[ERROR] {Message}\n");
         }
         protected IActionResult BadRequest(string Message)
         {

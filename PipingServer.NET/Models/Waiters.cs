@@ -151,7 +151,7 @@ namespace Piping.Models
         async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(IHeaderDictionary Headers, Stream Stream, CancellationToken Token = default)
         {
             var enumerable = new AsyncMutiPartFormDataEnumerable(Headers, Stream);
-            await foreach (var (headers, stream) in enumerable)
+            await foreach (var (headers, stream) in enumerable.WithCancellation(Token))
             {
                 var _Stream = stream;
                 var ContentLength = headers.ContentLength;
@@ -215,7 +215,7 @@ namespace Piping.Models
             var buffer = Encoding.GetBytes(Message + Environment.NewLine).AsMemory();
             await Stream.WriteAsync(buffer, Token);
         }
-        private void SendMessage(Stream Stream, Encoding Encoding, string Message, CancellationToken Token = default)
+        private void SendMessage(Stream Stream, Encoding Encoding, string Message)
         {
             Stream.Write(Encoding.GetBytes(Message + Environment.NewLine).AsSpan());
         }
@@ -282,7 +282,7 @@ namespace Piping.Models
             public bool IsRemovable
                 => (!IsSetSenderComplete && !IsSetReceiversComplete)
                     || (IsSetSenderComplete && IsSetReceiversComplete && _Receivers.Count == 0);
-            List<CompletableStreamResult> _Receivers = new List<CompletableStreamResult>();
+            readonly List<CompletableStreamResult> _Receivers = new List<CompletableStreamResult>();
             public IEnumerable<CompletableStreamResult> Receivers => _Receivers;
             public int ReceiversCount => _Receivers.Count;
             public void AddReceiver(CompletableStreamResult Result) => _Receivers.Add(Result);

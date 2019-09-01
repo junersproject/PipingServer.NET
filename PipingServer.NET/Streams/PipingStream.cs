@@ -45,7 +45,7 @@ namespace Piping.Streams
             BytesRead?.Invoke(this, new BytesReadEventArgs(tmp));
         }
         public override void Write(byte[] buffer, int offset, int count) => PipeToOutputStream(buffer, offset, count);
-        public async override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
             await Task.Run(() =>
             {

@@ -2,6 +2,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Piping.Attributes;
 using Piping.Models;
 
@@ -14,10 +15,12 @@ namespace Piping.Controllers
     {
         readonly IWaiters Waiters;
         readonly Encoding Encoding;
-        public PipingController(IWaiters Waiters, Encoding Encoding)
+        readonly ILogger<PipingController> Logger;
+        public PipingController(IWaiters Waiters, ILogger<PipingController> Logger, Encoding? Encoding = default)
         {
             this.Waiters = Waiters;
-            this.Encoding = Encoding;
+            this.Encoding = Encoding ?? new UTF8Encoding(false);
+            this.Logger = Logger;
         }
         [HttpPut("/{**RelativeUri}")]
         [HttpPost("/{**RelativeUri}")]
@@ -28,6 +31,7 @@ namespace Piping.Controllers
                 return Waiters.AddSender(RelativeUri, HttpContext);
             }catch(InvalidOperationException e)
             {
+                Logger.LogError(e, "upload fail.");
                 return BadRequest(e.Message);
             }
         }
@@ -39,8 +43,9 @@ namespace Piping.Controllers
             {
                 return Waiters.AddReceiver(RelativeUri, HttpContext);
             }
-            catch (Exception e)
+            catch (InvalidOperationException e)
             {
+                Logger.LogError(e, "download fail.");
                 return BadRequest(e.Message);
             }
         }

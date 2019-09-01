@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Piping.Infrastructure;
 using Piping.Models;
+using System.Text;
 
 namespace Piping
 {
@@ -25,6 +26,7 @@ namespace Piping
             services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
             services.AddSingleton<IWaiters, Waiters>();
             services.AddTransient<CompletableStreamResult>();
+            services.AddTransient<Encoding>(_ => new UTF8Encoding(false));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

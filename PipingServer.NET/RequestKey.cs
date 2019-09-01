@@ -6,10 +6,19 @@ namespace Piping
 {
     public readonly struct RequestKey
     {
+        /// <summary>
+        /// 相対パスの辻褄合わせ用
+        /// </summary>
         const string PATH = "http://example.com/";
+        /// <summary>
+        /// パス
+        /// </summary>
         public readonly string LocalPath;
+        /// <summary>
+        /// 送信先数
+        /// </summary>
         public readonly int Receivers;
-        public RequestKey(string relativeUri) : this(new Uri(PATH + relativeUri.TrimStart('/'))) { }
+        public RequestKey(string relativeUri) : this(new Uri(PATH + relativeUri.TrimStart('/').ToLower())) { }
         public RequestKey(Uri relativeUri)
         {
             var Collection = QueryToDictionary(relativeUri.Query);

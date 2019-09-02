@@ -7,10 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Piping.Infrastructure;
 using Piping.Models;
 using System.Text;
+using Piping.Converters;
 
 namespace Piping
 {
-    public class Startup
+    internal class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -22,11 +23,14 @@ namespace Piping
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<PipingOptions>(Configuration.GetSection("PipingOptions"));
             services.AddControllers();
             services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
             services.AddSingleton<IWaiters, Waiters>();
             services.AddTransient<CompletableStreamResult>();
             services.AddTransient<Encoding>(_ => new UTF8Encoding(false));
+            services.AddTransient<IStreamConverter, MultipartStreamConverter>();
+            services.AddTransient<IStreamConverter, DefaultStreamConverter>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

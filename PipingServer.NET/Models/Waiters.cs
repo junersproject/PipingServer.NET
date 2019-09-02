@@ -6,11 +6,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 using Piping.Streams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc;
+using Piping.Converters;
+using Microsoft.Extensions.Options;
 
 namespace Piping.Models
 {
@@ -18,14 +19,16 @@ namespace Piping.Models
     {
         readonly Encoding Encoding;
         readonly IServiceProvider Services;
+        readonly PipingOptions Options;
         readonly ILogger<Waiters> Logger;
+        readonly IEnumerable<IStreamConverter> Converters;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="Services"></param>
         /// <param name="Logger"></param>
-        public Waiters(IServiceProvider Services, ILogger<Waiters> Logger, Encoding Encoding)
-            => (this.Services, this.Logger, this.Encoding) = (Services, Logger, Encoding);
+        public Waiters(IServiceProvider Services, ILogger<Waiters> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
+            => (this.Services, this.Logger, this.Encoding, this.Converters, this.Options) = (Services, Logger, Encoding, Converters, Options.Value);
         public IActionResult AddSender(string RelativeUri, HttpRequest Request, CancellationToken Token = default)
             => AddSender(new RequestKey(RelativeUri), Request, Token);
         public IActionResult AddSender(RequestKey Key, HttpRequest Request, CancellationToken Token = default)
@@ -42,7 +45,6 @@ namespace Piping.Models
             {
                 if (w.IsEstablished)
                     throw new InvalidOperationException($"[ERROR] Connection on '{Key.LocalPath}' has been established already.\n");
-                string message;
                 if (w.RequestedReceiversCount is null)
                     w.RequestedReceiversCount = Key.Receivers;
                 else if (Key.Receivers != w.RequestedReceiversCount)
@@ -58,14 +60,8 @@ namespace Piping.Models
 
                 var DataTask = GetDataAsync(Request, Token);
                 var ResponseStream = Result.Stream;
-
-                message = $"[INFO] Waiting for {w.RequestedReceiversCount} receiver(s)...";
-                Logger.LogInformation(message);
-                SendMessage(ResponseStream, Encoding, message);
-                message = $"[INFO] {w.ReceiversCount} receiver(s) has/have been connected.";
-                Logger.LogInformation(message);
-                SendMessage(ResponseStream, Encoding, message);
-
+                SendMessage(ResponseStream, $"[INFO] Waiting for {w.RequestedReceiversCount} receiver(s)...");
+                SendMessage(ResponseStream, $"[INFO] {w.ReceiversCount} receiver(s) has/have been connected.");
                 _ = Task.Run(async () =>
                 {
                     using var l = Logger.BeginLogInformationScope("async " + nameof(AddSender) + " Run");
@@ -77,11 +73,6 @@ namespace Piping.Models
                             using (Token.Register(() => w.ReadyTaskSource.TrySetCanceled(Token)))
                                 await w.ReadyTaskSource.Task;
                         var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
-                        message = $"[INFO] {nameof(ContentLength)}:{ContentLength}, {nameof(ContentType)}:{ContentType}, {nameof(ContentDisposition)}:{ContentDisposition}";
-                        Logger.LogInformation(message);
-                        await SendMessageAsync(ResponseStream, Encoding, message);
-
-                        w.IsEstablished = true;
                         var Buffers = w.Receivers.Select(Response =>
                         {
                             Response.ContentLength = ContentLength;
@@ -89,10 +80,7 @@ namespace Piping.Models
                             Response.ContentDisposition = ContentDisposition;
                             return Response.Stream;
                         });
-                        message = $"[INFO] Start sending with {w.ReceiversCount} receiver(s)!";
-                        Logger.LogInformation(message);
-                        await SendMessageAsync(ResponseStream, Encoding, message);
-
+                        await SendMessageAsync(ResponseStream, $"[INFO] Start sending with {w.ReceiversCount} receiver(s)!");
                         var PipingTask = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
                         w.ResponseTaskSource.TrySetResult(true);
                         await Task.WhenAll(w.ResponseTaskSource.Task, PipingTask);
@@ -110,10 +98,13 @@ namespace Piping.Models
                 TryRemove(w);
             }
         }
-        private async ValueTask<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetDataAsync(HttpRequest Request, CancellationToken Token = default)
-            => IsMultiForm(Request.Headers) ? await GetPartStreamAsync(Request.Headers, Request.Body, Token) : GetRequestStream(Request);
-        private static bool IsMultiForm(IHeaderDictionary Headers)
-            => FileUploadSample.MultipartRequestHelper.IsMultipartContentType(Headers["Content-Type"]);
+        private Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetDataAsync(HttpRequest Request, CancellationToken Token = default)
+        {
+            foreach (var c in Converters)
+                if (c.IsUse(Request.Headers))
+                    return c.GetStreamAsync(Request.Headers, Request.Body, Token);
+            throw new InvalidOperationException("Empty Stream.");
+        }
         private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
             using var l = Logger.BeginLogInformationScope(nameof(PipingAsync));
@@ -130,7 +121,7 @@ namespace Piping.Models
                 }
                 var Message = $"[INFO] Sending successful! {byteCounter} bytes.";
                 Logger.LogInformation(Message);
-                await SendMessageAsync(InfomationStream, Encoding, Message);
+                await SendMessageAsync(InfomationStream, Message);
                 using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
 
             }
@@ -141,33 +132,6 @@ namespace Piping.Models
                 InfomationStream.CompleteAdding();
             }
         }
-        /// <summary>
-        /// multipart/form-data を
-        /// </summary>
-        /// <param name="Headers"></param>
-        /// <param name="Stream"></param>
-        /// <param name="Token"></param>
-        /// <returns></returns>
-        async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetPartStreamAsync(IHeaderDictionary Headers, Stream Stream, CancellationToken Token = default)
-        {
-            var enumerable = new AsyncMutiPartFormDataEnumerable(Headers, Stream);
-            await foreach (var (headers, stream) in enumerable.WithCancellation(Token))
-            {
-                var _Stream = stream;
-                var ContentLength = headers.ContentLength;
-                var ContentType = (string)headers["Content-Type"];
-                var ContentDisposition = (string)headers["Content-Disposition"];
-                return (_Stream, ContentLength, ContentType, ContentDisposition);
-            }
-            throw new InvalidOperationException("source is empty");
-        }
-        (Stream Stream, long? CountentLength, string? ContentType, string? ContentDisposition) GetRequestStream(HttpRequest Request)
-            => (
-                Request.Body,
-                Request.ContentLength,
-                Request.ContentType,
-                Request.Headers["Content-Disposition"] == StringValues.Empty ? null : string.Join(" ", Request.Headers["Content-Disposition"])
-            );
         public IActionResult AddReceiver(string RelativeUri, CancellationToken Token = default)
             => AddReceiver(new RequestKey(RelativeUri), Token);
         public IActionResult AddReceiver(RequestKey Key, CancellationToken Token = default)
@@ -195,7 +159,7 @@ namespace Piping.Models
                 Result.OnFinally += (o, arg) =>
                 {
                     var Removed = w.RemoveReceiver(Result);
-                    Logger.LogInformation("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED" ));
+                    Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED" ));
                     TryRemove(w);
                 };
                 w.AddReceiver(Result);
@@ -210,13 +174,15 @@ namespace Piping.Models
                 TryRemove(w);
             }
         }
-        private async Task SendMessageAsync(Stream Stream, Encoding Encoding, string Message, CancellationToken Token = default)
+        private async Task SendMessageAsync(Stream Stream, string Message, CancellationToken Token = default)
         {
+            Logger.LogDebug(Message);
             var buffer = Encoding.GetBytes(Message + Environment.NewLine).AsMemory();
             await Stream.WriteAsync(buffer, Token);
         }
-        private void SendMessage(Stream Stream, Encoding Encoding, string Message)
+        private void SendMessage(Stream Stream, string Message)
         {
+            Logger.LogDebug(Message);
             Stream.Write(Encoding.GetBytes(Message + Environment.NewLine).AsSpan());
         }
         protected Waiter Get(RequestKey Key)
@@ -225,12 +191,12 @@ namespace Piping.Models
             {
                 if (_waiters.TryGetValue(Key, out var Waiter))
                 {
-                    Logger.LogInformation("GET " + Waiter);
+                    Logger.LogDebug("GET " + Waiter);
                 }
                 else
                 {
-                    Waiter = new Waiter(Key);
-                    Logger.LogInformation("CREATE " + Waiter);
+                    Waiter = new Waiter(Key, Options);
+                    Logger.LogDebug("CREATE " + Waiter);
                     _waiters.Add(Key, Waiter);
                 }
                 return Waiter;
@@ -243,12 +209,12 @@ namespace Piping.Models
                 bool Result;
                 if (Result = Waiter.IsRemovable)
                 {
-                    Logger.LogInformation("REMOVE " + Waiter);
+                    Logger.LogDebug("REMOVE " + Waiter);
                     _waiters.Remove(Waiter.Key);
                 }
                 else
                 {
-                    Logger.LogInformation("KEEP " + Waiter);
+                    Logger.LogDebug("KEEP " + Waiter);
                 }
                 return Result;
             }
@@ -257,17 +223,33 @@ namespace Piping.Models
         protected class Waiter : IDisposable
         {
             public readonly RequestKey Key;
-            public Waiter(RequestKey Key)
+            public Waiter(RequestKey Key, PipingOptions Options)
             {
                 this.Key = Key;
+                if (Options.WatingTimeout < TimeSpan.Zero)
+                    throw new ArgumentException($"{nameof(Options)}.{nameof(Options.WatingTimeout)} is {Options.WatingTimeout}. required {nameof(Options.WatingTimeout)} is {nameof(TimeSpan.Zero)} over");
+                if (Options.WatingTimeout is TimeSpan WaitTimeout)
+                {
+                    WaitTokenSource = new CancellationTokenSource(WaitTimeout);
+                    var Token = WaitTokenSource.Token;
+                    CancelAction = WaitTokenSource.Token.Register(() =>
+                    {
+                        ReadyTaskSource.TrySetCanceled(Token);
+                        ResponseTaskSource.TrySetCanceled(Token);
+                    });
+                    ReadyTaskSource.Task.ContinueWith(t => {
+                        CancelAction?.Dispose();
+                    });
+                }
             }
-
+            readonly IDisposable? CancelAction = null;
+            readonly CancellationTokenSource? WaitTokenSource = null;
             internal readonly TaskCompletionSource<bool> ReadyTaskSource = new TaskCompletionSource<bool>();
             internal readonly TaskCompletionSource<bool> ResponseTaskSource = new TaskCompletionSource<bool>();
             /// <summary>
             /// 待ち合わせが完了しているかどうか
             /// </summary>
-            public bool IsEstablished { internal set; get; } = false;
+            public bool IsEstablished => ReadyTaskSource.Task.IsCompletedSuccessfully;
             /// <summary>
             /// Sender が設定済み
             /// </summary>
@@ -328,6 +310,7 @@ namespace Piping.Models
                     nameof(GetHashCode) + ":" +GetHashCode()
                 }.OfType<string>()) + "}";
             }
+            public event EventHandler? OnWaitTimeout;
             #region IDisposable Support
             private bool disposedValue = false; // 重複する呼び出しを検出するには
 
@@ -341,6 +324,12 @@ namespace Piping.Models
                             ReadyTaskSource.TrySetCanceled();
                         if (!ResponseTaskSource.Task.IsCompleted)
                             ResponseTaskSource.TrySetCanceled();
+                        foreach (var e in (OnWaitTimeout?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
+                            OnWaitTimeout -= e;
+                        if (WaitTokenSource is CancellationTokenSource TokenSource)
+                            TokenSource.Dispose();
+                        if (CancelAction is IDisposable Disposable)
+                            Disposable.Dispose();
                     }
                     disposedValue = true;
                 }
@@ -368,7 +357,6 @@ namespace Piping.Models
                 disposedValue = true;
             }
         }
-
         // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
         public void Dispose()
         {

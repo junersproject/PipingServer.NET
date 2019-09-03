@@ -5,15 +5,10 @@ namespace Piping
 {
     public static class LoggerExtensions
     {
-        public static IDisposable BeginLogInformationScope<T>(this ILogger<T> logger, string message, string startSuffix = " START", string stopSuffix = " STOP")
+        public static IDisposable BeginLogDebugScope<T>(this ILogger<T> logger, string message, string startSuffix = " START", string stopSuffix = " STOP")
         {
-            logger.LogInformation(message + startSuffix);
+            logger.LogDebug(message + startSuffix);
             return Disposable.Create(() => logger.LogInformation(message + stopSuffix));
-        }
-        public static IDisposable BeginLogTraceScope<T>(this ILogger<T> logger, string message, string startSuffix = " START", string stopSuffix = " STOP")
-        {
-            logger.LogTrace(message + startSuffix);
-            return Disposable.Create(() => logger.LogTrace(message + stopSuffix));
         }
     }
 }

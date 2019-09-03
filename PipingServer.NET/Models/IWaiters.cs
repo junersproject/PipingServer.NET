@@ -12,4 +12,16 @@ namespace Piping.Models
         public IActionResult AddSender(string RelativeUri, HttpContext Context) => AddSender(RelativeUri, Context.Request, Context.RequestAborted);
         IActionResult AddSender(string RelativeUri, HttpRequest Request, CancellationToken Token = default);
     }
+    public interface IWaiter
+    {
+        RequestKey Key { get; }
+        WaiterStatus Status { get; }
+    }
+    public enum WaiterStatus
+    {
+        Wait,
+        Ready,
+        ResponseStart,
+        Canceled,
+    }
 }

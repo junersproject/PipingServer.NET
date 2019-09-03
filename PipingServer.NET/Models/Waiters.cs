@@ -34,59 +34,60 @@ namespace Piping.Models
         public IActionResult AddSender(RequestKey Key, HttpRequest Request, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
+            // seek request body
             if (Request.Body.CanSeek)
                 Request.Body.Seek(0, SeekOrigin.Begin);
-            Logger.LogInformation(string.Join(" ", _waiters.Select(v => $"{ v.Key }:{v.Value}")));
 
-            var w = Get(Key);
-            try
+            var Waiter = Get(Key);
+            using var finallyremove = Disposable.Create(() => TryRemove(Waiter));
+            Waiter.AssertKey(Key);
+            using var l = Logger.BeginLogDebugScope(nameof(AddSender));
+            Waiter.SetSenderComplete();
+            var Response = GetSenderStreamResult(Waiter);
+            var DataTask = GetDataAsync(Request, Token);
+            SendMessage(Response.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...");
+            SendMessage(Response.Stream, $"{Waiter.ReceiversCount} receiver(s) has/have been connected.");
+            _ = Task.Run(async () =>
             {
-                w.AssertKey(Key);
-                using var l = Logger.BeginLogInformationScope(nameof(AddSender));
-                w.SetSenderComplete();
-                var Result = Services.GetRequiredService<CompletableStreamResult>();
-                Result.Identity = "Sender";
-                Result.Stream = new CompletableQueueStream();
-                Result.ContentType = $"text/plain;charset={Encoding.WebName}";
-                Result.OnFinally += (o, arg) => TryRemove(w);
-                var DataTask = GetDataAsync(Request, Token);
-                var ResponseStream = Result.Stream;
-                SendMessage(ResponseStream, $"Waiting for {w.RequestedReceiversCount} receiver(s)...");
-                SendMessage(ResponseStream, $"{w.ReceiversCount} receiver(s) has/have been connected.");
-                _ = Task.Run(async () =>
+                using var l = Logger.BeginLogDebugScope("async " + nameof(AddSender) + " Run");
+                try
                 {
-                    using var l = Logger.BeginLogInformationScope("async " + nameof(AddSender) + " Run");
-                    try
-                    {
-                        if (w.IsReady)
-                            w.ReadyTaskSource.TrySetResult(true);
-                        else
-                            using (Token.Register(() => w.ReadyTaskSource.TrySetCanceled(Token)))
-                                await w.ReadyTaskSource.Task;
-                        var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
-                        var Buffers = w.Receivers.Select(Response =>
-                        {
-                            Response.ContentLength = ContentLength;
-                            Response.ContentType = ContentType;
-                            Response.ContentDisposition = ContentDisposition;
-                            return Response.Stream;
-                        });
-                        await SendMessageAsync(ResponseStream, $"Start sending with {w.ReceiversCount} receiver(s)!");
-                        var PipingTask = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
-                        w.ResponseTaskSource.TrySetResult(true);
-                        await Task.WhenAll(w.ResponseTaskSource.Task, PipingTask);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(e, nameof(AddSender));
-                        w.ResponseTaskSource.TrySetException(e);
-                    }
-                });
-                return Result;
-            }
-            finally
+                    if (Waiter.IsReady)
+                        Waiter.ReadyTaskSource.TrySetResult(true);
+                    else
+                        using (Token.Register(() => Waiter.ReadyTaskSource.TrySetCanceled(Token)))
+                            await Waiter.ReadyTaskSource.Task;
+                    var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
+                    SetHeaders(Waiter.Receivers, ContentLength, ContentType, ContentDisposition);
+                    await SendMessageAsync(Response.Stream, $"Start sending with {Waiter.ReceiversCount} receiver(s)!");
+                    var PipingTask = PipingAsync(Stream, Response.Stream, Waiter.Receivers.Select(v => v.Stream), 1024, Encoding, Token);
+                    Waiter.ResponseTaskSource.TrySetResult(true);
+                    await Task.WhenAll(Waiter.ResponseTaskSource.Task, PipingTask);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, nameof(AddSender));
+                    Waiter.ResponseTaskSource.TrySetException(e);
+                }
+            });
+            return Response;
+        }
+        private CompletableStreamResult GetSenderStreamResult(Waiter Waiter)
+        {
+            var Result = Services.GetRequiredService<CompletableStreamResult>();
+            Result.Identity = "Sender";
+            Result.Stream = new CompletableQueueStream();
+            Result.ContentType = $"text/plain;charset={Encoding.WebName}";
+            Result.OnFinally += (o, arg) => TryRemove(Waiter);
+            return Result;
+        }
+        private void SetHeaders(IEnumerable<CompletableStreamResult> Responses, long? ContentLength, string? ContentType, string? ContentDisposition)
+        {
+            foreach (var r in Responses)
             {
-                TryRemove(w);
+                r.ContentLength = ContentLength;
+                r.ContentType = ContentType;
+                r.ContentDisposition = ContentDisposition;
             }
         }
         private Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetDataAsync(HttpRequest Request, CancellationToken Token = default)
@@ -98,63 +99,57 @@ namespace Piping.Models
         }
         private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
-            using var l = Logger.BeginLogInformationScope(nameof(PipingAsync));
-            var buffer = new byte[BufferSize];
+            using var l = Logger.BeginLogDebugScope(nameof(PipingAsync));
+            var buffer = new byte[BufferSize].AsMemory();
             using var Stream = new PipingStream(Buffers);
             int bytesRead;
             var byteCounter = 0L;
-            try
-            {
-                while ((bytesRead = await RequestStream.ReadAsync(buffer, 0, buffer.Length, Token).ConfigureAwait(false)) != 0)
-                {
-                    await Stream.WriteAsync(buffer.AsMemory().Slice(0, bytesRead), Token).ConfigureAwait(false);
-                    byteCounter += bytesRead;
-                }
-                await SendMessageAsync(InfomationStream, $"Sending successful! {byteCounter} bytes.");
-                using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
-
-            }
-            finally
+            using var finallyact = Disposable.Create(() =>
             {
                 foreach (var b in Buffers)
                     b.CompleteAdding();
                 InfomationStream.CompleteAdding();
+            });
+            while ((bytesRead = await RequestStream.ReadAsync(buffer, Token).ConfigureAwait(false)) != 0)
+            {
+                await Stream.WriteAsync(buffer.Slice(0, bytesRead), Token).ConfigureAwait(false);
+                byteCounter += bytesRead;
             }
+            await SendMessageAsync(InfomationStream, $"Sending successful! {byteCounter} bytes.");
+            using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
         }
         public IActionResult AddReceiver(string RelativeUri, CancellationToken Token = default)
             => AddReceiver(new RequestKey(RelativeUri), Token);
         public IActionResult AddReceiver(RequestKey Key, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
-            using var l = Logger.BeginLogInformationScope(nameof(AddReceiver));
-            var w = Get(Key);
-            try
+            using var l = Logger.BeginLogDebugScope(nameof(AddReceiver));
+            var Waiter = Get(Key);
+            using var finallyremove = Disposable.Create(() => TryRemove(Waiter));
+            Waiter.AssertKey(Key);
+            if (!(Waiter.ReceiversCount < Waiter.RequestedReceiversCount))
+                throw new InvalidOperationException($"Connection receivers over.");
+            var Response = CreateReceiverStreamResult(Waiter);
+            Waiter.AddReceiver(Response);
+            if (Waiter.IsReady)
+                Waiter.ReadyTaskSource.TrySetResult(true);
+            return Response;
+        }
+        private CompletableStreamResult CreateReceiverStreamResult(Waiter Waiter)
+        {
+            var Result = Services.GetRequiredService<CompletableStreamResult>();
+            Result.Identity = "Receiver";
+            Result.Stream = new CompletableQueueStream();
+            Result.AccessControlAllowOrigin = "*";
+            Result.AccessControlExposeHeaders = "Content-Length, Content-Type";
+            Result.OnFinally += (o, arg) =>
             {
-                w.AssertKey(Key);
-                if (!(w.ReceiversCount < w.RequestedReceiversCount))
-                    throw new InvalidOperationException($"Connection receivers over.");
-                var Result = Services.GetRequiredService<CompletableStreamResult>();
-                Result.Identity = "Receiver";
-                Result.Stream = new CompletableQueueStream();
-                Result.AccessControlAllowOrigin = "*";
-                Result.AccessControlExposeHeaders = "Content-Length, Content-Type";
-                Result.OnFinally += (o, arg) =>
-                {
-                    var Removed = w.RemoveReceiver(Result);
-                    Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED"));
-                    TryRemove(w);
-                };
-                w.AddReceiver(Result);
-                Result.HeaderIsSetCompletedTask = Task.WhenAll(w.ReadyTaskSource.Task, w.ResponseTaskSource.Task);
-
-                if (w.IsReady)
-                    w.ReadyTaskSource.TrySetResult(true);
-                return Result;
-            }
-            finally
-            {
-                TryRemove(w);
-            }
+                var Removed = Waiter.RemoveReceiver(Result);
+                Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED"));
+                TryRemove(Waiter);
+            };
+            Result.HeaderIsSetCompletedTask = Waiter.HeaderIsSetCompletedTask;
+            return Result;
         }
         private async Task SendMessageAsync(Stream Stream, string Message, CancellationToken Token = default)
         {
@@ -206,9 +201,9 @@ namespace Piping.Models
             }
         }
         protected Dictionary<RequestKey, Waiter> _waiters = new Dictionary<RequestKey, Waiter>();
-        protected class Waiter : IDisposable
+        protected class Waiter : IWaiter, IDisposable
         {
-            public readonly RequestKey Key;
+            public RequestKey Key { get; }
             public Waiter(RequestKey Key, PipingOptions Options)
             {
                 this.Key = Key;
@@ -229,8 +224,21 @@ namespace Piping.Models
                     });
                 }
             }
+            public WaiterStatus Status {
+                get
+                {
+                    if (IsWaitCanceled)
+                        return WaiterStatus.Canceled;
+                    if (IsEstablished)
+                        return WaiterStatus.ResponseStart;
+                    if (IsReady)
+                        return WaiterStatus.Ready;
+                    return WaiterStatus.Wait;
+                }
+            }
             readonly IDisposable? CancelAction = null;
             readonly CancellationTokenSource? WaitTokenSource = null;
+            public Task HeaderIsSetCompletedTask => Task.WhenAll(ReadyTaskSource.Task, ResponseTaskSource.Task);
             internal readonly TaskCompletionSource<bool> ReadyTaskSource = new TaskCompletionSource<bool>();
             internal readonly TaskCompletionSource<bool> ResponseTaskSource = new TaskCompletionSource<bool>();
             public bool IsWaitCanceled => ReadyTaskSource.Task.IsCanceled;
@@ -273,10 +281,6 @@ namespace Piping.Models
             }
             public void AddReceiver(CompletableStreamResult Result) => _Receivers.Add(Result);
             public bool RemoveReceiver(CompletableStreamResult Result) => _Receivers.Remove(Result);
-            /// <summary>
-            /// Receivers が空
-            /// </summary>
-            public bool ReceiversIsEmpty => _receiversCount <= 0;
             public bool ReceiversIsAllSet => _Receivers.Count == _receiversCount;
             internal int? _receiversCount = 1;
             /// <summary>
@@ -299,16 +303,16 @@ namespace Piping.Models
                         ReadyTaskSource.TrySetResult(true);
                 }
             }
-            public bool IsReady => IsSetSenderComplete && ReceiversIsAllSet;
+            public bool IsReady => IsSetSenderComplete && ReceiversIsAllSet || IsEstablished;
             public override string? ToString()
             {
                 return nameof(Waiter) + "{" + string.Join(", ", new[] {
                     nameof(Key) + ":" + Key,
+                    nameof(Status) + ":" + Status,
                     nameof(IsEstablished) + ":" + IsEstablished,
                     nameof(IsSetSenderComplete) + ":" + IsSetSenderComplete,
                     nameof(IsSetReceiversComplete) + ":" + IsSetReceiversComplete,
                     nameof(IsRemovable) + ":" + IsRemovable,
-                    nameof(ReceiversIsEmpty) + ":" + ReceiversIsEmpty,
                     nameof(RequestedReceiversCount) + ":" + RequestedReceiversCount,
                     nameof(IsReady) + ":" + IsReady,
                     nameof(GetHashCode) + ":" +GetHashCode()

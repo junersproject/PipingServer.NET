@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28721.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServer.NET", "PipingServer.NET\PipingServer.NET.csproj", "{10A761F8-845E-42E8-A949-6FD4BA31F671}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServer.NETTests", "PipingServer.NETTests\PipingServer.NETTests.csproj", "{EBA241E7-5321-46BB-8AEF-589947BCFF49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.NET", "PipingServer.NET\PipingServer.NET.csproj", "{DBCDF606-BB7B-4E9E-875E-9D0219212782}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{88559B08-9EA2-4BD8-A8AA-8482EC2F2E37}"
 	ProjectSection(SolutionItems) = preProject
@@ -15,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServerConsole", "PipingServerConsole\PipingServerConsole.csproj", "{B72C47B1-61D2-4B16-BF1F-BA4EE28FC3E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServer.NETTests", "PipingServer.NETTests\PipingServer.NETTests.csproj", "{1AC8E450-E7FF-42B5-9DC6-894B5E40DBB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,18 +21,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{10A761F8-845E-42E8-A949-6FD4BA31F671}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10A761F8-845E-42E8-A949-6FD4BA31F671}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10A761F8-845E-42E8-A949-6FD4BA31F671}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10A761F8-845E-42E8-A949-6FD4BA31F671}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EBA241E7-5321-46BB-8AEF-589947BCFF49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EBA241E7-5321-46BB-8AEF-589947BCFF49}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EBA241E7-5321-46BB-8AEF-589947BCFF49}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EBA241E7-5321-46BB-8AEF-589947BCFF49}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B72C47B1-61D2-4B16-BF1F-BA4EE28FC3E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B72C47B1-61D2-4B16-BF1F-BA4EE28FC3E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B72C47B1-61D2-4B16-BF1F-BA4EE28FC3E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B72C47B1-61D2-4B16-BF1F-BA4EE28FC3E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBCDF606-BB7B-4E9E-875E-9D0219212782}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBCDF606-BB7B-4E9E-875E-9D0219212782}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBCDF606-BB7B-4E9E-875E-9D0219212782}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBCDF606-BB7B-4E9E-875E-9D0219212782}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AC8E450-E7FF-42B5-9DC6-894B5E40DBB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AC8E450-E7FF-42B5-9DC6-894B5E40DBB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AC8E450-E7FF-42B5-9DC6-894B5E40DBB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AC8E450-E7FF-42B5-9DC6-894B5E40DBB2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

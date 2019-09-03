@@ -1,11 +1,11 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static DebugUtils;
 
 namespace Piping.Tests
@@ -91,7 +91,8 @@ namespace Piping.Tests
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task GetVersionExample(string pipingServerUri)
         {
-            try { 
+            try
+            {
                 var BaseUri = new Uri(pipingServerUri);
                 var SendUri = new Uri(BaseUri, "/version");
                 var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
@@ -112,7 +113,8 @@ namespace Piping.Tests
         [Description("piping-server の / を取得する")]
         public async Task GetRootExample(string pipingServerUri)
         {
-            try { 
+            try
+            {
                 var BaseUri = new Uri(pipingServerUri.TrimEnd('/') + "/");
                 var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Get);
                 Trace.WriteLine(Status);
@@ -152,7 +154,8 @@ namespace Piping.Tests
         [Description("piping-server の /help の取得を試みる。")]
         public async Task GetHelpExample(string pipingServerUri)
         {
-            try { 
+            try
+            {
                 var BaseUri = new Uri(pipingServerUri);
                 var SendUri = new Uri(BaseUri, "/help");
                 var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(SendUri, HttpMethod.Get);
@@ -171,7 +174,8 @@ namespace Piping.Tests
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task OptionsRootExample(string pipingServerUri)
         {
-            try { 
+            try
+            {
                 var BaseUri = new Uri(pipingServerUri);
                 var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Options);
                 Trace.WriteLine(Status);
@@ -189,7 +193,8 @@ namespace Piping.Tests
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task PostRootExample(string pipingServerUri)
         {
-            try { 
+            try
+            {
                 var BaseUri = new Uri(pipingServerUri);
                 var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(BaseUri, HttpMethod.Post);
                 Trace.WriteLine(Status);

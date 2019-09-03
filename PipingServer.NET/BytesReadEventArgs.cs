@@ -4,8 +4,8 @@ namespace Piping
 {
     public class BytesReadEventArgs : EventArgs
     {
-        public byte[] Buffer { get; }
-        public BytesReadEventArgs(byte[] tmp) : base()
+        public ReadOnlyMemory<byte> Buffer { get; }
+        public BytesReadEventArgs(ReadOnlyMemory<byte> tmp) : base()
         {
             Buffer = tmp;
         }

@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Piping
+namespace Piping.Streams
 {
     public class PipingStream : Stream
     {
@@ -13,15 +15,24 @@ namespace Piping
         {
             Disposables = outputStreams.Select(stream =>
             {
+                IDisposable? disposable = null;
                 BytesRead += action;
-                return Disposable.Create(() => BytesRead -= action);
-                void action(object self, BytesReadEventArgs args)
+                disposable = Disposable.Create(() => BytesRead -= action);
+                return disposable!;
+                async void action(object? self, BytesReadEventArgs args)
                 {
-                    stream.Write(args.Buffer, 0, args.Buffer.Length);
+                    try
+                    {
+                        await stream.WriteAsync(args.Buffer);
+                    }
+                    catch (Exception)
+                    {
+                        disposable?.Dispose();
+                    }
                 }
             }).ToArray();
         }
-        public event EventHandler<BytesReadEventArgs> BytesRead;
+        public event EventHandler<BytesReadEventArgs>? BytesRead;
         public override void Flush() { }
         public override long Seek(long offset, SeekOrigin origin)
             => throw new InvalidOperationException("Cannot seek in " + nameof(PipingStream));
@@ -34,6 +45,13 @@ namespace Piping
             BytesRead?.Invoke(this, new BytesReadEventArgs(tmp));
         }
         public override void Write(byte[] buffer, int offset, int count) => PipeToOutputStream(buffer, offset, count);
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() =>
+            {
+                BytesRead?.Invoke(this, new BytesReadEventArgs(buffer));
+            });
+        }
         public override bool CanRead => false;
         public override bool CanSeek => false;
         public override bool CanWrite => true;

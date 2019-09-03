@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Piping.Tests
 {
@@ -77,7 +77,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -113,7 +113,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -185,7 +185,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -221,7 +221,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var streamDispose = Token.Register(() => stream.Dispose());
                     using var reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -292,7 +292,7 @@ namespace Piping.Tests
                         Trace.WriteLine($"[SENDER'S RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
                     using var outstreamDispose = Token.Register(() => outstream.Dispose());
                     using var reader = new StreamReader(outstream, Encoding.UTF8, false, 1024, true);
-                    string Line;
+                    string? Line;
                     string ReadToEnd = string.Empty;
                     while (!string.IsNullOrEmpty(Line = await reader.ReadLineAsync()))
                     {
@@ -334,9 +334,9 @@ namespace Piping.Tests
                     var buffer = new byte[1024];
                     var Bytes = new List<byte>();
                     int Count;
-                    while (0 < (Count = await stream.ReadAsync(buffer,0, buffer.Length, Token)))
+                    while (0 < (Count = await stream.ReadAsync(buffer, 0, buffer.Length, Token)))
                     {
-                        Trace.WriteLine($"[RECEIVE BYTES] : {string.Join(" ",buffer.Take(Count).Select(v => $"{v:X2}"))}");
+                        Trace.WriteLine($"[RECEIVE BYTES] : {string.Join(" ", buffer.Take(Count).Select(v => $"{v:X2}"))}");
                         Bytes.AddRange(buffer.Take(Count));
                     }
                     return (Bytes.ToArray(), ContentType, FileName);

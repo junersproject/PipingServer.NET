@@ -20,11 +20,13 @@ namespace Piping.Streams.Tests
             var Tasks = new[] { Task.Run(() => stream.Read(buffer, 0, buffer.Length)) };
             using var TokenSource = new CancellationTokenSource(Time);
             Assert.ThrowsException<OperationCanceledException>(
-                () => {
+                () =>
+                {
                     try
                     {
                         Task.WaitAny(Tasks, TokenSource.Token);
-                    }catch(Exception e)
+                    }
+                    catch (Exception e)
                     {
                         System.Diagnostics.Trace.WriteLine(e);
                         throw;
@@ -65,10 +67,14 @@ namespace Piping.Streams.Tests
             using var TokenSource = CreateTokenSource(Time);
             var Tasks = new[] { Task.Run(() => stream.Read(buffer)) };
             Assert.ThrowsException<OperationCanceledException>(
-                () => {
-                    try {
+                () =>
+                {
+                    try
+                    {
                         Task.WaitAny(Tasks, TokenSource.Token);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e)
+                    {
                         System.Diagnostics.Trace.WriteLine(e);
                         throw;
                     }
@@ -85,7 +91,7 @@ namespace Piping.Streams.Tests
             stream.Write(data);
             int ReadBytes = 0;
             using (var TokenSource = new CancellationTokenSource(Time))
-            Task.WaitAny(new[] { Task.Run(() => ReadBytes = stream.Read(buffer)) }, TokenSource.Token);
+                Task.WaitAny(new[] { Task.Run(() => ReadBytes = stream.Read(buffer)) }, TokenSource.Token);
             Assert.AreEqual(buffer.Length, ReadBytes);
             ReadBytes = stream.Read(buffer);
             Assert.AreEqual(buffer.Length, ReadBytes);
@@ -154,7 +160,7 @@ namespace Piping.Streams.Tests
             using var stream = new CompletableQueueStream();
             using var TokenSource = CreateTokenSource(Time);
             Assert.ThrowsExceptionAsync<OperationCanceledException>(
-                async() => await stream.ReadAsync(buffer.AsMemory(), TokenSource.Token));
+                async () => await stream.ReadAsync(buffer.AsMemory(), TokenSource.Token));
         }
         [TestMethod, TestCategory("ShortTime")]
         public async Task StartReadAsyncTest1()
@@ -186,7 +192,7 @@ namespace Piping.Streams.Tests
             using var stream = new CompletableQueueStream();
             using var TokenSource = CreateTokenSource(Time);
             Assert.ThrowsExceptionAsync<OperationCanceledException>(
-                () => stream.ReadAsync(buffer, 0, buffer.Length, TokenSource.Token)) ;
+                () => stream.ReadAsync(buffer, 0, buffer.Length, TokenSource.Token));
         }
         [TestMethod, TestCategory("ShortTime")]
         public async Task StartReadAsyncTest2()

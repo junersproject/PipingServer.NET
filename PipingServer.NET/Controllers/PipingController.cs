@@ -29,7 +29,8 @@ namespace Piping.Controllers
             try
             {
                 return Waiters.AddSender(RelativeUri, HttpContext);
-            }catch(InvalidOperationException e)
+            }
+            catch (InvalidOperationException e)
             {
                 Logger.LogError(e, "upload fail.");
                 return BadRequest(e.Message);

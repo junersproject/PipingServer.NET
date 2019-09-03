@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Piping.Models
 {
@@ -10,6 +7,6 @@ namespace Piping.Models
         /// <summary>
         /// Waiting Timeout Value.
         /// </summary>
-        public TimeSpan? WatingTimeout { get; set; } = TimeSpan.FromHours(1);
+        public TimeSpan? WatingTimeout { get; set; } = null;
     }
 }

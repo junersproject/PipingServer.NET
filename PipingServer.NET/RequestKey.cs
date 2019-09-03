@@ -30,7 +30,7 @@ namespace Piping
         {
             return obj is RequestKey other ? other.LocalPath == LocalPath : false;
         }
-        public static IDictionary<string,string> QueryToDictionary(string Query)
+        public static IDictionary<string, string> QueryToDictionary(string Query)
         {
             var dic = new Dictionary<string, string>();
             if (!Query.Any())

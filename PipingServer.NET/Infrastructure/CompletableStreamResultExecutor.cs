@@ -32,6 +32,12 @@ namespace Piping.Infrastructure
             if (Result.ContentDisposition is string _ContentDisposition)
                 Response.Headers["Content-Disposition"] = _ContentDisposition;
         }
+        protected void SetTimeout(HttpResponse Response)
+        {
+            Response.StatusCode = 408;
+            Response.ContentLength = 0;
+            Response.Headers["Connection"] = "Close";
+        }
         public async Task ExecuteAsync(ActionContext context, CompletableStreamResult result)
         {
             using var l = logger.BeginLogInformationScope(nameof(ExecuteAsync) + " : " + result.Identity);
@@ -39,10 +45,21 @@ namespace Piping.Infrastructure
                 throw new ArgumentNullException(nameof(context));
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
+            using var finallydispose = Disposable.Create(() => result.FireFinally(context));
             var Response = context.HttpContext.Response;
-            await result.HeaderIsSetCompletedTask;
+            try
+            {
+                await result.HeaderIsSetCompletedTask;
+            }
+            catch (OperationCanceledException e)
+            {
+                SetTimeout(Response);
+                logger.LogError(e, "[TIMEOUT] " + e.Message);
+                return;
+            }
             SetHeader(result, Response);
             var Token = context.HttpContext.RequestAborted;
+
             try
             {
                 var buffer = new byte[1024].AsMemory();
@@ -67,16 +84,12 @@ namespace Piping.Infrastructure
             }
             catch (OperationCanceledException e)
             {
-                logger.LogInformation(e.Message, e);
+                logger.LogError(e, "[CANCELED] " + e.Message);
             }
             catch (Exception e)
             {
-                logger.LogError(e.Message, e);
+                logger.LogError(e, "[ERROR] " + e.Message);
                 throw;
-            }
-            finally
-            {
-                result.FireFinally(context);
             }
         }
     }

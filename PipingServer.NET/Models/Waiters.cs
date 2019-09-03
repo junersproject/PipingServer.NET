@@ -1,17 +1,17 @@
 ﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Piping.Streams;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc;
-using Piping.Converters;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Piping.Converters;
+using Piping.Streams;
 
 namespace Piping.Models
 {
@@ -52,12 +52,15 @@ namespace Piping.Models
                 using var l = Logger.BeginLogInformationScope(nameof(AddSender));
                 if (w.IsSetSenderComplete)
                     throw new InvalidOperationException($"[ERROR] The number of receivers should be {w.RequestedReceiversCount} but ${w.ReceiversCount}.\n");
-                w.IsSetSenderComplete = true; 
+                w.IsSetSenderComplete = true;
                 var Result = Services.GetRequiredService<CompletableStreamResult>();
                 Result.Identity = "Sender";
                 Result.Stream = new CompletableQueueStream();
                 Result.ContentType = $"text/plain;charset={Encoding.WebName}";
-
+                Result.OnFinally += (o, arg) =>
+                {
+                    TryRemove(w);
+                };
                 var DataTask = GetDataAsync(Request, Token);
                 var ResponseStream = Result.Stream;
                 SendMessage(ResponseStream, $"[INFO] Waiting for {w.RequestedReceiversCount} receiver(s)...");
@@ -159,7 +162,7 @@ namespace Piping.Models
                 Result.OnFinally += (o, arg) =>
                 {
                     var Removed = w.RemoveReceiver(Result);
-                    Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED" ));
+                    Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED"));
                     TryRemove(w);
                 };
                 w.AddReceiver(Result);
@@ -198,6 +201,10 @@ namespace Piping.Models
                     Waiter = new Waiter(Key, Options);
                     Logger.LogDebug("CREATE " + Waiter);
                     _waiters.Add(Key, Waiter);
+                    Waiter.OnWaitTimeout += (o, arg) =>
+                    {
+                        TryRemove(Waiter);
+                    };
                 }
                 return Waiter;
             }
@@ -211,6 +218,7 @@ namespace Piping.Models
                 {
                     Logger.LogDebug("REMOVE " + Waiter);
                     _waiters.Remove(Waiter.Key);
+                    Waiter.Dispose();
                 }
                 else
                 {
@@ -237,7 +245,8 @@ namespace Piping.Models
                         ReadyTaskSource.TrySetCanceled(Token);
                         ResponseTaskSource.TrySetCanceled(Token);
                     });
-                    ReadyTaskSource.Task.ContinueWith(t => {
+                    ReadyTaskSource.Task.ContinueWith(t =>
+                    {
                         CancelAction?.Dispose();
                     });
                 }
@@ -246,6 +255,7 @@ namespace Piping.Models
             readonly CancellationTokenSource? WaitTokenSource = null;
             internal readonly TaskCompletionSource<bool> ReadyTaskSource = new TaskCompletionSource<bool>();
             internal readonly TaskCompletionSource<bool> ResponseTaskSource = new TaskCompletionSource<bool>();
+            public bool IsWaitCanceled => ReadyTaskSource.Task.IsCanceled;
             /// <summary>
             /// 待ち合わせが完了しているかどうか
             /// </summary>
@@ -263,7 +273,8 @@ namespace Piping.Models
             /// </summary>
             public bool IsRemovable
                 => (!IsSetSenderComplete && !IsSetReceiversComplete)
-                    || (IsSetSenderComplete && IsSetReceiversComplete && _Receivers.Count == 0);
+                    || (IsSetSenderComplete && IsSetReceiversComplete && _Receivers.Count == 0)
+                    || IsWaitCanceled;
             readonly List<CompletableStreamResult> _Receivers = new List<CompletableStreamResult>();
             public IEnumerable<CompletableStreamResult> Receivers => _Receivers;
             public int ReceiversCount => _Receivers.Count;

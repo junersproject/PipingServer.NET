@@ -63,7 +63,7 @@ namespace FileUploadSample
             var ContentType = Headers["Content-Type"];
             if (!IsMultipartContentType(ContentType))
                 throw new ArgumentException($"Expected a multipart request, but got {ContentType}");
-            
+
             var boundary = GetBoundary(
                 MediaTypeHeaderValue.Parse((string)ContentType),
                 MultipartBoundaryLengthLimit);

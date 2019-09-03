@@ -21,7 +21,7 @@ namespace Piping.Controllers
         /// ルートへのアクセス
         /// </summary>
         /// <returns></returns>
-        [HttpGet("/")]  
+        [HttpGet("/")]
         public IActionResult Index() => Content(Properties.Resources.index, $"text/html; charset={Encoding.WebName}", Encoding);
         /// <summary>
         /// ヘルプ

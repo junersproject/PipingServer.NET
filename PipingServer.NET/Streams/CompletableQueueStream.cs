@@ -16,11 +16,12 @@ namespace Piping.Streams
         public static CompletableQueueStream Empty { get; } = new CompletableQueueStream(false);
         readonly Pipe data;
         public bool IsAddingCompleted { get; private set; } = false;
-        public void CompleteAdding(){
+        public void CompleteAdding()
+        {
             data.Writer.Complete();
             IsAddingCompleted = true;
         }
-        public CompletableQueueStream() :this(PipeOptions.Default) { }
+        public CompletableQueueStream() : this(PipeOptions.Default) { }
         public CompletableQueueStream(PipeOptions options) => data = new Pipe(options);
         private CompletableQueueStream(bool isWritableMode) : this(new PipeOptions()) => this.isWritableMode = isWritableMode;
         public override bool CanRead => isWritableMode;
@@ -50,7 +51,7 @@ namespace Piping.Streams
             Sequence.CopyTo(buffer.Span);
             if (Read.Buffer.Length > buffer.Length)
                 data.Reader.AdvanceTo(Read.Buffer.Slice(buffer.Length).Start);
-            else 
+            else
                 data.Reader.AdvanceTo(Read.Buffer.End);
             return buffer.Length;
         }

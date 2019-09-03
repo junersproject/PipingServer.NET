@@ -61,6 +61,6 @@ namespace Piping.Converters
                 return (section.Body, _Headers.ContentLength, section.ContentType, section.ContentDisposition);
             }
             throw new InvalidOperationException("No Data Stream.");
-        } 
+        }
     }
 }

@@ -124,7 +124,7 @@ namespace Piping.Streams.Tests
                 {
                     Token.ThrowIfCancellationRequested();
                     await Piping.WriteAsync(Encoding.GetBytes(Text).AsMemory(), Token);
-                    Trace.WriteLine($"write: '{Text.TrimEnd('\r','\n')}'");
+                    Trace.WriteLine($"write: '{Text.TrimEnd('\r', '\n')}'");
                     await Task.Delay(Delay, Token);
                 }
             });
@@ -138,7 +138,7 @@ namespace Piping.Streams.Tests
                         while (_buffer.Length > 0)
                         {
                             var count = await os.ReadAsync(_buffer, Token);
-                            Trace.WriteLine($"{index}: {string.Join(' ', _buffer.Slice(0,count).ToArray().Select(v => $"{v:X2}"))}");
+                            Trace.WriteLine($"{index}: {string.Join(' ', _buffer.Slice(0, count).ToArray().Select(v => $"{v:X2}"))}");
                             _buffer = _buffer.Slice(count);
                         }
                         var Text = Encoding.GetString(buffer.Span);

@@ -51,8 +51,8 @@ namespace Piping.Models
                 Result.OnFinally += (o, arg) => TryRemove(w);
                 var DataTask = GetDataAsync(Request, Token);
                 var ResponseStream = Result.Stream;
-                SendMessage(ResponseStream, $"[INFO] Waiting for {w.RequestedReceiversCount} receiver(s)...");
-                SendMessage(ResponseStream, $"[INFO] {w.ReceiversCount} receiver(s) has/have been connected.");
+                SendMessage(ResponseStream, $"Waiting for {w.RequestedReceiversCount} receiver(s)...");
+                SendMessage(ResponseStream, $"{w.ReceiversCount} receiver(s) has/have been connected.");
                 _ = Task.Run(async () =>
                 {
                     using var l = Logger.BeginLogInformationScope("async " + nameof(AddSender) + " Run");
@@ -71,7 +71,7 @@ namespace Piping.Models
                             Response.ContentDisposition = ContentDisposition;
                             return Response.Stream;
                         });
-                        await SendMessageAsync(ResponseStream, $"[INFO] Start sending with {w.ReceiversCount} receiver(s)!");
+                        await SendMessageAsync(ResponseStream, $"Start sending with {w.ReceiversCount} receiver(s)!");
                         var PipingTask = PipingAsync(Stream, ResponseStream, Buffers, 1024, Encoding, Token);
                         w.ResponseTaskSource.TrySetResult(true);
                         await Task.WhenAll(w.ResponseTaskSource.Task, PipingTask);
@@ -110,8 +110,7 @@ namespace Piping.Models
                     await Stream.WriteAsync(buffer.AsMemory().Slice(0, bytesRead), Token).ConfigureAwait(false);
                     byteCounter += bytesRead;
                 }
-                var Message = $"[INFO] Sending successful! {byteCounter} bytes.";
-                Logger.LogInformation(Message);
+                Logger.LogInformation($"Sending successful! {byteCounter} bytes.");
                 await SendMessageAsync(InfomationStream, Message);
                 using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
 
@@ -161,13 +160,12 @@ namespace Piping.Models
         private async Task SendMessageAsync(Stream Stream, string Message, CancellationToken Token = default)
         {
             Logger.LogDebug(Message);
-            var buffer = Encoding.GetBytes(Message + Environment.NewLine).AsMemory();
-            await Stream.WriteAsync(buffer, Token);
+            await Stream.WriteAsync(Encoding.GetBytes("[INFO] " + Message + Environment.NewLine).AsMemory(), Token);
         }
         private void SendMessage(Stream Stream, string Message)
         {
             Logger.LogDebug(Message);
-            Stream.Write(Encoding.GetBytes(Message + Environment.NewLine).AsSpan());
+            Stream.Write(Encoding.GetBytes("[INFO]" + Message + Environment.NewLine).AsSpan());
         }
         protected Waiter Get(RequestKey Key)
         {

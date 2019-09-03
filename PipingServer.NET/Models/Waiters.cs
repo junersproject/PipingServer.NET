@@ -36,31 +36,19 @@ namespace Piping.Models
             Token.ThrowIfCancellationRequested();
             if (Request.Body.CanSeek)
                 Request.Body.Seek(0, SeekOrigin.Begin);
-            if (Key.Receivers <= 0)
-                throw new InvalidOperationException($"[ERROR] n should > 0, but n = ${Key.Receivers}.\n");
             Logger.LogInformation(string.Join(" ", _waiters.Select(v => $"{ v.Key }:{v.Value}")));
 
             var w = Get(Key);
             try
             {
-                if (w.IsEstablished)
-                    throw new InvalidOperationException($"[ERROR] Connection on '{Key.LocalPath}' has been established already.\n");
-                if (w.RequestedReceiversCount is null)
-                    w.RequestedReceiversCount = Key.Receivers;
-                else if (Key.Receivers != w.RequestedReceiversCount)
-                    throw new InvalidOperationException($"[ERROR] The number of receivers should be ${w.RequestedReceiversCount} but {Key.Receivers}.");
+                w.AssertKey(Key);
                 using var l = Logger.BeginLogInformationScope(nameof(AddSender));
-                if (w.IsSetSenderComplete)
-                    throw new InvalidOperationException($"[ERROR] The number of receivers should be {w.RequestedReceiversCount} but ${w.ReceiversCount}.\n");
-                w.IsSetSenderComplete = true;
+                w.SetSenderComplete();
                 var Result = Services.GetRequiredService<CompletableStreamResult>();
                 Result.Identity = "Sender";
                 Result.Stream = new CompletableQueueStream();
                 Result.ContentType = $"text/plain;charset={Encoding.WebName}";
-                Result.OnFinally += (o, arg) =>
-                {
-                    TryRemove(w);
-                };
+                Result.OnFinally += (o, arg) => TryRemove(w);
                 var DataTask = GetDataAsync(Request, Token);
                 var ResponseStream = Result.Stream;
                 SendMessage(ResponseStream, $"[INFO] Waiting for {w.RequestedReceiversCount} receiver(s)...");
@@ -141,19 +129,12 @@ namespace Piping.Models
         {
             Token.ThrowIfCancellationRequested();
             using var l = Logger.BeginLogInformationScope(nameof(AddReceiver));
-            if (Key.Receivers <= 0)
-                throw new InvalidOperationException($"[ERROR] n should > 0, but n = {Key.Receivers}.\n");
             var w = Get(Key);
             try
             {
-                if (w.IsEstablished)
-                    throw new InvalidOperationException($"[ERROR] Connection on '{Key.LocalPath}' has been established already.\n");
-                if (w.RequestedReceiversCount is null)
-                    w.RequestedReceiversCount = Key.Receivers;
-                else if (w.RequestedReceiversCount != Key.Receivers)
-                    throw new InvalidOperationException($"[ERROR] The number of receivers should be ${w.RequestedReceiversCount} but {Key.Receivers}.");
-                else if (!(w.ReceiversCount < w.RequestedReceiversCount))
-                    throw new InvalidOperationException($"[ERROR] Connection receivers over.");
+                w.AssertKey(Key);
+                if (!(w.ReceiversCount < w.RequestedReceiversCount))
+                    throw new InvalidOperationException($"Connection receivers over.");
                 var Result = Services.GetRequiredService<CompletableStreamResult>();
                 Result.Identity = "Receiver";
                 Result.Stream = new CompletableQueueStream();
@@ -263,7 +244,13 @@ namespace Piping.Models
             /// <summary>
             /// Sender が設定済み
             /// </summary>
-            public bool IsSetSenderComplete { internal set; get; } = false;
+            public bool IsSetSenderComplete { private set; get; }
+            public void SetSenderComplete()
+            {
+                if (IsSetSenderComplete)
+                    throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but ${ReceiversCount}.\n");
+                IsSetSenderComplete = true;
+            }
             /// <summary>
             /// Receivers が設定済み
             /// </summary>
@@ -278,6 +265,15 @@ namespace Piping.Models
             readonly List<CompletableStreamResult> _Receivers = new List<CompletableStreamResult>();
             public IEnumerable<CompletableStreamResult> Receivers => _Receivers;
             public int ReceiversCount => _Receivers.Count;
+            public void AssertKey(RequestKey Key)
+            {
+                if (IsEstablished)
+                    throw new InvalidOperationException($"Connection on '{Key.LocalPath}' has been established already.\n");
+                if (RequestedReceiversCount is null)
+                    RequestedReceiversCount = Key.Receivers;
+                else if (Key.Receivers != RequestedReceiversCount)
+                    throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
+            }
             public void AddReceiver(CompletableStreamResult Result) => _Receivers.Add(Result);
             public bool RemoveReceiver(CompletableStreamResult Result) => _Receivers.Remove(Result);
             /// <summary>

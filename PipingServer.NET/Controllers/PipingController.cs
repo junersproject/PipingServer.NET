@@ -33,7 +33,7 @@ namespace Piping.Controllers
             catch (InvalidOperationException e)
             {
                 Logger.LogError(e, "upload fail.");
-                return BadRequest(e.Message);
+                return BadRequest("[ERROR] " + e.Message);
             }
         }
 
@@ -47,7 +47,7 @@ namespace Piping.Controllers
             catch (InvalidOperationException e)
             {
                 Logger.LogError(e, "download fail.");
-                return BadRequest(e.Message);
+                return BadRequest("[ERROR] " + e.Message);
             }
         }
 

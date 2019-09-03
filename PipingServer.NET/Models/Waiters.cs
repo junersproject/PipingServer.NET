@@ -110,8 +110,7 @@ namespace Piping.Models
                     await Stream.WriteAsync(buffer.AsMemory().Slice(0, bytesRead), Token).ConfigureAwait(false);
                     byteCounter += bytesRead;
                 }
-                Logger.LogInformation($"Sending successful! {byteCounter} bytes.");
-                await SendMessageAsync(InfomationStream, Message);
+                await SendMessageAsync(InfomationStream, $"Sending successful! {byteCounter} bytes.");
                 using var writer = new StreamWriter(InfomationStream, Encoding, BufferSize, true);
 
             }

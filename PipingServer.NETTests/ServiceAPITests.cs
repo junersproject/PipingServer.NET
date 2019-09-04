@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Piping.Tests
@@ -220,5 +221,13 @@ namespace Piping.Tests
         //        throw new AssertInconclusiveException(e.Message, e);
         //    }
         //}
+        private class Startup
+        {
+
+        }
+
+        private class CustomWebApplicationFactory : WebApplicationFactory<Startup> {
+        
+        }
     }
 }

@@ -15,19 +15,19 @@ using Piping.Streams;
 
 namespace Piping.Models
 {
-    public class Waiters : IWaiters
+    public partial class PipingProvider : IPipingProvider
     {
         readonly Encoding Encoding;
         readonly IServiceProvider Services;
         readonly PipingOptions Options;
-        readonly ILogger<Waiters> Logger;
+        readonly ILogger<PipingProvider> Logger;
         readonly IEnumerable<IStreamConverter> Converters;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="Services"></param>
         /// <param name="Logger"></param>
-        public Waiters(IServiceProvider Services, ILogger<Waiters> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
+        public PipingProvider(IServiceProvider Services, ILogger<PipingProvider> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
             => (this.Services, this.Logger, this.Encoding, this.Converters, this.Options) = (Services, Logger, Encoding, Converters, Options.Value);
         public IActionResult AddSender(string RelativeUri, HttpRequest Request, CancellationToken Token = default)
             => AddSender(new RequestKey(RelativeUri), Request, Token);
@@ -72,7 +72,7 @@ namespace Piping.Models
             });
             return Response;
         }
-        private CompletableStreamResult GetSenderStreamResult(Waiter Waiter)
+        private CompletableStreamResult GetSenderStreamResult(Pipe Waiter)
         {
             var Result = Services.GetRequiredService<CompletableStreamResult>();
             Result.Identity = "Sender";
@@ -135,7 +135,7 @@ namespace Piping.Models
                 Waiter.ReadyTaskSource.TrySetResult(true);
             return Response;
         }
-        private CompletableStreamResult CreateReceiverStreamResult(Waiter Waiter)
+        private CompletableStreamResult CreateReceiverStreamResult(Pipe Waiter)
         {
             var Result = Services.GetRequiredService<CompletableStreamResult>();
             Result.Identity = "Receiver";
@@ -161,7 +161,7 @@ namespace Piping.Models
             Logger.LogDebug(Message);
             Stream.Write(Encoding.GetBytes("[INFO]" + Message + Environment.NewLine).AsSpan());
         }
-        protected Waiter Get(RequestKey Key)
+        protected Pipe Get(RequestKey Key)
         {
             lock (_waiters)
             {
@@ -171,7 +171,7 @@ namespace Piping.Models
                 }
                 else
                 {
-                    Waiter = new Waiter(Key, Options);
+                    Waiter = new Pipe(Key, Options);
                     Logger.LogDebug("CREATE " + Waiter);
                     _waiters.Add(Key, Waiter);
                     Waiter.OnWaitTimeout += (o, arg) =>
@@ -182,7 +182,7 @@ namespace Piping.Models
                 return Waiter;
             }
         }
-        protected bool TryRemove(Waiter Waiter)
+        protected bool TryRemove(Pipe Waiter)
         {
             lock (_waiters)
             {
@@ -200,156 +200,7 @@ namespace Piping.Models
                 return Result;
             }
         }
-        protected Dictionary<RequestKey, Waiter> _waiters = new Dictionary<RequestKey, Waiter>();
-        protected class Waiter : IWaiter, IDisposable
-        {
-            public RequestKey Key { get; }
-            public Waiter(RequestKey Key, PipingOptions Options)
-            {
-                this.Key = Key;
-                if (Options.WatingTimeout < TimeSpan.Zero)
-                    throw new ArgumentException($"{nameof(Options)}.{nameof(Options.WatingTimeout)} is {Options.WatingTimeout}. required {nameof(Options.WatingTimeout)} is {nameof(TimeSpan.Zero)} over");
-                if (Options.WatingTimeout is TimeSpan WaitTimeout)
-                {
-                    WaitTokenSource = new CancellationTokenSource(WaitTimeout);
-                    var Token = WaitTokenSource.Token;
-                    CancelAction = WaitTokenSource.Token.Register(() =>
-                    {
-                        ReadyTaskSource.TrySetCanceled(Token);
-                        ResponseTaskSource.TrySetCanceled(Token);
-                    });
-                    ReadyTaskSource.Task.ContinueWith(t =>
-                    {
-                        CancelAction?.Dispose();
-                    });
-                }
-            }
-            public WaiterStatus Status {
-                get
-                {
-                    if (IsWaitCanceled)
-                        return WaiterStatus.Canceled;
-                    if (IsEstablished)
-                        return WaiterStatus.ResponseStart;
-                    if (IsReady)
-                        return WaiterStatus.Ready;
-                    return WaiterStatus.Wait;
-                }
-            }
-            readonly IDisposable? CancelAction = null;
-            readonly CancellationTokenSource? WaitTokenSource = null;
-            public Task HeaderIsSetCompletedTask => Task.WhenAll(ReadyTaskSource.Task, ResponseTaskSource.Task);
-            internal readonly TaskCompletionSource<bool> ReadyTaskSource = new TaskCompletionSource<bool>();
-            internal readonly TaskCompletionSource<bool> ResponseTaskSource = new TaskCompletionSource<bool>();
-            public bool IsWaitCanceled => ReadyTaskSource.Task.IsCanceled;
-            /// <summary>
-            /// 待ち合わせが完了しているかどうか
-            /// </summary>
-            public bool IsEstablished => ReadyTaskSource.Task.IsCompletedSuccessfully;
-            /// <summary>
-            /// Sender が設定済み
-            /// </summary>
-            public bool IsSetSenderComplete { private set; get; }
-            public void SetSenderComplete()
-            {
-                if (IsSetSenderComplete)
-                    throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but ${ReceiversCount}.\n");
-                IsSetSenderComplete = true;
-            }
-            /// <summary>
-            /// Receivers が設定済み
-            /// </summary>
-            public bool IsSetReceiversComplete => IsEstablished ? true : ReceiversIsAllSet;
-            /// <summary>
-            /// 削除かのうであるかどうか
-            /// </summary>
-            public bool IsRemovable
-                => (!IsSetSenderComplete && !IsSetReceiversComplete)
-                    || (IsSetSenderComplete && IsSetReceiversComplete && _Receivers.Count == 0)
-                    || IsWaitCanceled;
-            readonly List<CompletableStreamResult> _Receivers = new List<CompletableStreamResult>();
-            public IEnumerable<CompletableStreamResult> Receivers => _Receivers;
-            public int ReceiversCount => _Receivers.Count;
-            public void AssertKey(RequestKey Key)
-            {
-                if (IsEstablished)
-                    throw new InvalidOperationException($"Connection on '{Key.LocalPath}' has been established already.\n");
-                if (RequestedReceiversCount is null)
-                    RequestedReceiversCount = Key.Receivers;
-                else if (Key.Receivers != RequestedReceiversCount)
-                    throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
-            }
-            public void AddReceiver(CompletableStreamResult Result) => _Receivers.Add(Result);
-            public bool RemoveReceiver(CompletableStreamResult Result) => _Receivers.Remove(Result);
-            public bool ReceiversIsAllSet => _Receivers.Count == _receiversCount;
-            internal int? _receiversCount = 1;
-            /// <summary>
-            /// 受け取り数
-            /// </summary>
-            public int? RequestedReceiversCount
-            {
-                get => _receiversCount;
-                set
-                {
-                    // 完了してたらNG
-                    if (IsEstablished
-                        || IsSetSenderComplete
-                        || IsSetReceiversComplete)
-                        throw new InvalidOperationException("[ERROR] no change " + nameof(RequestedReceiversCount));
-                    if (value <= 0)
-                        throw new ArgumentException($"{nameof(RequestedReceiversCount)} is 1 or letter.");
-                    _receiversCount = value;
-                    if (_receiversCount == _Receivers.Count)
-                        ReadyTaskSource.TrySetResult(true);
-                }
-            }
-            public bool IsReady => IsSetSenderComplete && ReceiversIsAllSet || IsEstablished;
-            public override string? ToString()
-            {
-                return nameof(Waiter) + "{" + string.Join(", ", new[] {
-                    nameof(Key) + ":" + Key,
-                    nameof(Status) + ":" + Status,
-                    nameof(IsEstablished) + ":" + IsEstablished,
-                    nameof(IsSetSenderComplete) + ":" + IsSetSenderComplete,
-                    nameof(IsSetReceiversComplete) + ":" + IsSetReceiversComplete,
-                    nameof(IsRemovable) + ":" + IsRemovable,
-                    nameof(RequestedReceiversCount) + ":" + RequestedReceiversCount,
-                    nameof(IsReady) + ":" + IsReady,
-                    nameof(GetHashCode) + ":" +GetHashCode()
-                }.OfType<string>()) + "}";
-            }
-            public event EventHandler? OnWaitTimeout;
-            #region IDisposable Support
-            private bool disposedValue = false; // 重複する呼び出しを検出するには
-
-            protected virtual void Dispose(bool disposing)
-            {
-                if (!disposedValue)
-                {
-                    if (disposing)
-                    {
-                        if (!ReadyTaskSource.Task.IsCompleted)
-                            ReadyTaskSource.TrySetCanceled();
-                        if (!ResponseTaskSource.Task.IsCompleted)
-                            ResponseTaskSource.TrySetCanceled();
-                        foreach (var e in (OnWaitTimeout?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
-                            OnWaitTimeout -= e;
-                        if (WaitTokenSource is CancellationTokenSource TokenSource)
-                            TokenSource.Dispose();
-                        if (CancelAction is IDisposable Disposable)
-                            Disposable.Dispose();
-                    }
-                    disposedValue = true;
-                }
-            }
-
-            // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
-            public void Dispose()
-            {
-                Dispose(true);
-            }
-            #endregion
-        }
+        protected Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 

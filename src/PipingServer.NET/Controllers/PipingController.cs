@@ -13,10 +13,10 @@ namespace Piping.Controllers
     [DisableFormValueModelBinding]
     public class PipingController : ControllerBase
     {
-        readonly IWaiters Waiters;
+        readonly IPipingProvider Waiters;
         readonly Encoding Encoding;
         readonly ILogger<PipingController> Logger;
-        public PipingController(IWaiters Waiters, ILogger<PipingController> Logger, Encoding? Encoding = default)
+        public PipingController(IPipingProvider Waiters, ILogger<PipingController> Logger, Encoding? Encoding = default)
         {
             this.Waiters = Waiters;
             this.Encoding = Encoding ?? new UTF8Encoding(false);

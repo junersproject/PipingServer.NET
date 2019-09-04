@@ -26,7 +26,7 @@ namespace Piping
             services.Configure<PipingOptions>(Configuration.GetSection("PipingOptions"));
             services.AddControllers();
             services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
-            services.AddSingleton<IWaiters, Waiters>();
+            services.AddSingleton<IPipingProvider, PipingProvider>();
             services.AddTransient<CompletableStreamResult>();
             services.AddTransient<Encoding>(_ => new UTF8Encoding(false));
             services.AddTransient<IStreamConverter, MultipartStreamConverter>();

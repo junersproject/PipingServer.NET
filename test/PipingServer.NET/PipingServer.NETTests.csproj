@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PipingServer.NET\PipingServer.NET.csproj" />
+    <ProjectReference Include="..\..\src\PipingServer.NET\PipingServer.NET.csproj" />
   </ItemGroup>
 
 </Project>

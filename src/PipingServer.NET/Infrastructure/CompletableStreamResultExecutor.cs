@@ -40,7 +40,7 @@ namespace Piping.Infrastructure
         }
         public async Task ExecuteAsync(ActionContext context, CompletableStreamResult result)
         {
-            using var l = logger.BeginLogDebugScope(nameof(ExecuteAsync) + " : " + result.Identity);
+            using var l = logger.BeginLogDebugScope(nameof(ExecuteAsync) + " : " + result?.Identity);
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (result == null)

@@ -13,22 +13,22 @@ namespace Piping.Controllers
     [DisableFormValueModelBinding]
     public class PipingController : ControllerBase
     {
-        readonly IPipingProvider Waiters;
+        readonly IPipingProvider Provider;
         readonly Encoding Encoding;
         readonly ILogger<PipingController> Logger;
-        public PipingController(IPipingProvider Waiters, ILogger<PipingController> Logger, Encoding? Encoding = default)
+        public PipingController(IPipingProvider Provider, ILogger<PipingController> Logger, Encoding? Encoding = default)
         {
-            this.Waiters = Waiters;
+            this.Provider = Provider;
             this.Encoding = Encoding ?? new UTF8Encoding(false);
             this.Logger = Logger;
         }
-        [HttpPut("/{**RelativeUri}")]
-        [HttpPost("/{**RelativeUri}")]
-        public IActionResult Upload(string RelativeUri)
+        [HttpPut("/{**Path}")]
+        [HttpPost("/{**Path}")]
+        public IActionResult Upload(string Path)
         {
             try
             {
-                return Waiters.AddSender(RelativeUri, HttpContext);
+                return Provider.AddSender(Path, HttpContext);
             }
             catch (InvalidOperationException e)
             {
@@ -37,12 +37,12 @@ namespace Piping.Controllers
             }
         }
 
-        [HttpGet("/{**RelativeUri}")]
-        public IActionResult Download(string RelativeUri)
+        [HttpGet("/{**Path}")]
+        public IActionResult Download(string Path)
         {
             try
             {
-                return Waiters.AddReceiver(RelativeUri, HttpContext);
+                return Provider.AddReceiver(Path, HttpContext);
             }
             catch (InvalidOperationException e)
             {

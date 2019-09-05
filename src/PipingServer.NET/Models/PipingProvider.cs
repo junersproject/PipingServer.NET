@@ -28,14 +28,14 @@ namespace Piping.Models
         /// <param name="Services"></param>
         /// <param name="Logger"></param>
         public PipingProvider(IServiceProvider Services, ILogger<PipingProvider> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
-            => (this.Services, this.Logger, this.Encoding, this.Converters, this.Options) = (Services, Logger, Encoding, Converters, Options.Value);
-        public IActionResult AddSender(string RelativeUri, HttpRequest Request, CancellationToken Token = default)
-            => AddSender(new RequestKey(RelativeUri), Request, Token);
+            => (this.Services, this.Logger, this.Encoding, this.Converters, this.Options) = (Services, Logger, Encoding, Converters, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
+        public IActionResult AddSender(string Path, HttpRequest Request, CancellationToken Token = default)
+            => AddSender(new RequestKey(Path), Request, Token);
         public IActionResult AddSender(RequestKey Key, HttpRequest Request, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
             // seek request body
-            if (Request.Body.CanSeek)
+            if ((Request ?? throw new ArgumentNullException(nameof(Request))).Body.CanSeek)
                 Request.Body.Seek(0, SeekOrigin.Begin);
 
             var Waiter = Get(Key);

@@ -14,6 +14,8 @@ namespace Piping.Converters
     {
         public Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
         {
+            if (Headers == null)
+                throw new ArgumentNullException(nameof(Headers));
             var ContentType = Headers["Content-Type"] is StringValues _ContentType
                 ? _ContentType == StringValues.Empty ? null : (string?)_ContentType : throw new InvalidOperationException();
             var ContentDisposition = Headers["Content-Disposition"] is StringValues _ContentDisposition

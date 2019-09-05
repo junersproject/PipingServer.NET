@@ -22,9 +22,9 @@ namespace FileUploadSample
         {
             var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary);
             if (boundary.IsNullOrWhiteSpace())
-                throw new InvalidDataException("Missing content-type boundary.");
+                throw new ArgumentException("Missing content-type boundary.");
             if (boundary.Length > MultipartBoundaryLengthLimit)
-                throw new InvalidDataException(
+                throw new ArgumentException(
                     $"Multipart boundary length limit {MultipartBoundaryLengthLimit} exceeded.");
             return boundary.Value;
         }
@@ -33,43 +33,6 @@ namespace FileUploadSample
         {
             return !string.IsNullOrEmpty(contentType)
                    && contentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        public static bool HasFormDataContentDisposition(ContentDispositionHeaderValue contentDisposition)
-        {
-            // Content-Disposition: form-data; name="key";
-            return contentDisposition != null
-                   && contentDisposition.DispositionType.Equals("form-data")
-                   && contentDisposition.FileName.IsNullOrEmpty()
-                   && contentDisposition.FileNameStar.IsNullOrEmpty();
-        }
-
-        public static bool HasFileContentDisposition(ContentDispositionHeaderValue contentDisposition)
-        {
-            // Content-Disposition: form-data; name="myfile1"; filename="Misc 002.jpg"
-            return contentDisposition != null
-                   && contentDisposition.DispositionType.Equals("form-data")
-                   && (!contentDisposition.FileName.IsNullOrEmpty()
-                       || !contentDisposition.FileNameStar.IsNullOrEmpty());
-        }
-        public static async IAsyncEnumerable<MultipartSection> GetMutipartSectionAsync(IHeaderDictionary Headers, Stream Stream, int MultipartBoundaryLengthLimit = MultipartBoundaryLengthLimit, [EnumeratorCancellation]CancellationToken Token = default)
-        {
-            if (Headers == null)
-                throw new ArgumentNullException(nameof(Headers));
-            if (Stream == null || Stream == Stream.Null)
-                throw new ArgumentNullException(nameof(Stream));
-            if (!Stream.CanRead)
-                yield break;
-            var ContentType = Headers["Content-Type"];
-            if (!IsMultipartContentType(ContentType))
-                throw new ArgumentException($"Expected a multipart request, but got {ContentType}");
-
-            var boundary = GetBoundary(
-                MediaTypeHeaderValue.Parse((string)ContentType),
-                MultipartBoundaryLengthLimit);
-            var reader = new MultipartReader(boundary, Stream);
-            while ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)
-                yield return section;
         }
     }
 

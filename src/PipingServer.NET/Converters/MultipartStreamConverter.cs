@@ -30,17 +30,7 @@ namespace Piping.Converters
             return !string.IsNullOrEmpty(contentType)
                    && contentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0;
         }
-
-        static bool HasFormDataContentDisposition(ContentDispositionHeaderValue contentDisposition)
-        {
-            // Content-Disposition: form-data; name="key";
-            return contentDisposition != null
-                   && contentDisposition.DispositionType.Equals("form-data")
-                   && contentDisposition.FileName.IsNullOrEmpty()
-                   && contentDisposition.FileNameStar.IsNullOrEmpty();
-        }
-
-        public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType(Headers["Content-Type"]);
+        public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))["Content-Type"]);
 
         public async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
         {

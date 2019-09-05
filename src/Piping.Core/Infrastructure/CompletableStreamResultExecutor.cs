@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
 
-namespace Piping.Infrastructure
+namespace Piping.Core.Infrastructure
 {
     public class CompletableStreamResultExecutor : IActionResultExecutor<CompletableStreamResult>
     {
@@ -16,7 +16,6 @@ namespace Piping.Infrastructure
         }
         protected void SetHeader(CompletableStreamResult Result, HttpResponse Response)
         {
-            using var l = logger.BeginLogDebugScope(nameof(SetHeader) + " : " + Result.Identity);
             if (Result.StatusCode is int _StatusCode)
                 Response.StatusCode = _StatusCode;
             if (Result.AccessControlAllowOrigin is string _AccessControlAllowOrigin)
@@ -40,7 +39,6 @@ namespace Piping.Infrastructure
         }
         public async Task ExecuteAsync(ActionContext context, CompletableStreamResult result)
         {
-            using var l = logger.BeginLogDebugScope(nameof(ExecuteAsync) + " : " + result?.Identity);
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (result == null)
@@ -66,7 +64,6 @@ namespace Piping.Infrastructure
                 int length;
                 using (result.Stream)
                 {
-                    using var sl = logger.BeginLogDebugScope(nameof(ExecuteAsync) + " : " + result.Identity + " StreamScope");
                     try
                     {
                         while (!Token.IsCancellationRequested

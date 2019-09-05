@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
-using Piping.Internal;
+using Piping.Core.Internal;
 
-namespace Piping.Converters
+namespace Piping.Core.Converters
 {
     public class MultipartStreamConverter : IStreamConverter
     {

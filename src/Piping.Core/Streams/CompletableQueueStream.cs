@@ -5,7 +5,7 @@ using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Piping.Streams
+namespace Piping.Core.Streams
 {
     /// <summary>
     /// Completable queue stream.

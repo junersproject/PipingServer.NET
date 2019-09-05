@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Piping.Models
+namespace Piping.Core.Models
 {
-    public interface IPipingProvider : IDisposable
+    public interface IPipingProvider : IDisposable , IEnumerable<IPipe>
     {
         public IActionResult AddReceiver(string Path, HttpContext Receiver)
             => AddReceiver(Path, Receiver?.RequestAborted ?? throw new ArgumentNullException(nameof(Receiver)));

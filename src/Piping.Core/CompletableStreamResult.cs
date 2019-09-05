@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Piping.Streams;
+using Piping.Core.Streams;
 
-namespace Piping
+namespace Piping.Core
 {
     public class CompletableStreamResult : IActionResult
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Piping
+namespace Piping.Core
 {
     public class BytesReadEventArgs : EventArgs
     {

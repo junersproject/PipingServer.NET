@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Piping.Attributes;
-using Piping.Models;
+using Piping.Core.Models;
 
 namespace Piping.Controllers
 {

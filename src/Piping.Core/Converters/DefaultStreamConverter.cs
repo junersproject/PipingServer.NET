@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
-namespace Piping.Converters
+namespace Piping.Core.Converters
 {
     /// <summary>
     /// <see cref="Stream"/> と <see cref="IHeaderDictionary"/> を其の儘使用するコンバータ

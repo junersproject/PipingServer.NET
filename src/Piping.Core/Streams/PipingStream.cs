@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Piping.Streams
+namespace Piping.Core.Streams
 {
     public class PipingStream : Stream
     {

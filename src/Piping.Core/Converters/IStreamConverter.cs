@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Piping.Converters
+namespace Piping.Core.Converters
 {
     public interface IStreamConverter
     {

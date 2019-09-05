@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Piping
+namespace Piping.Core
 {
     public readonly struct RequestKey
     {

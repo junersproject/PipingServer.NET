@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Primitives;
 
-namespace Piping.Internal
+namespace Piping.Core.Internal
 {
     public static class StringSegmentExtensions
     {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,10 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Piping.Converters;
-using Piping.Streams;
+using Piping.Core.Converters;
+using Piping.Core.Streams;
 
-namespace Piping.Models
+namespace Piping.Core.Models
 {
     public partial class PipingProvider : IPipingProvider
     {
@@ -201,6 +202,10 @@ namespace Piping.Models
             }
         }
         protected Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
+
+        public IEnumerator<IPipe> GetEnumerator() => _waiters.Values.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 

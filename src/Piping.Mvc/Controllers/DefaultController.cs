@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace Piping.Controllers
+namespace Piping.Mvc.Controllers
 {
     [Route("")]
     [ApiController]

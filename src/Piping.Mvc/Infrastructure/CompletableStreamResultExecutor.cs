@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
 
-namespace Piping.Core.Infrastructure
+namespace Piping.Mvc.Infrastructure
 {
     public class CompletableStreamResultExecutor : IActionResultExecutor<CompletableStreamResult>
     {
@@ -69,12 +69,12 @@ namespace Piping.Core.Infrastructure
                         while (!Token.IsCancellationRequested
                             && (length = await result.Stream.ReadAsync(buffer, Token)) > 0)
                         {
-                            await Response.BodyWriter.WriteAsync(buffer.Slice(0, length), Token);
+                            await Response.Body.WriteAsync(buffer.Slice(0, length), Token);
                         }
                     }
                     finally
                     {
-                        Response.BodyWriter.Complete();
+                        await Response.Body.FlushAsync(Token);
                     }
 
                 }

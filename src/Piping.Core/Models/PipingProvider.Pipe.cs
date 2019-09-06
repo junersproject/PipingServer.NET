@@ -74,8 +74,8 @@ namespace Piping.Core.Models
                 => (!IsSetSenderComplete && !IsSetReceiversComplete)
                     || (IsSetSenderComplete && IsSetReceiversComplete && _Receivers.Count == 0)
                     || IsWaitCanceled;
-            readonly List<CompletableStreamResult> _Receivers = new List<CompletableStreamResult>();
-            public IEnumerable<CompletableStreamResult> Receivers => _Receivers;
+            readonly List<ICompletableStream> _Receivers = new List<ICompletableStream>();
+            public IEnumerable<ICompletableStream> Receivers => _Receivers;
             public int ReceiversCount => _Receivers.Count;
             public void AssertKey(RequestKey Key)
             {
@@ -86,8 +86,8 @@ namespace Piping.Core.Models
                 else if (Key.Receivers != RequestedReceiversCount)
                     throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
             }
-            public void AddReceiver(CompletableStreamResult Result) => _Receivers.Add(Result);
-            public bool RemoveReceiver(CompletableStreamResult Result) => _Receivers.Remove(Result);
+            public void AddReceiver(ICompletableStream Result) => _Receivers.Add(Result);
+            public bool RemoveReceiver(ICompletableStream Result) => _Receivers.Remove(Result);
             public bool ReceiversIsAllSet => _Receivers.Count == _receiversCount;
             internal int? _receiversCount = 1;
             /// <summary>

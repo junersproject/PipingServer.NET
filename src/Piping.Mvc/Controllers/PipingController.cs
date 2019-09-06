@@ -3,10 +3,10 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Piping.Attributes;
 using Piping.Core.Models;
+using Piping.Mvc.Attributes;
 
-namespace Piping.Controllers
+namespace Piping.Mvc.Controllers
 {
     [Route("")]
     [ApiController]
@@ -28,7 +28,9 @@ namespace Piping.Controllers
         {
             try
             {
-                return Provider.AddSender(Path, HttpContext);
+                var Result = new CompletableStreamResult();
+                Provider.SetSender(Path, HttpContext, Result);
+                return Result;
             }
             catch (InvalidOperationException e)
             {
@@ -42,7 +44,9 @@ namespace Piping.Controllers
         {
             try
             {
-                return Provider.AddReceiver(Path, HttpContext);
+                var Result = new CompletableStreamResult();
+                Provider.SetReceiver(Path, HttpContext, Result);
+                return Result;
             }
             catch (InvalidOperationException e)
             {

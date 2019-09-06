@@ -18,6 +18,11 @@
     <PackageReference Include="System.IO.Pipelines" Version="4.6.0-preview9.19421.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Piping.Core\Piping.Core.csproj" />
+    <ProjectReference Include="..\Piping.Mvc\Piping.Mvc.csproj" />
+  </ItemGroup>
+
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
 </Project>

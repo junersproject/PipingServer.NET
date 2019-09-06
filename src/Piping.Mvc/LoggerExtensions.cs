@@ -1,7 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
+using Piping.Mvc.Internal;
 
-namespace Piping
+namespace Piping.Mvc
 {
     public static class LoggerExtensions
     {

@@ -13,6 +13,7 @@ namespace Piping.Mvc.Attributes
         public void OnResourceExecuting(ResourceExecutingContext context)
         {
             var factories = context.ValueProviderFactories;
+
             factories.RemoveType<FormValueProviderFactory>();
             factories.RemoveType<JQueryFormValueProviderFactory>();
         }

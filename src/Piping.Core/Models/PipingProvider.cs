@@ -18,7 +18,6 @@ namespace Piping.Core.Models
     public partial class PipingProvider : IPipingProvider
     {
         readonly Encoding Encoding;
-        readonly IServiceProvider Services;
         readonly PipingOptions Options;
         readonly ILogger<PipingProvider> Logger;
         readonly IEnumerable<IStreamConverter> Converters;
@@ -27,8 +26,8 @@ namespace Piping.Core.Models
         /// </summary>
         /// <param name="Services"></param>
         /// <param name="Logger"></param>
-        public PipingProvider(IServiceProvider Services, ILogger<PipingProvider> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
-            => (this.Services, this.Logger, this.Encoding, this.Converters, this.Options) = (Services, Logger, Encoding, Converters, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
+        public PipingProvider(ILogger<PipingProvider> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
+            => (this.Logger, this.Encoding, this.Converters, this.Options) = (Logger, Encoding, Converters, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
         public void SetSender(string Path, HttpRequest Request, ICompletableStream CompletableStream, CancellationToken Token = default)
             => SetSender(new RequestKey(Path), Request, CompletableStream, Token);
         public void SetSender(RequestKey Key, HttpRequest Request, ICompletableStream CompletableStream, CancellationToken Token = default)
@@ -43,9 +42,9 @@ namespace Piping.Core.Models
             Waiter.AssertKey(Key);
             Logger.LogDebug(nameof(SetSender) + " START");
             using var l = Disposable.Create(() => Logger.LogDebug(nameof(SetSender) + " STOP"));
-            Waiter.SetSenderComplete();
-            SetSenderCompletableStream(Waiter, CompletableStream);
             var DataTask = GetDataAsync(Request, Token);
+            SetSenderCompletableStream(Waiter, CompletableStream);
+            Waiter.SetSenderComplete();
             SendMessage(CompletableStream.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...");
             SendMessage(CompletableStream.Stream, $"{Waiter.ReceiversCount} receiver(s) has/have been connected.");
             _ = Task.Run(async () =>

@@ -8,14 +8,17 @@ namespace Piping.Mvc.Attributes
     /// <see cref="https://docs.microsoft.com/ja-jp/aspnet/core/mvc/models/file-uploads?view=aspnetcore-2.2#uploading-large-files-with-streaming"/>
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-    public class DisableFormValueModelBindingAttribute : Attribute, IResourceFilter
+    public class RouteValueOnlyBindingAttribute : Attribute, IResourceFilter
     {
         public void OnResourceExecuting(ResourceExecutingContext context)
         {
             var factories = context.ValueProviderFactories;
-
-            factories.RemoveType<FormValueProviderFactory>();
-            factories.RemoveType<JQueryFormValueProviderFactory>();
+            foreach (var factory in factories)
+            {
+                if (factory is RouteValueProviderFactory)
+                    continue;
+                factories.Remove(factory);
+            }
         }
 
         public void OnResourceExecuted(ResourceExecutedContext context)

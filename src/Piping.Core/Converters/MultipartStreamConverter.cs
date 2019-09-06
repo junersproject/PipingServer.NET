@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Piping.Core.Internal;
 
@@ -11,21 +12,22 @@ namespace Piping.Core.Converters
 {
     public class MultipartStreamConverter : IStreamConverter
     {
-        public const int MultipartBoundaryLengthLimit = 1024;
+        readonly MultipartStreamConverterOption Option;
+        public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value; 
         // Content-Type: multipart/form-data; boundary="----WebKitFormBoundarymx2fSWqWSd0OxQqq"
         // The spec says 70 characters is a reasonable limit.
-        static string GetBoundary(MediaTypeHeaderValue contentType, int MultipartBoundaryLengthLimit = MultipartBoundaryLengthLimit)
+        string GetBoundary(MediaTypeHeaderValue contentType)
         {
             var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary);
             if (boundary.IsNullOrWhiteSpace())
                 throw new InvalidDataException("Missing content-type boundary.");
-            if (boundary.Length > MultipartBoundaryLengthLimit)
+            if (boundary.Length > Option.MultipartBoundaryLengthLimit)
                 throw new InvalidDataException(
-                    $"Multipart boundary length limit {MultipartBoundaryLengthLimit} exceeded.");
+                    $"Multipart boundary length limit {Option.MultipartBoundaryLengthLimit} exceeded.");
             return boundary.Value;
         }
 
-        static bool IsMultipartContentType(string contentType)
+        bool IsMultipartContentType(string contentType)
         {
             return !string.IsNullOrEmpty(contentType)
                    && contentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -41,10 +43,8 @@ namespace Piping.Core.Converters
             if (!Body.CanRead)
                 throw new ArgumentException("Not Readable Stream.");
             var ContentType = Headers["Content-Type"];
-            var boundary = GetBoundary(
-                MediaTypeHeaderValue.Parse((string)ContentType),
-                MultipartBoundaryLengthLimit);
-            var reader = new MultipartReader(boundary, Body);
+            var boundary = GetBoundary(MediaTypeHeaderValue.Parse((string)ContentType));
+            var reader = new MultipartReader(boundary, Body, Option.DefaultBufferSize);
             if ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)
             {
                 var _Headers = new HeaderDictionary(section.Headers);

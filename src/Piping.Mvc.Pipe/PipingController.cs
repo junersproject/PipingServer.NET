@@ -6,11 +6,11 @@ using Microsoft.Extensions.Logging;
 using Piping.Core.Models;
 using Piping.Mvc.Attributes;
 
-namespace Piping.Mvc.Controllers
+namespace Piping.Mvc.Pipe
 {
     [Route("")]
     [ApiController]
-    [DisableFormValueModelBinding]
+    [RouteValueOnlyBinding]
     public class PipingController : ControllerBase
     {
         readonly IPipingProvider Provider;

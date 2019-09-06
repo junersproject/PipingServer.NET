@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace Piping.Mvc.Controllers
+namespace Piping.Mvc.Commands
 {
     [Route("")]
     [ApiController]
@@ -22,7 +22,7 @@ namespace Piping.Mvc.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/")]
-        public IActionResult Index() => Content(Properties.Resources.index, $"text/html; charset={Encoding.WebName}", Encoding);
+        public IActionResult Index() => Content(Properties.Resources.Index, $"text/html; charset={Encoding.WebName}", Encoding);
         /// <summary>
         /// ヘルプ
         /// </summary>

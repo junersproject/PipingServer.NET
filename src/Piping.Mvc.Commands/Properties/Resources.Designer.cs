@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Piping.Mvc.Properties {
+namespace Piping.Mvc.Commands.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Piping.Mvc.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Piping.Mvc.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Piping.Mvc.Commands.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -82,9 +82,9 @@ namespace Piping.Mvc.Properties {
         ///
         ///    &lt; [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string index {
+        internal static string Index {
             get {
-                return ResourceManager.GetString("index", resourceCulture);
+                return ResourceManager.GetString("Index", resourceCulture);
             }
         }
     }

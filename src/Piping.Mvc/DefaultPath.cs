@@ -1,6 +1,6 @@
 ﻿namespace Piping
 {
-    internal static class DefaultPath
+    public static class DefaultPath
     {
         public const string Root = "/";
         public const string Version = "/version";

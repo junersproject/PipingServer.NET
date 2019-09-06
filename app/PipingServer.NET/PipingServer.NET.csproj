@@ -19,8 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Piping.Core\Piping.Core.csproj" />
-    <ProjectReference Include="..\Piping.Mvc\Piping.Mvc.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Core\Piping.Core.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Mvc.Commands\Piping.Mvc.Commands.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Mvc.Pipe\Piping.Mvc.Pipe.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Mvc\Piping.Mvc.csproj" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>

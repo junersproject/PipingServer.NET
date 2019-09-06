@@ -60,7 +60,7 @@ namespace Piping.Core.Models
             public void SetSenderComplete()
             {
                 if (IsSetSenderComplete)
-                    throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but ${ReceiversCount}.\n");
+                    throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but {ReceiversCount}.\n");
                 IsSetSenderComplete = true;
             }
             /// <summary>

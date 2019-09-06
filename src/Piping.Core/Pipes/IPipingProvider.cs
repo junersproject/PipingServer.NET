@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Piping.Core.Streams;
 
-namespace Piping.Core.Models
+namespace Piping.Core.Pipes
 {
     public interface IPipingProvider : IDisposable , IEnumerable<IPipe>
     {

@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Piping.Core.Models;
+using Piping.Core.Pipes;
 using Piping.Mvc.Attributes;
 
 namespace Piping.Mvc.Pipe

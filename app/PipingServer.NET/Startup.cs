@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Piping.Core.Converters;
-using Piping.Core.Models;
+using Piping.Core.Pipes;
 using Piping.Mvc;
 using Piping.Mvc.Infrastructure;
 

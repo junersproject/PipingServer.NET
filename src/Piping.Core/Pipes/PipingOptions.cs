@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Piping.Core.Models
+namespace Piping.Core.Pipes
 {
     public class PipingOptions
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Piping.Core.Models
+namespace Piping.Core.Pipes
 {
     public partial class PipingProvider
     {

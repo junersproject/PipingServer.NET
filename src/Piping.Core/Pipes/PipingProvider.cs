@@ -13,7 +13,7 @@ using Piping.Core.Converters;
 using Piping.Core.Internal;
 using Piping.Core.Streams;
 
-namespace Piping.Core.Models
+namespace Piping.Core.Pipes
 {
     public partial class PipingProvider : IPipingProvider
     {

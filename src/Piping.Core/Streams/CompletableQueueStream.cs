@@ -14,7 +14,7 @@ namespace Piping.Core.Streams
     {
         readonly bool isWritableMode = true;
         public static CompletableQueueStream Empty { get; } = new CompletableQueueStream(false);
-        readonly Pipe data;
+        readonly System.IO.Pipelines.Pipe data;
         public bool IsAddingCompleted { get; private set; } = false;
         public void CompleteAdding()
         {
@@ -22,7 +22,7 @@ namespace Piping.Core.Streams
             IsAddingCompleted = true;
         }
         public CompletableQueueStream() : this(PipeOptions.Default) { }
-        public CompletableQueueStream(PipeOptions options) => data = new Pipe(options);
+        public CompletableQueueStream(PipeOptions options) => data = new System.IO.Pipelines.Pipe(options);
         private CompletableQueueStream(bool isWritableMode) : this(new PipeOptions()) => this.isWritableMode = isWritableMode;
         public override bool CanRead => isWritableMode;
 

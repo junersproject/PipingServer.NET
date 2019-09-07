@@ -8,6 +8,6 @@ namespace Piping.Core.Converters
     public interface IStreamConverter
     {
         bool IsUse(IHeaderDictionary Headers);
-        Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default);
+        Task<(IHeaderDictionary Headers, Stream Stream)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default);
     }
 }

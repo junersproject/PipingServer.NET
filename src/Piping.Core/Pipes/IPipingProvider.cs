@@ -7,7 +7,7 @@ using Piping.Core.Streams;
 
 namespace Piping.Core.Pipes
 {
-    public interface IPipingProvider : IDisposable , IEnumerable<IPipe>
+    public interface IPipingProvider : IDisposable, IEnumerable<IPipe>
     {
         public void SetReceiver(string Path, HttpContext Receiver, ICompletableStream CompletableStream)
             => SetReceiver(Path, CompletableStream, Receiver?.RequestAborted ?? throw new ArgumentNullException(nameof(Receiver)));
@@ -23,23 +23,25 @@ namespace Piping.Core.Pipes
     }
     public interface ICompletableStream
     {
-        string Identity { get; set; }
+        PipeType PipeType { get; set; }
         CompletableQueueStream Stream { get; set; }
         event EventHandler? OnFinally;
         int? StatusCode { get; set; }
-        long? ContentLength { get; set; }
-        string? ContentType { get; set; }
-        string? ContentDisposition { get; set; }
-        string? AccessControlAllowOrigin { get; set; }
-        string? AccessControlExposeHeaders { get; set; }
+        IHeaderDictionary? Headers { get; set; }
         int BufferSize { get; set; }
         Task HeaderIsSetCompletedTask { get; set; }
     }
-    public enum PipeStatus
+    public enum PipeStatus : byte
     {
-        Wait,
-        Ready,
-        ResponseStart,
-        Canceled,
+        Wait = 0,
+        Ready = 1,
+        ResponseStart = 2,
+        Canceled = 3,
+    }
+    public enum PipeType : byte
+    {
+        None = 0,
+        Sender = 1,
+        Receiver = 2,
     }
 }

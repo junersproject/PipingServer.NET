@@ -17,7 +17,6 @@ namespace Piping.Core.Pipes
 {
     public partial class PipingProvider : IPipingProvider
     {
-        readonly Encoding Encoding;
         readonly PipingOptions Options;
         readonly ILogger<PipingProvider> Logger;
         readonly IEnumerable<IStreamConverter> Converters;
@@ -26,8 +25,8 @@ namespace Piping.Core.Pipes
         /// </summary>
         /// <param name="Services"></param>
         /// <param name="Logger"></param>
-        public PipingProvider(ILogger<PipingProvider> Logger, Encoding Encoding, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
-            => (this.Logger, this.Encoding, this.Converters, this.Options) = (Logger, Encoding, Converters, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
+        public PipingProvider(ILogger<PipingProvider> Logger, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
+            => (this.Logger, this.Converters, this.Options) = (Logger, Converters, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
         public void SetSender(string Path, HttpRequest Request, ICompletableStream CompletableStream, CancellationToken Token = default)
             => SetSender(new RequestKey(Path), Request, CompletableStream, Token);
         public void SetSender(RequestKey Key, HttpRequest Request, ICompletableStream CompletableStream, CancellationToken Token = default)
@@ -58,10 +57,10 @@ namespace Piping.Core.Pipes
                     else
                         using (Token.Register(() => Waiter.ReadyTaskSource.TrySetCanceled(Token)))
                             await Waiter.ReadyTaskSource.Task;
-                    var (Stream, ContentLength, ContentType, ContentDisposition) = await DataTask;
-                    SetHeaders(Waiter.Receivers, ContentLength, ContentType, ContentDisposition);
+                    var (Headers, Stream) = await DataTask;
+                    SetHeaders(Waiter.Receivers, Headers);
                     await SendMessageAsync(CompletableStream.Stream, $"Start sending with {Waiter.ReceiversCount} receiver(s)!");
-                    var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Waiter.Receivers.Select(v => v.Stream), 1024, Encoding, Token);
+                    var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Waiter.Receivers.Select(v => v.Stream), 1024, Options.Encoding, Token);
                     Waiter.ResponseTaskSource.TrySetResult(true);
                     await Task.WhenAll(Waiter.ResponseTaskSource.Task, PipingTask);
                 }
@@ -74,26 +73,26 @@ namespace Piping.Core.Pipes
         }
         private void SetSenderCompletableStream(Pipe Waiter, ICompletableStream CompletableStream)
         {
-            CompletableStream.Identity = "Sender";
+            CompletableStream.PipeType = PipeType.Sender;
             CompletableStream.Stream = new CompletableQueueStream();
-            CompletableStream.ContentType = $"text/plain;charset={Encoding.WebName}";
+            CompletableStream.Headers ??= new HeaderDictionary();
+            CompletableStream.Headers["Content-Type"] = $"text/plain;charset={Options.Encoding.WebName}";
             CompletableStream.OnFinally += (o, arg) => TryRemove(Waiter);
         }
-        private void SetHeaders(IEnumerable<ICompletableStream> Responses, long? ContentLength, string? ContentType, string? ContentDisposition)
+        private void SetHeaders(IEnumerable<ICompletableStream> Responses, IHeaderDictionary Headers)
         {
             foreach (var r in Responses)
-            {
-                r.ContentLength = ContentLength;
-                r.ContentType = ContentType;
-                r.ContentDisposition = ContentDisposition;
-            }
+                if (r.Headers is IHeaderDictionary _Headers)
+                    foreach (var kv in Headers)
+                        if (!_Headers.TryGetValue(kv.Key, out _ ))
+                            _Headers[kv.Key] = kv.Value;
         }
-        private Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetDataAsync(HttpRequest Request, CancellationToken Token = default)
+        private Task<(IHeaderDictionary Headers, Stream Stream)> GetDataAsync(HttpRequest Request, CancellationToken Token = default)
         {
             foreach (var c in Converters)
                 if (c.IsUse(Request.Headers))
                     return c.GetStreamAsync(Request.Headers, Request.Body, Token);
-            throw new InvalidOperationException("Empty Stream.");
+            return DefaultStreamConverter.GetStreamAsync(Request.Headers, Request.Body, Token);
         }
         private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {
@@ -136,10 +135,11 @@ namespace Piping.Core.Pipes
         }
         private void SetReceiverCompletableStream(Pipe Waiter, ICompletableStream CompletableStream)
         {
-            CompletableStream.Identity = "Receiver";
+            CompletableStream.PipeType = PipeType.Receiver;
             CompletableStream.Stream = new CompletableQueueStream();
-            CompletableStream.AccessControlAllowOrigin = "*";
-            CompletableStream.AccessControlExposeHeaders = "Content-Length, Content-Type";
+            CompletableStream.Headers ??= new HeaderDictionary();
+            CompletableStream.Headers["Access-Control-Allow-Origin"] = " * ";
+            CompletableStream.Headers["Access-Control-Expose-Headers"] = "Content-Length, Content-Type";
             CompletableStream.OnFinally += (o, arg) =>
             {
                 var Removed = Waiter.RemoveReceiver(CompletableStream);
@@ -151,12 +151,12 @@ namespace Piping.Core.Pipes
         private async Task SendMessageAsync(Stream Stream, string Message, CancellationToken Token = default)
         {
             Logger.LogDebug(Message);
-            await Stream.WriteAsync(Encoding.GetBytes("[INFO] " + Message + Environment.NewLine).AsMemory(), Token);
+            await Stream.WriteAsync(Options.Encoding.GetBytes("[INFO] " + Message + Environment.NewLine).AsMemory(), Token);
         }
         private void SendMessage(Stream Stream, string Message)
         {
             Logger.LogDebug(Message);
-            Stream.Write(Encoding.GetBytes("[INFO]" + Message + Environment.NewLine).AsSpan());
+            Stream.Write(Options.Encoding.GetBytes("[INFO]" + Message + Environment.NewLine).AsSpan());
         }
         protected Pipe Get(RequestKey Key)
         {

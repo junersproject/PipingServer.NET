@@ -21,31 +21,29 @@ namespace Piping.Streams.Tests
         {
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
-            using (var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1)))
-            using (var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, 5).Select(v => new CompletableQueueStream())))
-            using (var Piping = new PipingStream(Buffers))
+            using var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1));
+            using var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, 5).Select(v => new CompletableQueueStream()));
+            using var Piping = new PipingStream(Buffers);
+            var Token = TokenSource.Token;
+            using (var writer = new StreamWriter(Piping, Encoding, 1024, true))
             {
-                var Token = TokenSource.Token;
-                using (var writer = new StreamWriter(Piping, Encoding, 1024, true))
+                foreach (var Text in Data)
                 {
-                    foreach (var Text in Data)
-                    {
-                        Token.ThrowIfCancellationRequested();
-                        writer.WriteLine(Text);
-                        Trace.WriteLine($"write: {Text}");
-                    }
+                    Token.ThrowIfCancellationRequested();
+                    writer.WriteLine(Text);
+                    Trace.WriteLine($"write: {Text}");
                 }
-                foreach (var (os, index) in Buffers.Select((v, i) => (v, i)))
-                    using (var reader = new StreamReader(os, Encoding, false, 1024, true))
-                        foreach (var ExpectText in Data)
-                        {
-
-                            Token.ThrowIfCancellationRequested();
-                            var Text = reader.ReadLine();
-                            Trace.WriteLine($"cache {index} read: {Text}");
-                            Assert.AreEqual(ExpectText, Text);
-                        }
             }
+            foreach (var (os, index) in Buffers.Select((v, i) => (v, i)))
+                using (var reader = new StreamReader(os, Encoding, false, 1024, true))
+                    foreach (var ExpectText in Data)
+                    {
+
+                        Token.ThrowIfCancellationRequested();
+                        var Text = reader.ReadLine();
+                        Trace.WriteLine($"cache {index} read: {Text}");
+                        Assert.AreEqual(ExpectText, Text);
+                    }
         }
         static IEnumerable<object[]> PipingStreamAsyncSyncTestData
         {

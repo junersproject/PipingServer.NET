@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Piping.Core.Converters;
 using Piping.Core.Pipes;
+using Piping.Extensions;
 using Piping.Mvc;
 using Piping.Mvc.Infrastructure;
 
@@ -24,14 +25,8 @@ namespace Piping
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<PipingOptions>(Configuration.GetSection("PipingOptions"));
             services.AddControllers();
-            services.AddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
-            services.AddSingleton<IPipingProvider, PipingProvider>();
-            services.AddTransient<CompletableStreamResult>();
-            services.AddTransient<Encoding>(_ => new UTF8Encoding(false));
-            services.AddTransient<IStreamConverter, MultipartStreamConverter>();
-            services.AddTransient<IStreamConverter, DefaultStreamConverter>();
+            services.AddPiping();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

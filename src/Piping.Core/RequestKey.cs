@@ -50,6 +50,6 @@ namespace Piping.Core
             return dic;
         }
         public override string ToString()
-            => $"{LocalPath}?n={Receivers}";
+            => $"{LocalPath}" + (Receivers <= 1 ? "" : $"?n={Receivers}");
     }
 }

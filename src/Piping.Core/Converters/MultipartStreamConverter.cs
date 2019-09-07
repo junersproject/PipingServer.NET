@@ -34,7 +34,7 @@ namespace Piping.Core.Converters
         }
         public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))["Content-Type"]);
 
-        public async Task<(Stream Stream, long? ContentLength, string? ContentType, string? ContentDisposition)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
+        public async Task<(IHeaderDictionary Headers, Stream Stream)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
         {
             if (Headers == null)
                 throw new ArgumentNullException(nameof(Headers));
@@ -46,10 +46,7 @@ namespace Piping.Core.Converters
             var boundary = GetBoundary(MediaTypeHeaderValue.Parse((string)ContentType));
             var reader = new MultipartReader(boundary, Body, Option.DefaultBufferSize);
             if ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)
-            {
-                var _Headers = new HeaderDictionary(section.Headers);
-                return (section.Body, _Headers.ContentLength, section.ContentType, section.ContentDisposition);
-            }
+                return (new HeaderDictionary(section.Headers), section.Body);
             throw new InvalidOperationException("No Data Stream.");
         }
     }

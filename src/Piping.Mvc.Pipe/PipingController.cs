@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Piping.Core.Pipes;
 using Piping.Mvc.Attributes;
 
@@ -14,12 +14,12 @@ namespace Piping.Mvc.Pipe
     public class PipingController : ControllerBase
     {
         readonly IPipingProvider Provider;
-        readonly Encoding Encoding;
+        readonly PipingOptions Option;
         readonly ILogger<PipingController> Logger;
-        public PipingController(IPipingProvider Provider, ILogger<PipingController> Logger, Encoding? Encoding = default)
+        public PipingController(IPipingProvider Provider, ILogger<PipingController> Logger, IOptions<PipingOptions> Options)
         {
             this.Provider = Provider;
-            this.Encoding = Encoding ?? new UTF8Encoding(false);
+            Option = Options.Value;
             this.Logger = Logger;
         }
         [HttpPut("/{**Path}")]
@@ -68,7 +68,7 @@ namespace Piping.Mvc.Pipe
         }
         protected IActionResult BadRequest(string Message)
         {
-            var Content = this.Content(Message, $"text/plain; charset={Encoding.WebName}", Encoding);
+            var Content = this.Content(Message, $"text/plain; charset={Option.Encoding.WebName}", Option.Encoding);
             Content.StatusCode = 400;
             return Content;
         }

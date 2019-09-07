@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ namespace Piping.Mvc
 {
     public class CompletableStreamResult : IActionResult, ICompletableStream
     {
-        public string Identity { get; set; } = string.Empty;
+        public PipeType PipeType { get; set; } = PipeType.None;
         public CompletableQueueStream Stream { get; set; } = CompletableQueueStream.Empty;
         public event EventHandler? OnFinally;
         public void FireFinally(ActionContext? context = null)
@@ -28,11 +29,12 @@ namespace Piping.Mvc
                 OnFinally -= d;
         }
         public int? StatusCode { get; set; }
-        public long? ContentLength { get; set; } = null;
-        public string? ContentType { get; set; } = null;
-        public string? ContentDisposition { get; set; } = null;
-        public string? AccessControlAllowOrigin { get; set; } = null;
-        public string? AccessControlExposeHeaders { get; set; } = null;
+        public IHeaderDictionary? Headers { get; set; } = null;
+        public long? ContentLength => long.TryParse(Headers?["Content-Length"] ?? string.Empty, out var ContentLength) ? ContentLength : (long?)null;
+        public string? ContentType => Headers?["Content-Type"];
+        public string? ContentDisposition => Headers?["Content-Disposition"];
+        public string? AccessControlAllowOrigin => Headers?["Access-Control-Allow-Origin"];
+        public string? AccessControlExposeHeaders => Headers?["Access-Control-Expose-Headers"];
         public int BufferSize { get; set; } = 1024;
         public Task HeaderIsSetCompletedTask { get; set; } = Task.CompletedTask;
 

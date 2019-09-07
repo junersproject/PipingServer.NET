@@ -19,9 +19,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piping.Core", "src\Piping.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piping.Mvc", "src\Piping.Mvc\Piping.Mvc.csproj", "{4BBFBFD5-A301-42A3-8BD0-116DE6535E3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Piping.Mvc.Pipe", "src\Piping.Mvc.Pipe\Piping.Mvc.Pipe.csproj", "{207F6322-09F9-4252-96FE-9DCE79DF8263}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piping.Mvc.Pipe", "src\Piping.Mvc.Pipe\Piping.Mvc.Pipe.csproj", "{207F6322-09F9-4252-96FE-9DCE79DF8263}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Piping.Mvc.Commands", "src\Piping.Mvc.Commands\Piping.Mvc.Commands.csproj", "{C93C23A2-B4C5-4EBA-AE5E-5350D3E2E867}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Piping.Mvc.Commands", "src\Piping.Mvc.Commands\Piping.Mvc.Commands.csproj", "{C93C23A2-B4C5-4EBA-AE5E-5350D3E2E867}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Piping.Core.Tests", "test\Piping.Core.Tests\Piping.Core.Tests.csproj", "{400E0B84-9FE7-448A-B746-6CA546015111}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Piping.Extensions", "src\Piping.Extensions\Piping.Extensions.csproj", "{61B69D68-571E-4107-8C77-EF27FADD4665}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +57,14 @@ Global
 		{C93C23A2-B4C5-4EBA-AE5E-5350D3E2E867}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C93C23A2-B4C5-4EBA-AE5E-5350D3E2E867}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C93C23A2-B4C5-4EBA-AE5E-5350D3E2E867}.Release|Any CPU.Build.0 = Release|Any CPU
+		{400E0B84-9FE7-448A-B746-6CA546015111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{400E0B84-9FE7-448A-B746-6CA546015111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{400E0B84-9FE7-448A-B746-6CA546015111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{400E0B84-9FE7-448A-B746-6CA546015111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61B69D68-571E-4107-8C77-EF27FADD4665}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61B69D68-571E-4107-8C77-EF27FADD4665}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61B69D68-571E-4107-8C77-EF27FADD4665}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61B69D68-571E-4107-8C77-EF27FADD4665}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

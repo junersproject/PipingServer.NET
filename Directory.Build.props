@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <Deterministic>true</Deterministic>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>

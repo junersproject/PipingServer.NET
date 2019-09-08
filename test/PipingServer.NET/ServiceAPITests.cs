@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Piping.Tests
+namespace Piping.Server.Tests
 {
     [TestClass()]
     public class ServiceAPITests : RequestTestBase

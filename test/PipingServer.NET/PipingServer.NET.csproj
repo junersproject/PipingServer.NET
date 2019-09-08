@@ -15,10 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Piping.Core\Piping.Core.csproj" />
-    <ProjectReference Include="..\..\src\Piping.Mvc.Commands\Piping.Mvc.Commands.csproj" />
-    <ProjectReference Include="..\..\src\Piping.Mvc.Pipe\Piping.Mvc.Pipe.csproj" />
-    <ProjectReference Include="..\..\src\Piping.Mvc\Piping.Mvc.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Server.Mvc.Commands\Piping.Server.Mvc.Commands.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Server.Mvc.Pipe\Piping.Server.Mvc.Pipe.csproj" />
+    <ProjectReference Include="..\..\src\Piping.Server.Mvc\Piping.Server.Mvc.csproj" />
   </ItemGroup>
 
 </Project>

@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Piping.Core.Converters;
-using Piping.Core.Pipes;
-using Piping.Extensions;
-using Piping.Mvc;
-using Piping.Mvc.Infrastructure;
+using Piping.Server.Core.Converters;
+using Piping.Server.Core.Pipes;
+using Piping.Server.Extensions;
+using Piping.Server.Mvc;
+using Piping.Server.Mvc.Infrastructure;
 
 namespace Piping
 {

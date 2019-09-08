@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Piping.Server.Core\Piping.Server.Core.csproj" />
+  </ItemGroup>
+
+</Project>

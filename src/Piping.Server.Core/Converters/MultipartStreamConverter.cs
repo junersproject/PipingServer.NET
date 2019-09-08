@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Piping.Server.Core.Internal;
+using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Converters
 {
@@ -20,17 +21,17 @@ namespace Piping.Server.Core.Converters
         {
             var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary);
             if (boundary.IsNullOrWhiteSpace())
-                throw new InvalidDataException("Missing content-type boundary.");
+                throw new InvalidDataException(MultipartStreamConverter_GetBoundary_IsNullOrWhiteSpace);
             if (boundary.Length > Option.MultipartBoundaryLengthLimit)
                 throw new InvalidDataException(
-                    $"Multipart boundary length limit {Option.MultipartBoundaryLengthLimit} exceeded.");
+                    string.Format(MultipartStreamConverter_GetBoundary_OverMultipartBoundaryLengthLimit, Option.MultipartBoundaryLengthLimit));
             return boundary.Value;
         }
-
+        const string MultipartMimeTypeStart = "multipart/";
         bool IsMultipartContentType(string contentType)
         {
             return !string.IsNullOrEmpty(contentType)
-                   && contentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0;
+                   && contentType.IndexOf(MultipartMimeTypeStart, StringComparison.OrdinalIgnoreCase) >= 0;
         }
         public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))["Content-Type"]);
 
@@ -41,13 +42,13 @@ namespace Piping.Server.Core.Converters
             if (Body == null)
                 throw new ArgumentNullException(nameof(Body));
             if (!Body.CanRead)
-                throw new ArgumentException("Not Readable Stream.");
+                throw new ArgumentException(NotReadableStream);
             var ContentType = Headers["Content-Type"];
             var boundary = GetBoundary(MediaTypeHeaderValue.Parse((string)ContentType));
             var reader = new MultipartReader(boundary, Body, Option.DefaultBufferSize);
             if ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)
                 return (new HeaderDictionary(section.Headers), section.Body);
-            throw new InvalidOperationException("No Data Stream.");
+            throw new InvalidOperationException(NoDataStream);
         }
     }
 }

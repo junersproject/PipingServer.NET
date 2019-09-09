@@ -8,13 +8,13 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageTags>piping-server</PackageTags>
     <PackageReleaseNotes>2019/09/09 0.1.0 release.</PackageReleaseNotes>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="Microsoft.Extensions.Primitives" />
-    <PackageReference Include="System.IO.Pipelines" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Extensions.Logging"/>
+    <PackageReference Include="Microsoft.Extensions.Primitives"/>
+    <PackageReference Include="System.IO.Pipelines"/>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\LICENSE.txt">

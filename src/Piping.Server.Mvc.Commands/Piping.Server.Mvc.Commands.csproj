@@ -4,10 +4,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Piping.Server.Mvc\Piping.Server.Mvc.csproj" />
   </ItemGroup>
 

@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Piping.Server.Core.Converters;
 using Piping.Server.Core.Internal;
 using Piping.Server.Core.Streams;
 
@@ -19,29 +18,24 @@ namespace Piping.Server.Core.Pipes
     {
         readonly PipingOptions Options;
         readonly ILogger<PipingProvider> Logger;
-        readonly IEnumerable<IStreamConverter> Converters;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="Services"></param>
         /// <param name="Logger"></param>
-        public PipingProvider(ILogger<PipingProvider> Logger, IEnumerable<IStreamConverter> Converters, IOptions<PipingOptions> Options)
-            => (this.Logger, this.Converters, this.Options) = (Logger, Converters, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
-        public void SetSender(string Path, HttpRequest Request, ICompletableStream CompletableStream, CancellationToken Token = default)
-            => SetSender(new RequestKey(Path), Request, CompletableStream, Token);
-        public void SetSender(RequestKey Key, HttpRequest Request, ICompletableStream CompletableStream, CancellationToken Token = default)
+        public PipingProvider(ILogger<PipingProvider> Logger, IOptions<PipingOptions> Options)
+            => (this.Logger, this.Options) = (Logger, Options?.Value ?? throw new ArgumentNullException(nameof(Options)));
+        public void SetSender(string Path, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default)
+            => SetSender(new RequestKey(Path), DataTask, CompletableStream, Token);
+        public void SetSender(RequestKey Key, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
-            // seek request body
-            if ((Request ?? throw new ArgumentNullException(nameof(Request))).Body.CanSeek)
-                Request.Body.Seek(0, SeekOrigin.Begin);
 
             var Waiter = Get(Key);
             using var finallyremove = Disposable.Create(() => TryRemove(Waiter));
             Waiter.AssertKey(Key);
             Logger.LogDebug(nameof(SetSender) + " START");
             using var l = Disposable.Create(() => Logger.LogDebug(nameof(SetSender) + " STOP"));
-            var DataTask = GetDataAsync(Request, Token);
             SetSenderCompletableStream(Waiter, CompletableStream);
             Waiter.SetSenderComplete();
             SendMessage(CompletableStream.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...");
@@ -58,7 +52,7 @@ namespace Piping.Server.Core.Pipes
                         using (Token.Register(() => Waiter.ReadyTaskSource.TrySetCanceled(Token)))
                             await Waiter.ReadyTaskSource.Task;
                     var (Headers, Stream) = await DataTask;
-                    SetHeaders(Waiter.Receivers, Headers);
+                    Waiter.Receivers.SetHeaders(Headers);
                     await SendMessageAsync(CompletableStream.Stream, $"Start sending with {Waiter.ReceiversCount} receiver(s)!");
                     var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Waiter.Receivers.Select(v => v.Stream), 1024, Options.Encoding, Token);
                     Waiter.ResponseTaskSource.TrySetResult(true);
@@ -78,21 +72,6 @@ namespace Piping.Server.Core.Pipes
             CompletableStream.Headers ??= new HeaderDictionary();
             CompletableStream.Headers["Content-Type"] = $"text/plain;charset={Options.Encoding.WebName}";
             CompletableStream.OnFinally += (o, arg) => TryRemove(Waiter);
-        }
-        private void SetHeaders(IEnumerable<ICompletableStream> Responses, IHeaderDictionary Headers)
-        {
-            foreach (var r in Responses)
-                if (r.Headers is IHeaderDictionary _Headers)
-                    foreach (var kv in Headers)
-                        if (!_Headers.TryGetValue(kv.Key, out _ ))
-                            _Headers[kv.Key] = kv.Value;
-        }
-        private Task<(IHeaderDictionary Headers, Stream Stream)> GetDataAsync(HttpRequest Request, CancellationToken Token = default)
-        {
-            foreach (var c in Converters)
-                if (c.IsUse(Request.Headers))
-                    return c.GetStreamAsync(Request.Headers, Request.Body, Token);
-            return DefaultStreamConverter.GetStreamAsync(Request.Headers, Request.Body, Token);
         }
         private async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, Encoding Encoding, CancellationToken Token = default)
         {

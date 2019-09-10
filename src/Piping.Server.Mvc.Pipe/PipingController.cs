@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Piping.Server.Core.Pipes;
 using Piping.Server.Mvc.Attributes;
+using Piping.Server.Mvc.Models;
 
 namespace Piping.Server.Mvc.Pipe
 {
@@ -24,12 +25,12 @@ namespace Piping.Server.Mvc.Pipe
         }
         [HttpPut("/{**Path}")]
         [HttpPost("/{**Path}")]
-        public IActionResult Upload(string Path)
+        public IActionResult Upload(string Path, SendData Sender)
         {
             try
             {
                 var Result = new CompletableStreamResult();
-                Provider.SetSender(Path, HttpContext, Result);
+                Provider.SetSender(Path, Sender.GetResultAsync(), HttpContext, Result);
                 return Result;
             }
             catch (InvalidOperationException e)

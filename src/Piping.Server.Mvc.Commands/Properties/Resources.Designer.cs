@@ -39,7 +39,7 @@ namespace Piping.Server.Mvc.Commands.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Piping.Mvc.Commands.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Piping.Server.Mvc.Commands.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -80,7 +80,7 @@ namespace Piping.Server.Mvc.Commands.Properties {
         ///
         ///    &lt;input type=&quot;checkbox&quot; id=&quot;inputMode&quot; onchange=&quot;toggleInputMode()&quot;&gt;: &lt;b&gt;Text mode&lt;/b&gt;&lt;br&gt;&lt;br&gt;
         ///
-        ///    &lt; [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
+        ///    &lt;input type=&quot;file&quot; n [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string Index {
             get {

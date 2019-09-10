@@ -22,6 +22,4 @@
     <ProjectReference Include="..\..\src\Piping.Server.Mvc.Pipe\Piping.Server.Mvc.Pipe.csproj" />
   </ItemGroup>
 
-  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
-
 </Project>

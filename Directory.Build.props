@@ -8,5 +8,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</RepoRoot>
     <PathMap>$(RepoRoot)=.</PathMap>
+    <Authors>juner</Authors>
   </PropertyGroup>
 </Project>

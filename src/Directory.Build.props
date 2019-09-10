@@ -1,14 +1,5 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
-    <Deterministic>true</Deterministic>
-    <LangVersion>preview</LangVersion>
-    <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</RepoRoot>
-    <PathMap>$(RepoRoot)=.</PathMap>
-    <Authors>juner</Authors>
     <Copyright>MIT</Copyright>
     <PackageProjectUrl>https://github.com/junersproject/PipingServer.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/junersproject/PipingServer.NET.git</RepositoryUrl>

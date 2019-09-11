@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Piping.Server.Extensions;
 
-namespace Piping
+namespace Piping.Server.App
 {
     internal class Startup
     {

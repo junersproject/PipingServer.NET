@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Piping
+namespace Piping.Server.App.Tests
 {
     internal class DisposableList<T> : List<T>, IDisposable
         where T : IDisposable

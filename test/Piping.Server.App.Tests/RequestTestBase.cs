@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Piping.Server.Tests
+namespace Piping.Server.App.Tests
 {
     public abstract class RequestTestBase
     {

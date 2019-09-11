@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static DebugUtils;
 
-namespace Piping.Server.Tests
+namespace Piping.Server.App.Tests
 {
     [TestClass]
     public class OriginServiceAPIExample : RequestTestBase

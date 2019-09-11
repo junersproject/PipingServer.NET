@@ -6,7 +6,7 @@
     <RootNamespace>Piping</RootNamespace>
     <FileVersion>0.1.3.0</FileVersion>
     <Version>0.1.3.0</Version>
-    <StartupObject>Piping.Program</StartupObject>
+    <StartupObject>Piping.Server.App.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

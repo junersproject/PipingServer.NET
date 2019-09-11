@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace PipingServer.NETTests.Controllers
+namespace Piping.Server.App.Tests.Controllers
 {
     [TestClass]
     public class PipingControllerTests

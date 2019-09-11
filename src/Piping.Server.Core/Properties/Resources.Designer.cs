@@ -95,5 +95,14 @@ namespace Piping.Server.Core.Properties {
                 return ResourceManager.GetString("NotReadableStream", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   USE {0}. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string StreamConverterExtensions_GetDataAsync_UseType {
+            get {
+                return ResourceManager.GetString("StreamConverterExtensions_GetDataAsync_UseType", resourceCulture);
+            }
+        }
     }
 }

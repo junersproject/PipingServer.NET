@@ -28,12 +28,13 @@ namespace Piping.Server.Core.Converters
             return boundary.Value;
         }
         const string MultipartMimeTypeStart = "multipart/";
+        const string ContentTypeHeaderName = "Content-Type";
         bool IsMultipartContentType(string contentType)
         {
             return !string.IsNullOrEmpty(contentType)
                    && contentType.IndexOf(MultipartMimeTypeStart, StringComparison.OrdinalIgnoreCase) >= 0;
         }
-        public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))["Content-Type"]);
+        public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))[ContentTypeHeaderName]);
 
         public async Task<(IHeaderDictionary Headers, Stream Stream)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
         {
@@ -43,7 +44,7 @@ namespace Piping.Server.Core.Converters
                 throw new ArgumentNullException(nameof(Body));
             if (!Body.CanRead)
                 throw new ArgumentException(NotReadableStream);
-            var ContentType = Headers["Content-Type"];
+            var ContentType = Headers[ContentTypeHeaderName];
             var boundary = GetBoundary(MediaTypeHeaderValue.Parse((string)ContentType));
             var reader = new MultipartReader(boundary, Body, Option.DefaultBufferSize);
             if ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)

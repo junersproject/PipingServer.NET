@@ -14,10 +14,10 @@ namespace Piping.Server.Core.Converters
             foreach (var c in Converters)
                 if (!(c is DefaultStreamConverter) && c.IsUse(Request.Headers))
                 {
-                    Logger?.LogInformation($"USE {c.GetType().FullName}");
+                    Logger?.LogInformation(string.Format(Properties.Resources.StreamConverterExtensions_GetDataAsync_UseType,c.GetType().FullName));
                     return c.GetStreamAsync(Request.Headers, Request.Body, Token);
                 }
-            Logger?.LogInformation($"USE {typeof(DefaultStreamConverter).FullName}");
+            Logger?.LogInformation(string.Format(Properties.Resources.StreamConverterExtensions_GetDataAsync_UseType, typeof(DefaultStreamConverter).FullName));
             return DefaultStreamConverter.GetStreamAsync(Request.Headers, Request.Body, Token);
         }
     }

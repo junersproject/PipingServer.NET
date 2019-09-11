@@ -24,7 +24,7 @@ namespace Piping.Server.Core
             var Collection = QueryToDictionary(relativeUri.Query);
             Receivers = Collection.TryGetValue("n", out var _n) && int.TryParse(_n, out var __n) ? __n : 1;
             if (Receivers <= 0)
-                throw new InvalidOperationException($"n should > 0, but n = ${Receivers}.\n");
+                throw new InvalidOperationException($"n should > 0, but n = ${Receivers}.");
             LocalPath = relativeUri.LocalPath.ToLower();
         }
         public override int GetHashCode() => LocalPath.GetHashCode();

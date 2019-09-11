@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -25,12 +26,12 @@ namespace Piping.Server.Mvc.Pipe
         }
         [HttpPut("/{**Path}")]
         [HttpPost("/{**Path}")]
-        public IActionResult Upload(string Path, SendData Sender)
+        public async Task<IActionResult> Upload(string Path, SendData Sender)
         {
             try
             {
                 var Result = new CompletableStreamResult();
-                Provider.SetSender(Path, Sender.GetResultAsync(), HttpContext, Result);
+                await Provider.SetSenderAsync(Path, Sender.GetResultAsync(), HttpContext, Result);
                 return Result;
             }
             catch (InvalidOperationException e)
@@ -41,12 +42,12 @@ namespace Piping.Server.Mvc.Pipe
         }
 
         [HttpGet("/{**Path}")]
-        public IActionResult Download(string Path)
+        public async Task<IActionResult> Download(string Path)
         {
             try
             {
                 var Result = new CompletableStreamResult();
-                Provider.SetReceiver(Path, HttpContext, Result);
+                await Provider.SetReceiverAsync(Path, HttpContext, Result);
                 return Result;
             }
             catch (InvalidOperationException e)

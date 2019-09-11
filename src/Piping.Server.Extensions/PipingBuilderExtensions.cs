@@ -29,7 +29,12 @@ namespace Piping.Server.Extensions
         }
         public static IPipingBuilder UseDefaultProvider(this IPipingBuilder self)
         {
-            self.Services.TryAddSingleton<IPipingProvider, PipingProvider>();
+            self.Services.TryAddTransient<IPipingProvider, PipingProvider>();
+            return self;
+        }
+        public static IPipingBuilder UseDefaultStore(this IPipingBuilder self)
+        {
+            self.Services.TryAddSingleton<IPipingStore, PipingStore>();
             return self;
         }
         public static IPipingBuilder AddExector<T>(this IPipingBuilder self)

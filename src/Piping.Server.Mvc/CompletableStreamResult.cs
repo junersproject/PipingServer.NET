@@ -35,8 +35,6 @@ namespace Piping.Server.Mvc
         public string? ContentDisposition => Headers?["Content-Disposition"];
         public string? AccessControlAllowOrigin => Headers?["Access-Control-Allow-Origin"];
         public string? AccessControlExposeHeaders => Headers?["Access-Control-Expose-Headers"];
-        public int BufferSize { get; set; } = 1024;
-        public Task HeaderIsSetCompletedTask { get; set; } = Task.CompletedTask;
 
         public CompletableStreamResult() { }
         public Task ExecuteResultAsync(ActionContext context)

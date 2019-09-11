@@ -55,16 +55,6 @@ namespace Piping.Server.Mvc.Infrastructure
                 throw new ArgumentNullException(nameof(result));
             using var finallydispose = Disposable.Create(() => result.FireFinally(context));
             var Response = context.HttpContext.Response;
-            try
-            {
-                await result.HeaderIsSetCompletedTask;
-            }
-            catch (OperationCanceledException e)
-            {
-                SetTimeout(Response);
-                logger.LogError(e, "[TIMEOUT] " + e.Message);
-                return;
-            }
             SetHeader(result, Response);
             var Token = context.HttpContext.RequestAborted;
 

@@ -12,6 +12,7 @@ namespace Piping.Server.Extensions
             new PipingBuilder(services)
                 .UseDefaultExector()
                 .UseDefaultProvider()
+                .UseDefaultStore()
                 .UseMultipartStreamConverter();
             return services;
         }
@@ -24,7 +25,8 @@ namespace Piping.Server.Extensions
             var builder = new PipingBuilder(services);
             action.Invoke(builder);
             builder.UseDefaultExector()
-                .UseDefaultProvider();
+                .UseDefaultProvider()
+                .UseDefaultStore();
             return services;
         }
     }

@@ -10,8 +10,7 @@ namespace Piping.Server.Core.Pipes
             foreach (var r in Responses)
                 if (r.Headers is IHeaderDictionary _Headers)
                     foreach (var kv in Headers)
-                        if (!_Headers.TryGetValue(kv.Key, out _))
-                            _Headers[kv.Key] = kv.Value;
+                        _Headers[kv.Key] = kv.Value;
         }
     }
 }

@@ -226,8 +226,9 @@ namespace Piping.Server.Tests
 
         }
 
-        private class CustomWebApplicationFactory : WebApplicationFactory<Startup> {
-        
+        private class CustomWebApplicationFactory : WebApplicationFactory<Startup>
+        {
+
         }
     }
 }

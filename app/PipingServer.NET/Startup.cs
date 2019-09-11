@@ -1,15 +1,9 @@
-﻿using System.Text;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Piping.Server.Core.Converters;
-using Piping.Server.Core.Pipes;
 using Piping.Server.Extensions;
-using Piping.Server.Mvc;
-using Piping.Server.Mvc.Infrastructure;
 
 namespace Piping
 {

@@ -31,7 +31,8 @@ namespace Piping.Server.Core.Pipes
                     });
                 }
             }
-            public PipeStatus Status {
+            public PipeStatus Status
+            {
                 get
                 {
                     if (IsWaitCanceled)

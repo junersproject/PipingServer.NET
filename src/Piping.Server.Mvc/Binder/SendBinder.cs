@@ -14,7 +14,8 @@ namespace Piping.Server.Mvc.Binder
             => (this.Converters, this.Logger) = (Converters, Logger);
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
-            if (bindingContext.ModelType != typeof(Models.SendData)) {
+            if (bindingContext.ModelType != typeof(Models.SendData))
+            {
                 bindingContext.Result = ModelBindingResult.Failed();
                 return Task.CompletedTask;
             }

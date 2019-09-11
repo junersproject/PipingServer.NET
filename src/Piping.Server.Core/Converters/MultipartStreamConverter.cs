@@ -14,7 +14,7 @@ namespace Piping.Server.Core.Converters
     public class MultipartStreamConverter : IStreamConverter
     {
         readonly MultipartStreamConverterOption Option;
-        public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value; 
+        public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value;
         // Content-Type: multipart/form-data; boundary="----WebKitFormBoundarymx2fSWqWSd0OxQqq"
         // The spec says 70 characters is a reasonable limit.
         string GetBoundary(MediaTypeHeaderValue contentType)

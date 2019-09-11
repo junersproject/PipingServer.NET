@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -26,41 +25,44 @@ namespace Piping.Server.Core.Pipes
         /// <param name="Logger"></param>
         public PipingProvider(ILogger<PipingProvider> Logger, IOptions<PipingOptions> Options, IPipingStore Store)
             => (this.Logger, this.Options, this.Store) = (Logger, Options?.Value ?? throw new ArgumentNullException(nameof(Options)), Store);
-        public async Task SetSenderAsync(string Path, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default)
+        public async Task SetSenderAsync(RequestKey Key, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
 
-            var Waiter = await Store.GetAsync(Path, Token);
+            var Waiter = await Store.GetAsync(Key, Token);
             using var finallyremove = Disposable.Create(() => Store.TryRemoveAsync(Waiter));
-            Waiter.AssertKey();
+            Waiter.AssertKey(Key);
             Logger.LogDebug(nameof(SetSenderAsync) + " START");
             using var l = Disposable.Create(() => Logger.LogDebug(nameof(SetSenderAsync) + " STOP"));
             SetSenderCompletableStream(Waiter, CompletableStream);
             Waiter.SetSenderComplete();
-            SendMessage(CompletableStream.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...");
-            SendMessage(CompletableStream.Stream, $"{Waiter.ReceiversCount} receiver(s) has/have been connected.");
-            _ = Task.Run(async () =>
-            {
-                Logger.LogDebug("async " + nameof(SetSenderAsync) + " START");
-                using var l = Disposable.Create(() => Logger.LogDebug("async " + nameof(SetSenderAsync) + " STOP"));
-                try
-                {
-                    await Waiter.ReadyAsync(Token);
-                    var (Headers, Stream) = await DataTask;
-                    var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Waiter.Receivers.Select(v => v.Stream), Options.BufferSize, Token);
-                    var SetHeaderTask = Waiter.SetHeadersAsync(Receivers => {
-                        Receivers.SetHeaders(Headers);
-                        return Task.CompletedTask;
-                    });
-                    await SendMessageAsync(CompletableStream.Stream, $"Start sending with {Waiter.ReceiversCount} receiver(s)!");
-                    await Task.WhenAll(PipingTask, SetHeaderTask.AsTask());
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(e, nameof(SetSenderAsync));
-                }
-            });
+            await SendMessageAsync(CompletableStream.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...", Token);
+            await SendMessageAsync(CompletableStream.Stream, $"{Waiter.ReceiversCount} receiver(s) has/have been connected.", Token);
+            await Waiter.ReadyAsync(Token);
+            _ = _SetSenderAsync(DataTask, CompletableStream, Waiter, Token);
         }
+        private async Task _SetSenderAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, IPipe Waiter, CancellationToken Token)
+        {
+
+            Logger.LogDebug("async " + nameof(_SetSenderAsync) + " START");
+            using var l = Disposable.Create(() => Logger.LogDebug("async " + nameof(SetSenderAsync) + " STOP"));
+            try
+            {
+                var (Headers, Stream) = await DataTask;
+                var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Waiter.Receivers.Select(v => v.Stream), Options.BufferSize, Token);
+                var SetHeaderTask = Waiter.SetHeadersAsync(Receivers => {
+                    Receivers.SetHeaders(Headers);
+                    return Task.CompletedTask;
+                });
+                await SendMessageAsync(CompletableStream.Stream, $"Start sending with {Waiter.ReceiversCount} receiver(s)!");
+                await Task.WhenAll(PipingTask, SetHeaderTask.AsTask());
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, nameof(SetSenderAsync));
+            }
+        }
+
         private void SetSenderCompletableStream(IPipe Waiter, ICompletableStream CompletableStream)
         {
             CompletableStream.PipeType = PipeType.Sender;
@@ -90,14 +92,14 @@ namespace Piping.Server.Core.Pipes
             }
             await SendMessageAsync(InfomationStream, $"Sending successful! {byteCounter} bytes.");
         }
-        public async Task SetReceiverAsync(string Path, ICompletableStream CompletableStream, CancellationToken Token = default)
+        public async Task SetReceiverAsync(RequestKey Key, ICompletableStream CompletableStream, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
             Logger.LogDebug(nameof(PipingAsync) + " START");
             using var l = Disposable.Create(() => Logger.LogDebug(nameof(PipingAsync) + " STOP"));
-            var Waiter = await Store.GetAsync(Path, Token);
+            var Waiter = await Store.GetAsync(Key, Token);
             using var finallyremove = Disposable.Create(() => Store.TryRemoveAsync(Waiter));
-            Waiter.AssertKey();
+            Waiter.AssertKey(Key);
             if (!(Waiter.ReceiversCount < Waiter.RequestedReceiversCount))
                 throw new InvalidOperationException($"Connection receivers over.");
             SetReceiverCompletableStream(Waiter, CompletableStream);

@@ -19,7 +19,7 @@ namespace Piping.Server.Mvc.Infrastructure
         {
             "content-type",
             "content-length",
-            "content-Disposition",
+            "content-disposition",
             "access-control-allow-origin",
             "access-control-expose-headers",
         };

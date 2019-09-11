@@ -105,39 +105,21 @@ namespace Piping.Server.Core.Pipes
         readonly List<ICompletableStream> _Receivers = new List<ICompletableStream>();
         public IEnumerable<ICompletableStream> Receivers => _Receivers;
         public int ReceiversCount => _Receivers.Count;
-        public void AssertKey()
+        public void AssertKey(RequestKey Key)
         {
             if (IsEstablished)
                 throw new InvalidOperationException($"Connection on '{Key.LocalPath}' has been established already.");
-            if (RequestedReceiversCount is null)
-                RequestedReceiversCount = Key.Receivers;
             else if (Key.Receivers != RequestedReceiversCount)
                 throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
         }
         public void AddReceiver(ICompletableStream Result) => _Receivers.Add(Result);
         public bool RemoveReceiver(ICompletableStream Result) => _Receivers.Remove(Result);
         public bool ReceiversIsAllSet => _Receivers.Count == _receiversCount;
-        internal int? _receiversCount = 1;
+        internal int? _receiversCount = null;
         /// <summary>
         /// 受け取り数
         /// </summary>
-        public int? RequestedReceiversCount
-        {
-            get => _receiversCount;
-            set
-            {
-                // 完了してたらNG
-                if (IsEstablished
-                    || IsSetSenderComplete
-                    || IsSetReceiversComplete)
-                    throw new InvalidOperationException("[ERROR] no change " + nameof(RequestedReceiversCount));
-                if (value <= 0)
-                    throw new ArgumentException($"{nameof(RequestedReceiversCount)} is 1 or letter.");
-                _receiversCount = value;
-                if (_receiversCount == _Receivers.Count)
-                    ReadyTaskSource.TrySetResult(true);
-            }
-        }
+        public int RequestedReceiversCount => Key.Receivers;
         public bool IsReady => IsSetSenderComplete && ReceiversIsAllSet || IsEstablished;
         public override string? ToString()
         {

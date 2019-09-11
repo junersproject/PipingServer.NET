@@ -26,12 +26,13 @@ namespace Piping.Server.Mvc.Pipe
         }
         [HttpPut("/{**Path}")]
         [HttpPost("/{**Path}")]
-        public async Task<IActionResult> Upload(string Path, SendData Sender)
+        public async Task<IActionResult> Upload(SendData Sender)
         {
             try
             {
+                var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
                 var Result = new CompletableStreamResult();
-                await Provider.SetSenderAsync(Path, Sender.GetResultAsync(), HttpContext, Result);
+                await Provider.SetSenderAsync(Sender.Key, Sender.GetResultAsync(), HttpContext, Result);
                 return Result;
             }
             catch (InvalidOperationException e)
@@ -42,12 +43,13 @@ namespace Piping.Server.Mvc.Pipe
         }
 
         [HttpGet("/{**Path}")]
-        public async Task<IActionResult> Download(string Path)
+        public async Task<IActionResult> Download(ReceiveData Receiver)
         {
             try
             {
+                var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
                 var Result = new CompletableStreamResult();
-                await Provider.SetReceiverAsync(Path, HttpContext, Result);
+                await Provider.SetReceiverAsync(Receiver.Key, HttpContext, Result);
                 return Result;
             }
             catch (InvalidOperationException e)

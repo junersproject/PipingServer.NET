@@ -16,10 +16,9 @@ namespace Piping.Server.Core.Pipes
         public PipingStore(ILogger<PipingStore> Logger, IOptions<PipingOptions> Options)
             => (this.Logger, this.Options) = (Logger, Options.Value);
         private Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
-        public Task<IPipe> GetAsync(string Path, CancellationToken Token = default)
+        public Task<IPipe> GetAsync(RequestKey Key, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
-            var Key = new RequestKey(Path);
             lock (_waiters)
             {
                 if (_waiters.TryGetValue(Key, out var Waiter))

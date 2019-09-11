@@ -6,6 +6,7 @@ namespace Piping.Server.Core
 {
     public readonly struct RequestKey
     {
+        public readonly static RequestKey Empty;
         /// <summary>
         /// 相対パスの辻褄合わせ用
         /// </summary>

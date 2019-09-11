@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
+using Piping.Server.Core;
 using Piping.Server.Core.Converters;
 
 namespace Piping.Server.Mvc.Binder
@@ -19,9 +21,17 @@ namespace Piping.Server.Mvc.Binder
                 bindingContext.Result = ModelBindingResult.Failed();
                 return Task.CompletedTask;
             }
-            var Sender = new Models.SendData();
-            Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Request, bindingContext.HttpContext.RequestAborted, Logger));
-            bindingContext.Result = ModelBindingResult.Success(Sender);
+            try
+            {
+                var Key = new RequestKey(bindingContext.HttpContext.Request.Path + bindingContext.HttpContext.Request.Query);
+                var Sender = new Models.SendData(Key);
+                Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Request, bindingContext.HttpContext.RequestAborted, Logger));
+                bindingContext.Result = ModelBindingResult.Success(Sender);
+            }
+            catch (Exception)
+            {
+                bindingContext.Result = ModelBindingResult.Failed();
+            }
             return Task.CompletedTask;
         }
     }

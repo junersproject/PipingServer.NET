@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Piping.Server.Core;
 using Piping.Server.Mvc.Binder;
 
 namespace Piping.Server.Mvc.Models
@@ -10,6 +11,8 @@ namespace Piping.Server.Mvc.Models
     [ModelBinder(typeof(SendBinder))]
     public class SendData : IDisposable
     {
+        public SendData(RequestKey Key) => this.Key = Key;
+        public RequestKey Key { get; }
         private Task<(IHeaderDictionary Header, Stream Stream)>? Result;
         public void SetResult(Task<(IHeaderDictionary Header, Stream Stream)> Result)
             => this.Result = Result;
@@ -42,6 +45,5 @@ namespace Piping.Server.Mvc.Models
             GC.SuppressFinalize(this);
         }
         #endregion
-
     }
 }

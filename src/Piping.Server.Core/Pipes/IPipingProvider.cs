@@ -10,25 +10,25 @@ namespace Piping.Server.Core.Pipes
 {
     public interface IPipingProvider : IEnumerable<IPipe>
     {
-        public Task SetReceiverAsync(string Path, HttpContext Receiver, ICompletableStream CompletableStream)
-            => SetReceiverAsync(Path, CompletableStream, Receiver?.RequestAborted ?? throw new ArgumentNullException(nameof(Receiver)));
-        Task SetReceiverAsync(string Path, ICompletableStream CompletableStream, CancellationToken Token = default);
-        public Task SetSenderAsync(string Path, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, HttpContext Context, ICompletableStream CompletableStream)
-            => SetSenderAsync(Path, DataTask, CompletableStream, Context?.RequestAborted ?? throw new ArgumentNullException(nameof(Context)));
-        Task SetSenderAsync(string Path, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default);
+        public Task SetReceiverAsync(RequestKey Key, HttpContext Receiver, ICompletableStream CompletableStream)
+            => SetReceiverAsync(Key, CompletableStream, Receiver?.RequestAborted ?? throw new ArgumentNullException(nameof(Receiver)));
+        Task SetReceiverAsync(RequestKey Key, ICompletableStream CompletableStream, CancellationToken Token = default);
+        public Task SetSenderAsync(RequestKey Key, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, HttpContext Context, ICompletableStream CompletableStream)
+            => SetSenderAsync(Key, DataTask, CompletableStream, Context?.RequestAborted ?? throw new ArgumentNullException(nameof(Context)));
+        Task SetSenderAsync(RequestKey Key, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default);
     }
     public interface IPipingStore: IEnumerable<IPipe> {
-        Task<IPipe> GetAsync(string Path, CancellationToken Token = default);
+        Task<IPipe> GetAsync(RequestKey Key, CancellationToken Token = default);
         Task<bool> TryRemoveAsync(IPipe Pipe);
     }
     public interface IPipe
     {
         RequestKey Key { get; }
         PipeStatus Status { get; }
-        void AssertKey();
+        void AssertKey(RequestKey Key);
         ValueTask ReadyAsync(CancellationToken Token = default);
         bool IsRemovable { get; }
-        int? RequestedReceiversCount { get; set; }
+        int RequestedReceiversCount { get; }
         int ReceiversCount { get; }
         void SetSenderComplete();
         ValueTask SetHeadersAsync(Func<IEnumerable<ICompletableStream>,Task> SetHeaderAction);

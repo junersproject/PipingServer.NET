@@ -35,6 +35,7 @@ namespace Piping.Server.Core.Pipes
         void AddReceiver(ICompletableStream Result);
         bool RemoveReceiver(ICompletableStream Result);
         IEnumerable<ICompletableStream> Receivers { get; }
+        event EventHandler? OnWaitTimeout;
     }
     public interface ICompletableStream
     {

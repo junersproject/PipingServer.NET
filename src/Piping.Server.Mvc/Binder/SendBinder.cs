@@ -23,7 +23,7 @@ namespace Piping.Server.Mvc.Binder
             }
             try
             {
-                var Key = new RequestKey(bindingContext.HttpContext.Request.Path + bindingContext.HttpContext.Request.Query);
+                var Key = new RequestKey(bindingContext.HttpContext.Request.Path, bindingContext.HttpContext.Request.Query);
                 var Sender = new Models.SendData(Key);
                 Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Request, bindingContext.HttpContext.RequestAborted, Logger));
                 bindingContext.Result = ModelBindingResult.Success(Sender);

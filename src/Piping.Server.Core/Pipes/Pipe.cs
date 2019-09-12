@@ -108,7 +108,7 @@ namespace Piping.Server.Core.Pipes
         public void AssertKey(RequestKey Key)
         {
             if (IsEstablished)
-                throw new InvalidOperationException($"Connection on '{Key.LocalPath}' has been established already.");
+                throw new InvalidOperationException($"Connection on '{Key}' has been established already.");
             else if (Key.Receivers != RequestedReceiversCount)
                 throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
         }

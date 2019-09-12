@@ -7,7 +7,7 @@ namespace Piping.Server.Core
 {
     public readonly struct RequestKey : IEquatable<PathString>, IEquatable<RequestKey>
     {
-        public readonly static RequestKey Empty;
+        public static readonly RequestKey Empty;
         /// <summary>
         /// パス
         /// </summary>

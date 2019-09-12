@@ -8,7 +8,7 @@ using Piping.Server.Core.Streams;
 
 namespace Piping.Server.Core.Pipes
 {
-    public interface IPipingProvider : IEnumerable<IPipe>
+    public interface IPipingProvider
     {
         public Task SetReceiverAsync(RequestKey Key, HttpContext Receiver, ICompletableStream CompletableStream)
             => SetReceiverAsync(Key, CompletableStream, Receiver?.RequestAborted ?? throw new ArgumentNullException(nameof(Receiver)));
@@ -18,6 +18,8 @@ namespace Piping.Server.Core.Pipes
         Task SetSenderAsync(RequestKey Key, Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default);
     }
     public interface IPipingStore: IEnumerable<IPipe> {
+        Task<ISenderPipe> GetSenderAsync(RequestKey Key, CancellationToken Token = default);
+        Task<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default);
         Task<IPipe> GetAsync(RequestKey Key, CancellationToken Token = default);
         Task<bool> TryRemoveAsync(IPipe Pipe);
     }
@@ -25,17 +27,31 @@ namespace Piping.Server.Core.Pipes
     {
         RequestKey Key { get; }
         PipeStatus Status { get; }
-        void AssertKey(RequestKey Key);
         ValueTask ReadyAsync(CancellationToken Token = default);
         bool IsRemovable { get; }
         int RequestedReceiversCount { get; }
         int ReceiversCount { get; }
+        event EventHandler? OnWaitTimeout;
+        event PipeStatusChangeEventHandler? OnStatusChanged;
+    }
+    public class PipeStatusChangedArgs
+    {
+        public PipeStatusChangedArgs() : this(PipeStatus.Wait) { }
+        public PipeStatusChangedArgs(PipeStatus Status) => this.Status = Status;
+        public PipeStatus Status { get; } = PipeStatus.Wait;
+    }
+    public delegate void PipeStatusChangeEventHandler(object? sender, PipeStatusChangedArgs args);
+    public interface ISenderPipe : IPipe
+    {
         void SetSenderComplete();
-        ValueTask SetHeadersAsync(Func<IEnumerable<ICompletableStream>,Task> SetHeaderAction);
+        ValueTask SetHeadersAsync(Func<IEnumerable<ICompletableStream>, Task> SetHeaderAction);
+        IEnumerable<ICompletableStream> Receivers { get; }
+
+    }
+    public interface IRecivePipe : IPipe
+    {
         void AddReceiver(ICompletableStream Result);
         bool RemoveReceiver(ICompletableStream Result);
-        IEnumerable<ICompletableStream> Receivers { get; }
-        event EventHandler? OnWaitTimeout;
     }
     public interface ICompletableStream
     {

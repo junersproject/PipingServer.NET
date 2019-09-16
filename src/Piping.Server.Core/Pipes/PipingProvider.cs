@@ -33,7 +33,7 @@ namespace Piping.Server.Core.Pipes
             using var finallyremove = Disposable.Create(() => Store.TryRemoveAsync(Waiter));
             using var l = Logger?.LogDebugScope(nameof(SetSenderAsync));
             SetSenderCompletableStream(Waiter, CompletableStream);
-            Waiter.SetSenderComplete();
+            _ = Waiter.SetHeadersAsync(DataTask, Token);
             await SendMessageAsync(CompletableStream.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...", Token);
             await SendMessageAsync(CompletableStream.Stream, $"{Waiter.ReceiversCount} receiver(s) has/have been connected.", Token);
             await Waiter.ReadyAsync(Token);

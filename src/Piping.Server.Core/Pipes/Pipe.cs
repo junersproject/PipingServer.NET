@@ -1,18 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Piping.Server.Core.Internal;
 
 namespace Piping.Server.Core.Pipes
 {
-    internal class Pipe : IPipe, IDisposable
+    internal sealed class Pipe : IReadOnlyPipe, IDisposable
     {
+        internal PipingOptions Options { get; }
         public RequestKey Key { get; }
         public Pipe(RequestKey Key, PipingOptions Options)
         {
             this.Key = Key;
+            this.Options = Options;
             if (Options.WatingTimeout < TimeSpan.Zero)
                 throw new ArgumentException($"{nameof(Options)}.{nameof(Options.WatingTimeout)} is {Options.WatingTimeout}. required {nameof(Options.WatingTimeout)} is {nameof(TimeSpan.Zero)} over");
             if (Options.WatingTimeout is TimeSpan WaitTimeout)
@@ -28,6 +32,38 @@ namespace Piping.Server.Core.Pipes
                 {
                     CancelAction?.Dispose();
                 });
+            }
+        }
+        readonly TaskCompletionSource<IHeaderDictionary> HeaderSetSource = new TaskCompletionSource<IHeaderDictionary>();
+        public Task<IHeaderDictionary> GetHeadersAsync(CancellationToken Token = default) => HeaderSetSource.Task;
+        Task<(IHeaderDictionary Header, Stream Stream)>? _dataTask = null;
+        internal Task<(IHeaderDictionary Header, Stream Stream)>? DataTask {
+            get
+            {
+                return _dataTask;
+            }
+            set
+            {
+                if (_dataTask != null)
+                    throw new InvalidOperationException();
+                _dataTask = value;
+                _ = _dataTask?.ContinueWith(SetResult);
+            }
+        }
+        private async void SetResult(Task<(IHeaderDictionary Header, Stream Stream)>? DataTask)
+        {
+            if (!(DataTask is Task<(IHeaderDictionary Header, Stream Stream)> _DataTask))
+                throw new ArgumentNullException(nameof(DataTask));
+            if (!_DataTask.IsCompleted)
+                throw new InvalidOperationException("DataTask is not complete.");
+            if (_DataTask.IsFaulted && _DataTask.Exception is Exception e)
+                HeaderSetSource.TrySetException(e);
+            else if (_DataTask.IsCanceled)
+                HeaderSetSource.TrySetCanceled();
+            else if (_DataTask.IsCompletedSuccessfully)
+            {
+                var (Header, _) = await _DataTask;
+                HeaderSetSource.TrySetResult(Header);
             }
         }
         public PipeStatus Status
@@ -71,26 +107,19 @@ namespace Piping.Server.Core.Pipes
         /// Sender が設定済み
         /// </summary>
         bool IsSetSenderComplete { set; get; }
-        public void SetSenderComplete()
+        private void SetSenderComplete()
         {
             if (IsSetSenderComplete)
                 throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but {ReceiversCount}.");
             IsSetSenderComplete = true;
         }
-        public async ValueTask SetHeadersAsync(Func<IEnumerable<ICompletableStream>, Task> SetHeaderAction)
+        internal async ValueTask SetHeadersAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, CancellationToken Token = default)
         {
-            if (!ResponseTaskSource.Task.IsCompleted)
-                return;
-            try
-            {
-                await SetHeaderAction.Invoke(Receivers);
-                ResponseTaskSource.TrySetResult(true);
-            }
-            catch(Exception e)
-            {
-                ResponseTaskSource.TrySetException(e);
-                throw;
-            }
+            this.DataTask = DataTask;
+            SetSenderComplete();
+            await ReadyAsync();
+            var Headers = await GetHeadersAsync();
+            Receivers.SetHeaders(Headers);
         }
         /// <summary>
         /// Receivers が設定済み
@@ -101,26 +130,48 @@ namespace Piping.Server.Core.Pipes
         /// </summary>
         public bool IsRemovable
             => (!IsSetSenderComplete && !IsSetReceiversComplete)
-                || (IsSetSenderComplete && IsSetReceiversComplete && _Receivers.Count == 0)
+                || (IsSetSenderComplete && IsSetReceiversComplete && Receivers.Count == 0)
                 || IsWaitCanceled;
-        readonly List<ICompletableStream> _Receivers = new List<ICompletableStream>();
-        public IEnumerable<ICompletableStream> Receivers => _Receivers;
-        public int ReceiversCount => _Receivers.Count;
+        readonly List<ICompletableStream> Receivers = new List<ICompletableStream>();
+        /// <summary>
+        /// 設定済み受取数
+        /// </summary>
+        public int ReceiversCount => Receivers.Count;
+        /// <summary>
+        /// キーが登録できる状態であるか
+        /// </summary>
+        /// <param name="Key"></param>
         public void AssertKey(RequestKey Key)
         {
             if (IsEstablished)
+                // 登録できる状態でない
                 throw new InvalidOperationException($"Connection on '{Key}' has been established already.");
             else if (Key.Receivers != RequestedReceiversCount)
+                // 指定されている受取数に相違がある
                 throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
         }
+        /// <summary>
+        /// レシーバーの追加
+        /// </summary>
+        /// <param name="Result"></param>
         public void AddReceiver(ICompletableStream Result)
         {
-            _Receivers.Add(Result);
+            Receivers.Add(Result);
+            if (IsReady)
+                ReadyTaskSource.TrySetResult(true);
         }
-        public bool RemoveReceiver(ICompletableStream Result) => _Receivers.Remove(Result);
-        public bool ReceiversIsAllSet => _Receivers.Count == Key.Receivers;
         /// <summary>
-        /// 受け取り数
+        /// レシーバーの削除
+        /// </summary>
+        /// <param name="Result"></param>
+        /// <returns></returns>
+        public bool RemoveReceiver(ICompletableStream Result) => Receivers.Remove(Result);
+        /// <summary>
+        /// 受取数に達している
+        /// </summary>
+        public bool ReceiversIsAllSet => Receivers.Count >= Key.Receivers;
+        /// <summary>
+        /// 受取数
         /// </summary>
         public int RequestedReceiversCount => Key.Receivers;
         public override string? ToString()
@@ -141,7 +192,7 @@ namespace Piping.Server.Core.Pipes
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 
-        protected virtual void Dispose(bool disposing)
+        void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
@@ -151,6 +202,8 @@ namespace Piping.Server.Core.Pipes
                         ReadyTaskSource.TrySetCanceled();
                     if (!ResponseTaskSource.Task.IsCompleted)
                         ResponseTaskSource.TrySetCanceled();
+                    if (!HeaderSetSource.Task.IsCompleted)
+                        HeaderSetSource.TrySetCanceled();
                     foreach (var e in (OnWaitTimeout?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
                         OnWaitTimeout -= e;
                     foreach (var e in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<PipeStatusChangeEventHandler>())
@@ -170,70 +223,5 @@ namespace Piping.Server.Core.Pipes
             Dispose(true);
         }
         #endregion
-        internal class SenderPipe : ISenderPipe
-        {
-            readonly Pipe Current;
-            internal SenderPipe(Pipe Current)
-                => this.Current = Current;
-            public RequestKey Key => Current.Key;
-
-            public PipeStatus Status => Current.Status;
-
-            public bool IsRemovable => Current.IsRemovable;
-
-            public int RequestedReceiversCount => Current.RequestedReceiversCount;
-
-            public int ReceiversCount => Current.ReceiversCount;
-
-            public event EventHandler? OnWaitTimeout
-            {
-                add => Current.OnWaitTimeout += value;
-                remove => Current.OnWaitTimeout -= value;
-            }
-            public event PipeStatusChangeEventHandler? OnStatusChanged
-            {
-                add => Current.OnStatusChanged += value;
-                remove => Current.OnStatusChanged -= value;
-            }
-            public IEnumerable<ICompletableStream> Receivers => Current.Receivers;
-
-            public ValueTask ReadyAsync(CancellationToken Token = default) => Current.ReadyAsync(Token);
-
-            public ValueTask SetHeadersAsync(Func<IEnumerable<ICompletableStream>, Task> SetHeaderAction) => Current.SetHeadersAsync(SetHeaderAction);
-
-            public void SetSenderComplete() => Current.SetSenderComplete();
-        }
-        internal class RecivePipe : IRecivePipe
-        {
-            readonly Pipe Current;
-            internal RecivePipe(Pipe Current)
-                => this.Current = Current;
-            public RequestKey Key => Current.Key;
-
-            public PipeStatus Status => Current.Status;
-
-            public bool IsRemovable => Current.IsRemovable;
-
-            public int RequestedReceiversCount => Current.RequestedReceiversCount;
-
-            public int ReceiversCount => Current.ReceiversCount;
-
-            public event EventHandler? OnWaitTimeout
-            {
-                add => Current.OnWaitTimeout += value;
-                remove => Current.OnWaitTimeout -= value;
-            }
-            public event PipeStatusChangeEventHandler? OnStatusChanged
-            {
-                add => Current.OnStatusChanged += value;
-                remove => Current.OnStatusChanged -= value;
-            }
-            public void AddReceiver(ICompletableStream Result) => Current.AddReceiver(Result);
-
-            public ValueTask ReadyAsync(CancellationToken Token = default) => Current.ReadyAsync(Token);
-
-            public bool RemoveReceiver(ICompletableStream Result) => Current.RemoveReceiver(Result);
-            public override string ToString() => Current?.ToString() ?? string.Empty;
-        }
     }
 }

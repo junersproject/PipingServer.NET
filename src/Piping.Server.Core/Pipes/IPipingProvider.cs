@@ -41,17 +41,20 @@ namespace Piping.Server.Core.Pipes
         public PipeStatus Status { get; } = PipeStatus.Wait;
     }
     public delegate void PipeStatusChangeEventHandler(object? sender, PipeStatusChangedArgs args);
+    public interface IReadOnlyPipe : IPipe
+    {
+        Task<IHeaderDictionary> GetHeadersAsync(CancellationToken Token = default);
+    }
     public interface ISenderPipe : IPipe
     {
-        void SetSenderComplete();
-        ValueTask SetHeadersAsync(Func<IEnumerable<ICompletableStream>, Task> SetHeaderAction);
-        IEnumerable<ICompletableStream> Receivers { get; }
-
+        ValueTask SetHeadersAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, CancellationToken Token = default);
+        ValueTask ConnectionAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default);
     }
     public interface IRecivePipe : IPipe
     {
         void AddReceiver(ICompletableStream Result);
         bool RemoveReceiver(ICompletableStream Result);
+        ValueTask ConnectionAsync(ICompletableStream CompletableStream, CancellationToken Token = default);
     }
     public interface ICompletableStream
     {

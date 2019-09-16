@@ -12,10 +12,11 @@ namespace Piping.Server.Core.Pipes
     public sealed class PipingStore : IPipingStore
     {
         readonly ILogger<PipingStore> Logger;
+        readonly ILoggerFactory LoggerFactory;
         readonly PipingOptions Options;
-        public PipingStore(ILogger<PipingStore> Logger, IOptions<PipingOptions> Options)
-            => (this.Logger, this.Options) = (Logger, Options.Value);
-        private Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
+        readonly Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
+        public PipingStore(ILoggerFactory LoggerFactory, IOptions<PipingOptions> Options)
+            => (this.Logger, this.Options, this.LoggerFactory) = (LoggerFactory.CreateLogger<PipingStore>(), Options.Value, LoggerFactory);
         async Task<IPipe> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) => await GetAsync(Key, Token);
         internal Task<Pipe> GetAsync(RequestKey Key, CancellationToken Token = default)
         {
@@ -46,7 +47,7 @@ namespace Piping.Server.Core.Pipes
             Pipe.AssertKey(Key);
             if (Pipe.IsSetReceiversComplete)
                 throw new InvalidOperationException("Connection sender over.");
-            return new Pipe.SenderPipe(Pipe);
+            return new SenderPipe(Pipe);
         }
 
         public async Task<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default)
@@ -55,7 +56,7 @@ namespace Piping.Server.Core.Pipes
             Pipe.AssertKey(Key);
             if (Pipe.ReceiversCount >= Pipe.Key.Receivers)
                 throw new InvalidOperationException($"Connection receivers over.");
-            return new Pipe.RecivePipe(Pipe);
+            return new RecivePipe(Pipe);
         }
 
         public Task<bool> TryRemoveAsync(IPipe Pipe)

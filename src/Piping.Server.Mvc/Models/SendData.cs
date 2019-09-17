@@ -11,8 +11,6 @@ namespace Piping.Server.Mvc.Models
     [ModelBinder(typeof(SendBinder))]
     public class SendData : IDisposable
     {
-        public SendData(RequestKey Key) => this.Key = Key;
-        public RequestKey Key { get; }
         private Task<(IHeaderDictionary Header, Stream Stream)>? Result;
         public void SetResult(Task<(IHeaderDictionary Header, Stream Stream)> Result)
             => this.Result = Result;

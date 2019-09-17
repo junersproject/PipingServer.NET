@@ -14,7 +14,7 @@ namespace Piping.Server.Core.Pipe.Tests
             services.AddLogging();
             //services.AddTransient<IPipingProvider, PipingProvider>();
             var provider = services.BuildServiceProvider();
-            var piping = provider.GetRequiredService<IPipingProvider>();
+            //var piping = provider.GetRequiredService<IPipingProvider>();
         }
     }
 }

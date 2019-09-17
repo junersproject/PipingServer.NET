@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Piping.Server.Core;
 using Piping.Server.Core.Pipes;
 using Piping.Server.Mvc.Attributes;
+using Piping.Server.Mvc.Binder;
 using Piping.Server.Mvc.Models;
 
 namespace Piping.Server.Mvc.Pipe
@@ -26,14 +30,29 @@ namespace Piping.Server.Mvc.Pipe
         }
         [HttpPut("/{**Path}")]
         [HttpPost("/{**Path}")]
-        public async Task<IActionResult> Upload(SendData Sender)
+        public async Task<IActionResult> Upload([ModelBinder(typeof(RequestKeyBinder))] RequestKey Key, SendData Sender)
         {
+            if (!ModelState.IsValid)
+            {
+                if (!(ModelState.Values.FirstOrDefault()?.Errors?.FirstOrDefault() is ModelError me))
+                    return BadRequest();
+                if (me?.Exception is Exception e)
+                {
+                    Logger.LogError(e, "validate fail.");
+                    return BadRequest("[ERROR] " + e.Message);
+                }
+                if (me?.ErrorMessage is string message)
+                {
+                    Logger.LogError(message, "validate fail.");
+                    return BadRequest("[ERROR] " + message);
+                }
+            }
             try
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
                 var Token = HttpContext.RequestAborted;
                 var Result = new CompletableStreamResult();
-                var Send = await Store.GetSenderAsync(Sender.Key, Token);
+                var Send = await Store.GetSenderAsync(Key, Token);
                 await Send.ConnectionAsync(Sender.GetResultAsync(), Result, Token);
                 return Result;
             }
@@ -45,14 +64,29 @@ namespace Piping.Server.Mvc.Pipe
         }
 
         [HttpGet("/{**Path}")]
-        public async Task<IActionResult> Download(ReceiveData Receiver)
+        public async Task<IActionResult> Download([ModelBinder(typeof(RequestKeyBinder))] RequestKey Key)
         {
+            if (!ModelState.IsValid)
+            {
+                if (!(ModelState.Values.FirstOrDefault()?.Errors?.FirstOrDefault() is ModelError me))
+                    return BadRequest();
+                if (me?.Exception is Exception e)
+                {
+                    Logger.LogError(e, "validate fail.");
+                    return BadRequest("[ERROR] " + e.Message);
+                }
+                if (me?.ErrorMessage is string message)
+                {
+                    Logger.LogError(message, "validate fail.");
+                    return BadRequest("[ERROR] " + message);
+                }
+            }
             try
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
                 var Token = HttpContext.RequestAborted;
                 var Result = new CompletableStreamResult();
-                var Receive = await Store.GetReceiveAsync(Receiver.Key, Token);
+                var Receive = await Store.GetReceiveAsync(Key, Token);
                 await Receive.ConnectionAsync(Result, Token);
                 return Result;
             }
@@ -74,7 +108,7 @@ namespace Piping.Server.Mvc.Pipe
             Response.Headers.Add("Access-Control-Max-Age", "86400");
             return new EmptyResult();
         }
-        protected IActionResult BadRequest(string Message)
+        protected ContentResult BadRequest(string Message)
         {
             var Content = this.Content(Message, $"text/plain; charset={Option.Encoding.WebName}", Option.Encoding);
             Content.StatusCode = 400;

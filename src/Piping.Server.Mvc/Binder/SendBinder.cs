@@ -17,20 +17,16 @@ namespace Piping.Server.Mvc.Binder
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
             if (bindingContext.ModelType != typeof(Models.SendData))
-            {
-                bindingContext.Result = ModelBindingResult.Failed();
-                return Task.CompletedTask;
-            }
+                throw new InvalidOperationException($"not support bind type : {bindingContext.ModelType.FullName}");
             try
             {
-                var Key = new RequestKey(bindingContext.HttpContext.Request.Path, bindingContext.HttpContext.Request.Query);
-                var Sender = new Models.SendData(Key);
+                var Sender = new Models.SendData();
                 Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Request, bindingContext.HttpContext.RequestAborted, Logger));
                 bindingContext.Result = ModelBindingResult.Success(Sender);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                bindingContext.Result = ModelBindingResult.Failed();
+                bindingContext.ModelState.TryAddModelError(bindingContext.ModelName, e.Message);
             }
             return Task.CompletedTask;
         }

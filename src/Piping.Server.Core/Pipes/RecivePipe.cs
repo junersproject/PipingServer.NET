@@ -24,36 +24,37 @@ namespace Piping.Server.Core.Pipes
 
         public int ReceiversCount => Current.ReceiversCount;
 
-        public event EventHandler? OnWaitTimeout
+        public event EventHandler? OnFinally
         {
-            add => Current.OnWaitTimeout += value;
-            remove => Current.OnWaitTimeout -= value;
+            add => Current.OnFinally += value;
+            remove => Current.OnFinally -= value;
         }
         public event PipeStatusChangeEventHandler? OnStatusChanged
         {
             add => Current.OnStatusChanged += value;
             remove => Current.OnStatusChanged -= value;
         }
-        public ValueTask ConnectionAsync(ICompletableStream CompletableStream, CancellationToken Token = default)
+        public async ValueTask ConnectionAsync(ICompletableStream CompletableStream, CancellationToken Token = default)
         {
-            using var l = Logger?.LogDebugScope(nameof(ConnectionAsync));
-            SetSenderCompletableStream(Waiter, CompletableStream);
-            _ = Waiter.SetHeadersAsync(DataTask, Token);
-            await SendMessageAsync(CompletableStream.Stream, $"Waiting for {Waiter.RequestedReceiversCount} receiver(s)...", Token);
-            await SendMessageAsync(CompletableStream.Stream, $"{Waiter.ReceiversCount} receiver(s) has/have been connected.", Token);
-            await Waiter.ReadyAsync(Token);
-            _ = _SetSenderAsync(DataTask, CompletableStream, Waiter, Token);
-
+            using var finallyremove = Disposable.Create(() => Current.TryRemove());
+            SetReceiverCompletableStream(CompletableStream);
+            AddReceiver(CompletableStream);
+            await Task.WhenAny(ReadyAsync().AsTask(), Token.AsTask());
         }
-
-        private void SetSenderCompletableStream(IPipe Waiter, ICompletableStream CompletableStream)
+        void SetReceiverCompletableStream(ICompletableStream CompletableStream)
         {
-            CompletableStream.PipeType = PipeType.Sender;
+            CompletableStream.PipeType = PipeType.Receiver;
             if (CompletableStream.Stream == CompletableQueueStream.Empty)
                 CompletableStream.Stream = new CompletableQueueStream();
             CompletableStream.Headers ??= new HeaderDictionary();
-            CompletableStream.Headers["Content-Type"] = $"text/plain;charset={Options.Encoding.WebName}";
-            CompletableStream.OnFinally += (o, arg) => Store.TryRemoveAsync(Waiter);
+            CompletableStream.Headers["Access-Control-Allow-Origin"] = " * ";
+            CompletableStream.Headers["Access-Control-Expose-Headers"] = "Content-Length, Content-Type";
+            CompletableStream.OnFinally += (o, arg) =>
+            {
+                var Removed = RemoveReceiver(CompletableStream);
+                Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED"));
+                Current.TryRemove();
+            };
         }
         public void AddReceiver(ICompletableStream Result) => Current.AddReceiver(Result);
 

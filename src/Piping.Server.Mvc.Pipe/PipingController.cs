@@ -15,12 +15,12 @@ namespace Piping.Server.Mvc.Pipe
     [RouteValueOnlyBinding]
     public class PipingController : ControllerBase
     {
-        readonly IPipingProvider Provider;
+        readonly IPipingStore Store;
         readonly PipingOptions Option;
         readonly ILogger<PipingController> Logger;
-        public PipingController(IPipingProvider Provider, ILogger<PipingController> Logger, IOptions<PipingOptions> Options)
+        public PipingController(IPipingStore Store, ILogger<PipingController> Logger, IOptions<PipingOptions> Options)
         {
-            this.Provider = Provider;
+            this.Store = Store;
             Option = Options.Value;
             this.Logger = Logger;
         }
@@ -31,8 +31,10 @@ namespace Piping.Server.Mvc.Pipe
             try
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
+                var Token = HttpContext.RequestAborted;
                 var Result = new CompletableStreamResult();
-                await Provider.SetSenderAsync(Sender.Key, Sender.GetResultAsync(), HttpContext, Result);
+                var Send = await Store.GetSenderAsync(Sender.Key, Token);
+                await Send.ConnectionAsync(Sender.GetResultAsync(), Result, Token);
                 return Result;
             }
             catch (InvalidOperationException e)
@@ -48,8 +50,10 @@ namespace Piping.Server.Mvc.Pipe
             try
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
+                var Token = HttpContext.RequestAborted;
                 var Result = new CompletableStreamResult();
-                await Provider.SetReceiverAsync(Receiver.Key, HttpContext, Result);
+                var Receive = await Store.GetReceiveAsync(Receiver.Key, Token);
+                await Receive.ConnectionAsync(Result, Token);
                 return Result;
             }
             catch (InvalidOperationException e)

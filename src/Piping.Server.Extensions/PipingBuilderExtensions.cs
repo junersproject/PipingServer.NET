@@ -21,17 +21,6 @@ namespace Piping.Server.Extensions
             self.Services.AddTransient<IStreamConverter, MultipartStreamConverter>();
             return self;
         }
-        public static IPipingBuilder AddProvider<T>(this IPipingBuilder self)
-            where T : class, IPipingProvider
-        {
-            self.Services.AddSingleton<IPipingProvider, T>();
-            return self;
-        }
-        public static IPipingBuilder UseDefaultProvider(this IPipingBuilder self)
-        {
-            self.Services.TryAddTransient<IPipingProvider, PipingProvider>();
-            return self;
-        }
         public static IPipingBuilder UseDefaultStore(this IPipingBuilder self)
         {
             self.Services.TryAddSingleton<IPipingStore, PipingStore>();

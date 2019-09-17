@@ -10,10 +10,9 @@ namespace Piping.Server.Mvc.Binder
 {
     public class ReceiveBinder : IModelBinder
     {
-        readonly IEnumerable<IStreamConverter> Converters;
         readonly ILogger<ReceiveBinder> Logger;
-        public ReceiveBinder(IEnumerable<IStreamConverter> Converters, ILogger<ReceiveBinder> Logger)
-            => (this.Converters, this.Logger) = (Converters, Logger);
+        public ReceiveBinder(ILogger<ReceiveBinder> Logger)
+            => (this.Logger) = (Logger);
 
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {

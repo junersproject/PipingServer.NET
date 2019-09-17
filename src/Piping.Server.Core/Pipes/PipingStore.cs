@@ -32,10 +32,7 @@ namespace Piping.Server.Core.Pipes
                     Waiter = new Pipe(Key, Options);
                     Logger.LogDebug("CREATE " + Waiter);
                     _waiters.Add(Key, Waiter);
-                    Waiter.OnWaitTimeout += (o, arg) =>
-                    {
-                        TryRemoveAsync(Waiter);
-                    };
+                    Waiter.OnFinally += (o, arg) => TryRemoveAsync(Waiter);
                 }
                 return Task.FromResult(Waiter);
             }
@@ -45,9 +42,9 @@ namespace Piping.Server.Core.Pipes
         {
             var Pipe = await GetAsync(Key, Token);
             Pipe.AssertKey(Key);
-            if (Pipe.IsSetReceiversComplete)
+            if (Pipe.IsSetSenderComplete)
                 throw new InvalidOperationException("Connection sender over.");
-            return new SenderPipe(Pipe);
+            return new SenderPipe(Pipe, Options, LoggerFactory.CreateLogger<ISenderPipe>());
         }
 
         public async Task<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default)
@@ -56,7 +53,7 @@ namespace Piping.Server.Core.Pipes
             Pipe.AssertKey(Key);
             if (Pipe.ReceiversCount >= Pipe.Key.Receivers)
                 throw new InvalidOperationException($"Connection receivers over.");
-            return new RecivePipe(Pipe);
+            return new RecivePipe(Pipe, LoggerFactory.CreateLogger<IRecivePipe>());
         }
 
         public Task<bool> TryRemoveAsync(IPipe Pipe)
@@ -68,8 +65,6 @@ namespace Piping.Server.Core.Pipes
                 {
                     Logger.LogDebug("REMOVE " + Pipe);
                     _waiters.Remove(Pipe.Key);
-                    if(Pipe is IDisposable Disposable)
-                        Disposable.Dispose();
                 }
                 else
                 {

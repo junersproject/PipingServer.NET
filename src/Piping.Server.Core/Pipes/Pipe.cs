@@ -106,19 +106,15 @@ namespace Piping.Server.Core.Pipes
         /// <summary>
         /// Sender が設定済み
         /// </summary>
-        bool IsSetSenderComplete { set; get; }
-        private void SetSenderComplete()
-        {
-            if (IsSetSenderComplete)
-                throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but {ReceiversCount}.");
-            IsSetSenderComplete = true;
-        }
+        internal bool IsSetSenderComplete { private set; get; }
         internal async ValueTask SetHeadersAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, CancellationToken Token = default)
         {
             this.DataTask = DataTask;
-            SetSenderComplete();
-            await ReadyAsync();
-            var Headers = await GetHeadersAsync();
+            if (IsSetSenderComplete)
+                throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but {ReceiversCount}.");
+            IsSetSenderComplete = true;
+            await ReadyAsync(Token);
+            var Headers = await GetHeadersAsync(Token);
             Receivers.SetHeaders(Headers);
         }
         /// <summary>
@@ -132,7 +128,7 @@ namespace Piping.Server.Core.Pipes
             => (!IsSetSenderComplete && !IsSetReceiversComplete)
                 || (IsSetSenderComplete && IsSetReceiversComplete && Receivers.Count == 0)
                 || IsWaitCanceled;
-        readonly List<ICompletableStream> Receivers = new List<ICompletableStream>();
+        internal readonly List<ICompletableStream> Receivers = new List<ICompletableStream>();
         /// <summary>
         /// 設定済み受取数
         /// </summary>
@@ -187,11 +183,20 @@ namespace Piping.Server.Core.Pipes
                 nameof(GetHashCode) + ":" +GetHashCode()
             }.OfType<string>()) + "}";
         }
-        public event EventHandler? OnWaitTimeout;
         public event PipeStatusChangeEventHandler? OnStatusChanged;
+        public event EventHandler? OnFinally;
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 
+        internal bool TryRemove()
+        {
+            bool Removable;
+            if (Removable = IsRemovable)
+            {
+                Dispose();
+            }
+            return Removable;
+        }
         void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -204,10 +209,18 @@ namespace Piping.Server.Core.Pipes
                         ResponseTaskSource.TrySetCanceled();
                     if (!HeaderSetSource.Task.IsCompleted)
                         HeaderSetSource.TrySetCanceled();
-                    foreach (var e in (OnWaitTimeout?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
-                        OnWaitTimeout -= e;
+                    try
+                    {
+                        OnStatusChanged?.Invoke(this, new PipeStatusChangedArgs(PipeStatus.Dispose));
+                    }catch (Exception) { }
                     foreach (var e in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<PipeStatusChangeEventHandler>())
                         OnStatusChanged -= e;
+                    try
+                    {
+                        OnFinally?.Invoke(this, new EventArgs());
+                    }catch(Exception){ }
+                    foreach (var e in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
+                        OnFinally -= e;
                     if (WaitTokenSource is CancellationTokenSource TokenSource)
                         TokenSource.Dispose();
                     if (CancelAction is IDisposable Disposable)

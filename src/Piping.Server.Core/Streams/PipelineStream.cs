@@ -10,10 +10,10 @@ namespace Piping.Server.Core.Streams
     /// <summary>
     /// Completable queue stream.
     /// </summary>
-    public class CompletableQueueStream : Stream
+    public class PipelineStream : Stream
     {
         readonly bool isWritableMode = true;
-        public static CompletableQueueStream Empty { get; } = new CompletableQueueStream(false);
+        public static PipelineStream Empty { get; } = new PipelineStream(false);
         readonly Pipe data;
         public bool IsAddingCompleted { get; private set; } = false;
         public void Complete(Exception? ex = null)
@@ -26,15 +26,17 @@ namespace Piping.Server.Core.Streams
             await data.Writer.CompleteAsync(ex);
             IsAddingCompleted = true;
         }
-        public CompletableQueueStream() : this(PipeOptions.Default) { }
-        public CompletableQueueStream(PipeOptions options) => data = new Pipe(options);
-        private CompletableQueueStream(bool isWritableMode) : this(new PipeOptions()) => this.isWritableMode = isWritableMode;
+        public PipelineStream() : this(PipeOptions.Default) { }
+        public PipelineStream(PipeOptions options) => data = new Pipe(options);
+        private PipelineStream(bool isWritableMode) : this(new PipeOptions()) => this.isWritableMode = isWritableMode;
 
 
         public override long Position { get => throw new NotSupportedException(); set => throw new NotImplementedException(); }
         #region flush is noop
-        public override void Flush() { /* noop */ }
-        public override Task FlushAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public override void Flush() {
+            _ = data.Writer.FlushAsync().ConfigureAwait(false).GetAwaiter().GetResult(); 
+        }
+        public override Task FlushAsync(CancellationToken cancellationToken) => data.Writer.FlushAsync(cancellationToken).AsTask();
         #endregion
         #region read is support        
         public override bool CanRead => isWritableMode;
@@ -87,10 +89,9 @@ namespace Piping.Server.Core.Streams
         #endregion
         #region write is support
         public override bool CanWrite => isWritableMode && !IsAddingCompleted;
+        
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            if (!CanWrite)
-                throw new InvalidOperationException();
             var result = await data.Writer.WriteAsync(buffer, cancellationToken);
             if (result.IsCanceled)
                 throw new OperationCanceledException(cancellationToken);
@@ -99,9 +100,10 @@ namespace Piping.Server.Core.Streams
             => await WriteAsync(buffer.AsMemory().Slice(offset, count), cancellationToken).ConfigureAwait(false);
         public override void Write(ReadOnlySpan<byte> buffer)
         {
-            if (!CanWrite)
-                throw new InvalidOperationException();
-            data.Writer.Write(buffer);
+            var Writer = data.Writer;
+            var Span = Writer.GetSpan(buffer.Length);
+            buffer.CopyTo(Span);
+            Writer.Advance(buffer.Length);
         }
         public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan().Slice(offset, count));
         #endregion

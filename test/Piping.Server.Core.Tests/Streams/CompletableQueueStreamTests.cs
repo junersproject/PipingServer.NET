@@ -17,7 +17,7 @@ namespace Piping.Server.Streams.Tests
         {
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             var Tasks = new[] { Task.Run(() => stream.Read(buffer, 0, buffer.Length)) };
             using var TokenSource = new CancellationTokenSource(Time);
             Assert.ThrowsException<OperationCanceledException>(
@@ -41,7 +41,7 @@ namespace Piping.Server.Streams.Tests
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             stream.Write(data, 0, data.Length);
             int ReadBytes = 0;
             using (var TokenSource = new CancellationTokenSource(Time))
@@ -64,7 +64,7 @@ namespace Piping.Server.Streams.Tests
         {
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             using var TokenSource = CreateTokenSource(Time);
             var Tasks = new[] { Task.Run(() => stream.Read(buffer)) };
             Assert.ThrowsException<OperationCanceledException>(
@@ -88,7 +88,7 @@ namespace Piping.Server.Streams.Tests
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             stream.Write(data);
             int ReadBytes = 0;
             using (var TokenSource = new CancellationTokenSource(Time))
@@ -110,7 +110,7 @@ namespace Piping.Server.Streams.Tests
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             stream.Write(data.AsSpan());
         }
         [TestMethod]
@@ -118,7 +118,7 @@ namespace Piping.Server.Streams.Tests
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             Assert.AreEqual(true, stream.CanWrite);
             stream.Write(data.AsSpan());
             stream.Complete();
@@ -131,7 +131,7 @@ namespace Piping.Server.Streams.Tests
             var Time = TimeSpan.FromMilliseconds(100);
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             using var TokenSource = new CancellationTokenSource(Time);
             await stream.WriteAsync(data, TokenSource.Token);
         }
@@ -141,7 +141,7 @@ namespace Piping.Server.Streams.Tests
             var Time = TimeSpan.FromMilliseconds(100);
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             Assert.AreEqual(true, stream.CanWrite);
             using (var TokenSource = new CancellationTokenSource(Time))
                 await stream.WriteAsync(data, TokenSource.Token);
@@ -156,7 +156,7 @@ namespace Piping.Server.Streams.Tests
         {
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(10);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             using var TokenSource = CreateTokenSource(Time);
             Assert.ThrowsExceptionAsync<OperationCanceledException>(
                 async () => await stream.ReadAsync(buffer.AsMemory(), TokenSource.Token));
@@ -167,7 +167,7 @@ namespace Piping.Server.Streams.Tests
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             await stream.WriteAsync(data);
             int ReadBytes = 0;
             using (var TokenSource = new CancellationTokenSource(Time))
@@ -188,7 +188,7 @@ namespace Piping.Server.Streams.Tests
         {
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(10);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             using var TokenSource = CreateTokenSource(Time);
             Assert.ThrowsExceptionAsync<OperationCanceledException>(
                 () => stream.ReadAsync(buffer, 0, buffer.Length, TokenSource.Token));
@@ -199,7 +199,7 @@ namespace Piping.Server.Streams.Tests
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(100);
-            using var stream = new CompletableQueueStream();
+            using var stream = new PipelineStream();
             await stream.WriteAsync(data, 0, data.Length);
             int ReadBytes = 0;
             using (var TokenSource = new CancellationTokenSource(Time))

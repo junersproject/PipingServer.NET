@@ -7,7 +7,7 @@ namespace Piping.Server.Core.Pipes
     public interface ICompletableStream
     {
         PipeType PipeType { get; set; }
-        CompletableQueueStream Stream { get; set; }
+        PipelineStream Stream { get; set; }
         event EventHandler? OnFinally;
         int? StatusCode { get; set; }
         IHeaderDictionary? Headers { get; set; }

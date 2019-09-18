@@ -81,7 +81,7 @@ namespace Piping.Server.Streams.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}\r\n").ToArray();
             using var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1));
-            using var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, receivers).Select(v => new CompletableQueueStream()));
+            using var Buffers = new DisposableList<PipelineStream>(Enumerable.Range(0, receivers).Select(v => new PipelineStream()));
             using var Piping = new PipingStream(Buffers);
             var Token = TokenSource.Token;
             foreach (var Text in Data)
@@ -128,7 +128,7 @@ namespace Piping.Server.Streams.Tests
             var Time = TimeSpan.FromMinutes(1);
             var Delay = Time / (5 * 2);
             using var TokenSource = CreateTokenSource(Time);
-            using var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, receivers).Select(v => new CompletableQueueStream()));
+            using var Buffers = new DisposableList<PipelineStream>(Enumerable.Range(0, receivers).Select(v => new PipelineStream()));
             using var Piping = new PipingStream(Buffers);
             var ExpectText = Data.Aggregate(string.Empty, (v1, v2) => v1 + v2);
             var bufferCount = Encoding.GetByteCount(ExpectText);

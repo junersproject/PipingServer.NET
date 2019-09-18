@@ -49,8 +49,8 @@ namespace Piping.Server.Core.Pipes
         void SetReceiverCompletableStream(ICompletableStream CompletableStream)
         {
             CompletableStream.PipeType = PipeType.Receiver;
-            if (CompletableStream.Stream == CompletableQueueStream.Empty)
-                CompletableStream.Stream = new CompletableQueueStream();
+            if (CompletableStream.Stream == PipelineStream.Empty)
+                CompletableStream.Stream = new PipelineStream();
             CompletableStream.Headers ??= new HeaderDictionary();
             CompletableStream.Headers[AccessControlAllowOriginKey] = AccessControlAllowOriginValue;
             CompletableStream.Headers[AccessControlExposeHeadersKey] = AccessControlExposeHeaderValue;

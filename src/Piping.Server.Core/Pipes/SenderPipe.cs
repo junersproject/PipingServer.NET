@@ -64,8 +64,8 @@ namespace Piping.Server.Core.Pipes
         void SetSenderCompletableStream(ICompletableStream CompletableStream)
         {
             CompletableStream.PipeType = PipeType.Sender;
-            if (CompletableStream.Stream == CompletableQueueStream.Empty)
-                CompletableStream.Stream = new CompletableQueueStream();
+            if (CompletableStream.Stream == PipelineStream.Empty)
+                CompletableStream.Stream = new PipelineStream();
             CompletableStream.Headers ??= new HeaderDictionary();
             CompletableStream.Headers[ContentTypeKey] = string.Format(SenderResponseMessageMimeType, Options.Encoding.WebName);
             CompletableStream.OnFinally += (o, arg) => Current.TryRemove();
@@ -93,7 +93,7 @@ namespace Piping.Server.Core.Pipes
             await Stream.WriteAsync(Options.Encoding.GetBytes(string.Format(InfoPrefix, Message) + Environment.NewLine).AsMemory(), Token);
         }
 
-        async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, CancellationToken Token = default)
+        async Task PipingAsync(Stream RequestStream, PipelineStream InfomationStream, IEnumerable<PipelineStream> Buffers, int BufferSize, CancellationToken Token = default)
         {
             using var l = Logger.LogDebugScope(nameof(PipingAsync));
             var buffer = new byte[BufferSize].AsMemory();

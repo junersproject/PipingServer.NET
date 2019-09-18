@@ -13,7 +13,7 @@ namespace Piping.Server.Mvc
     public class CompletableStreamResult : IActionResult, ICompletableStream
     {
         public PipeType PipeType { get; set; } = PipeType.None;
-        public CompletableQueueStream Stream { get; set; } = CompletableQueueStream.Empty;
+        public PipelineStream Stream { get; set; } = PipelineStream.Empty;
         public event EventHandler? OnFinally;
         public void FireFinally(ActionContext? context = null)
         {

@@ -59,7 +59,8 @@ namespace Piping.Server.Core.Streams
             => await ReadAsync(buffer.AsMemory().Slice(offset, count), Token).ConfigureAwait(false);
         public override int Read(Span<byte> buffer)
         {
-            var Read = data.Reader.ReadAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+            if (!data.Reader.TryRead(out var Read))
+                return 0;
             var Sequence = Read.Buffer;
             if (Read.IsCompleted && Sequence.Length == 0)
                 return 0;

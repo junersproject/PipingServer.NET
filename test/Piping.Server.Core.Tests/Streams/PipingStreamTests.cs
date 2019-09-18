@@ -14,40 +14,52 @@ namespace Piping.Server.Streams.Tests
     [TestClass]
     public class PipingStreamTests
     {
+        [TestMethod]
+        public void WriteTest()
+        {
+            var Encoding = System.Text.Encoding.UTF8;
+            using var Buffer = new MemoryStream();
+            using var Stream = new PipingStream(Buffer);
+            using var Writer = new StreamWriter(Stream, Encoding, 1024, true);
+            var Message = "HELLO WORLD";
+            Writer.WriteLine(Message);
+            Writer.Dispose();
+            Buffer.Seek(0, SeekOrigin.Begin);
+            using var Reader = new StreamReader(Buffer, Encoding, false, 1024, true);
+            Assert.AreEqual(Message, Reader.ReadLine());
+        }
 
         [TestMethod, TestCategory("ShortTime")]
-        [Ignore]
-        public async Task PipingStreamSyncTest()
+        public void PipingStreamSyncTest()
         {
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
             using var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1));
-            using var Buffers = new DisposableList<CompletableQueueStream>(Enumerable.Range(0, 5).Select(v => new CompletableQueueStream()));
+            using var Buffers = new DisposableList<MemoryStream>(Enumerable.Range(0, 5).Select(v => new MemoryStream()));
             using var Piping = new PipingStream(Buffers);
             var Token = TokenSource.Token;
-            var WriteTask = Task.Run(() =>
+            using (var writer = new StreamWriter(Piping, Encoding, 1024, true))
             {
-                using var writer = new StreamWriter(Piping, Encoding, 1024, true);
                 foreach (var Text in Data)
                 {
                     Token.ThrowIfCancellationRequested();
                     writer.WriteLine(Text);
                     Trace.WriteLine($"write: {Text}");
                 }
-            });
-            var ReadTask = Buffers.Select((os, index) => Task.Run(() =>
+            }
+            foreach (var (os, index) in Buffers.Select((o, i) => (o, i)))
+            {
+                using var reader = new StreamReader(os, Encoding, false, 1024, true);
+                os.Seek(0, SeekOrigin.Begin);
+                foreach (var ExpectText in Data)
                 {
-                    using var reader = new StreamReader(os, Encoding, false, 1024, true);
-                    foreach (var ExpectText in Data)
-                    {
 
-                        Token.ThrowIfCancellationRequested();
-                        var Text = reader.ReadLine();
-                        Trace.WriteLine($"cache {index} read: {Text}");
-                        Assert.AreEqual(ExpectText, Text);
-                    }
-                })).ToArray();
-            await Task.WhenAll(ReadTask.Append(WriteTask));
+                    Token.ThrowIfCancellationRequested();
+                    var Text = reader.ReadLine();
+                    Trace.WriteLine($"cache {index} read: {Text}");
+                    Assert.AreEqual(ExpectText, Text);
+                }
+            }
         }
         static IEnumerable<object[]> PipingStreamAsyncSyncTestData
         {

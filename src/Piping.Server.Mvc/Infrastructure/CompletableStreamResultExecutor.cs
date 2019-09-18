@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -37,7 +38,7 @@ namespace Piping.Server.Mvc.Infrastructure
             if (Result.StatusCode is int _StatusCode)
                 Response.StatusCode = _StatusCode;
             if (Result.Headers is IHeaderDictionary Headers)
-                foreach (var kv in Headers)
+                foreach (var kv in Headers.ToList())
                     if (AllowHeaders.Contains(kv.Key.ToLower()))
                         Response.Headers[kv.Key] = kv.Value;
         }

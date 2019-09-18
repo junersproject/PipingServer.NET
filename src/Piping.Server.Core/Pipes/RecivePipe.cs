@@ -5,14 +5,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Piping.Server.Core.Internal;
 using Piping.Server.Core.Streams;
+using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Pipes
 {
     internal class RecivePipe : IRecivePipe
     {
         readonly Pipe Current;
-        readonly ILogger<IRecivePipe> Logger;
-        internal RecivePipe(Pipe Current, ILogger<IRecivePipe> Logger)
+        readonly ILogger<RecivePipe> Logger;
+        internal RecivePipe(Pipe Current, ILogger<RecivePipe> Logger)
             => (this.Current, this.Logger) = (Current, Logger);
         public RequestKey Key => Current.Key;
 
@@ -41,18 +42,25 @@ namespace Piping.Server.Core.Pipes
             AddReceiver(CompletableStream);
             await Task.WhenAny(ReadyAsync().AsTask(), Token.AsTask());
         }
+        const string AccessControlAllowOriginKey = "Access-Control-Allow-Origin";
+        const string AccessControlAllowOriginValue = " * ";
+        const string AccessControlExposeHeadersKey = "Access-Control-Expose-Headers";
+        const string AccessControlExposeHeaderValue = "Content-Length, Content-Type";
         void SetReceiverCompletableStream(ICompletableStream CompletableStream)
         {
             CompletableStream.PipeType = PipeType.Receiver;
             if (CompletableStream.Stream == CompletableQueueStream.Empty)
                 CompletableStream.Stream = new CompletableQueueStream();
             CompletableStream.Headers ??= new HeaderDictionary();
-            CompletableStream.Headers["Access-Control-Allow-Origin"] = " * ";
-            CompletableStream.Headers["Access-Control-Expose-Headers"] = "Content-Length, Content-Type";
+            CompletableStream.Headers[AccessControlAllowOriginKey] = AccessControlAllowOriginValue;
+            CompletableStream.Headers[AccessControlExposeHeadersKey] = AccessControlExposeHeaderValue;
             CompletableStream.OnFinally += (o, arg) =>
             {
                 var Removed = RemoveReceiver(CompletableStream);
-                Logger.LogDebug("STREAM REMOVE " + (Removed ? "SUCCESS" : "FAILED"));
+                if (Removed)
+                    Logger.LogDebug(string.Format(StreamRemoveSuccess, CompletableStream));
+                else
+                    Logger.LogDebug(string.Format(StreamRemoveFaild, CompletableStream));
                 Current.TryRemove();
             };
         }

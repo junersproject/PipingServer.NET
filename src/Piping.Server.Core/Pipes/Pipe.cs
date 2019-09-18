@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Piping.Server.Core.Internal;
+using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Pipes
 {
@@ -15,10 +16,11 @@ namespace Piping.Server.Core.Pipes
         public RequestKey Key { get; }
         public Pipe(RequestKey Key, PipingOptions Options)
         {
+            const string Options_WaitingTimeout = nameof(Options) + "." + nameof(Options.WatingTimeout);
             this.Key = Key;
             this.Options = Options;
             if (Options.WatingTimeout < TimeSpan.Zero)
-                throw new ArgumentException($"{nameof(Options)}.{nameof(Options.WatingTimeout)} is {Options.WatingTimeout}. required {nameof(Options.WatingTimeout)} is {nameof(TimeSpan.Zero)} over");
+                throw new ArgumentException(string.Format(NameIsValue1RequiredNameIsValue2Over, Options_WaitingTimeout, Options.WatingTimeout, nameof(TimeSpan.Zero)));
             if (Options.WatingTimeout is TimeSpan WaitTimeout)
             {
                 WaitTokenSource = new CancellationTokenSource(WaitTimeout);
@@ -45,17 +47,17 @@ namespace Piping.Server.Core.Pipes
             set
             {
                 if (_dataTask != null)
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException(string.Format(IsAlreadySet, nameof(DataTask)));
                 _dataTask = value;
                 _ = _dataTask?.ContinueWith(SetResult);
             }
         }
-        private async void SetResult(Task<(IHeaderDictionary Header, Stream Stream)>? DataTask)
+        async void SetResult(Task<(IHeaderDictionary Header, Stream Stream)>? DataTask)
         {
             if (!(DataTask is Task<(IHeaderDictionary Header, Stream Stream)> _DataTask))
                 throw new ArgumentNullException(nameof(DataTask));
             if (!_DataTask.IsCompleted)
-                throw new InvalidOperationException("DataTask is not complete.");
+                throw new InvalidOperationException(string.Format(IsNotComplete, nameof(DataTask)));
             if (_DataTask.IsFaulted && _DataTask.Exception is Exception e)
                 HeaderSetSource.TrySetException(e);
             else if (_DataTask.IsCanceled)
@@ -111,7 +113,7 @@ namespace Piping.Server.Core.Pipes
         {
             this.DataTask = DataTask;
             if (IsSetSenderComplete)
-                throw new InvalidOperationException($"The number of receivers should be {RequestedReceiversCount} but {ReceiversCount}.");
+                throw new InvalidOperationException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, RequestedReceiversCount, ReceiversCount));
             IsSetSenderComplete = true;
             await ReadyAsync(Token);
             var Headers = await GetHeadersAsync(Token);
@@ -141,10 +143,10 @@ namespace Piping.Server.Core.Pipes
         {
             if (IsEstablished)
                 // 登録できる状態でない
-                throw new InvalidOperationException($"Connection on '{Key}' has been established already.");
+                throw new InvalidOperationException(string.Format(ConnectionOnKeyHasBeenEstablishedAlready, Key));
             else if (Key.Receivers != RequestedReceiversCount)
                 // 指定されている受取数に相違がある
-                throw new InvalidOperationException($"The number of receivers should be ${RequestedReceiversCount} but {Key.Receivers}.");
+                throw new InvalidOperationException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, RequestedReceiversCount, Key.Receivers));
         }
         /// <summary>
         /// レシーバーの追加

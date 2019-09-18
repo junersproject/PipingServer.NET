@@ -21,10 +21,10 @@ namespace Piping.Server.Core.Converters
         {
             var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary);
             if (boundary.IsNullOrWhiteSpace())
-                throw new InvalidDataException(MultipartStreamConverter_GetBoundary_IsNullOrWhiteSpace);
+                throw new InvalidDataException(MissingContentTypeBoundary);
             if (boundary.Length > Option.MultipartBoundaryLengthLimit)
                 throw new InvalidDataException(
-                    string.Format(MultipartStreamConverter_GetBoundary_OverMultipartBoundaryLengthLimit, Option.MultipartBoundaryLengthLimit));
+                    string.Format(MultipartBoundaryLengthLimitExceeded, Option.MultipartBoundaryLengthLimit));
             return boundary.Value;
         }
         const string MultipartMimeTypeStart = "multipart/";
@@ -46,7 +46,7 @@ namespace Piping.Server.Core.Converters
                 throw new ArgumentException(NotReadableStream);
             var ContentType = Headers[ContentTypeHeaderName];
             var boundary = GetBoundary(MediaTypeHeaderValue.Parse((string)ContentType));
-            var reader = new MultipartReader(boundary, Body, Option.DefaultBufferSize);
+            var reader = new MultipartReader(boundary, Body, Option.BufferSize);
             if ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)
                 return (new HeaderDictionary(section.Headers), section.Body);
             throw new InvalidOperationException(NoDataStream);

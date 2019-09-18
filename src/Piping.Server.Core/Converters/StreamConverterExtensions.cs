@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Converters
 {
@@ -14,10 +15,10 @@ namespace Piping.Server.Core.Converters
             foreach (var c in Converters)
                 if (!(c is DefaultStreamConverter) && c.IsUse(Request.Headers))
                 {
-                    Logger?.LogInformation(string.Format(Properties.Resources.StreamConverterExtensions_GetDataAsync_UseType,c.GetType().FullName));
+                    Logger?.LogInformation(string.Format(StreamConverterExtensions_GetDataAsync_UseType, c.GetType().FullName));
                     return c.GetStreamAsync(Request.Headers, Request.Body, Token);
                 }
-            Logger?.LogInformation(string.Format(Properties.Resources.StreamConverterExtensions_GetDataAsync_UseType, typeof(DefaultStreamConverter).FullName));
+            Logger?.LogInformation(string.Format(StreamConverterExtensions_GetDataAsync_UseType, typeof(DefaultStreamConverter).FullName));
             return DefaultStreamConverter.GetStreamAsync(Request.Headers, Request.Body, Token);
         }
     }

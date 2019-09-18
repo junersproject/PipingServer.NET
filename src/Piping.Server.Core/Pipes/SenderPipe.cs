@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Piping.Server.Core.Internal;
 using Piping.Server.Core.Streams;
+using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Pipes
 {
@@ -15,8 +16,8 @@ namespace Piping.Server.Core.Pipes
     {
         readonly Pipe Current;
         readonly PipingOptions Options;
-        readonly ILogger<ISenderPipe> Logger;
-        internal SenderPipe(Pipe Current, PipingOptions Options, ILogger<ISenderPipe> Logger)
+        readonly ILogger<SenderPipe> Logger;
+        internal SenderPipe(Pipe Current, PipingOptions Options, ILogger<SenderPipe> Logger)
             => (this.Current, this.Options, this.Logger) = (Current, Options, Logger);
         public RequestKey Key => Current.Key;
 
@@ -53,18 +54,20 @@ namespace Piping.Server.Core.Pipes
             using var l = Logger?.LogDebugScope(nameof(ConnectionAsync));
             SetSenderCompletableStream(CompletableStream);
             var SetHeaderTask = SetHeadersAsync(DataTask, Token);
-            await SendMessageAsync(CompletableStream.Stream, $"Waiting for {Current.RequestedReceiversCount} receiver(s)...", Token);
-            await SendMessageAsync(CompletableStream.Stream, $"{Current.ReceiversCount} receiver(s) has/have been connected.", Token);
+            await SendMessageAsync(CompletableStream.Stream, string.Format(WaitingForRequestedReceiversCountReceivers, Current.RequestedReceiversCount), Token);
+            await SendMessageAsync(CompletableStream.Stream, string.Format(ReceiversCountReceiversHaveBeenConnected, Current.ReceiversCount), Token);
             await SetHeaderTask;
             _ = SetSenderAsync(DataTask, CompletableStream, Token);
         }
+        const string ContentTypeKey = "Content-Type";
+        const string SenderResponseMessageMimeType = "text/plain;charset={0}";
         void SetSenderCompletableStream(ICompletableStream CompletableStream)
         {
             CompletableStream.PipeType = PipeType.Sender;
             if (CompletableStream.Stream == CompletableQueueStream.Empty)
                 CompletableStream.Stream = new CompletableQueueStream();
             CompletableStream.Headers ??= new HeaderDictionary();
-            CompletableStream.Headers["Content-Type"] = $"text/plain;charset={Options.Encoding.WebName}";
+            CompletableStream.Headers[ContentTypeKey] = string.Format(SenderResponseMessageMimeType, Options.Encoding.WebName);
             CompletableStream.OnFinally += (o, arg) => Current.TryRemove();
         }
         async Task SetSenderAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token)
@@ -74,7 +77,7 @@ namespace Piping.Server.Core.Pipes
             {
                 var (Headers, Stream) = await DataTask;
                 var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Current.Receivers.Select(v => v.Stream), Options.BufferSize, Token);
-                await SendMessageAsync(CompletableStream.Stream, $"Start sending with {Current.ReceiversCount} receiver(s)!");
+                await SendMessageAsync(CompletableStream.Stream, string.Format(StartSendingWithReceiversCountReceivers, Current.ReceiversCount));
                 await PipingTask;
             }
             catch (Exception e)
@@ -87,7 +90,7 @@ namespace Piping.Server.Core.Pipes
         async Task SendMessageAsync(Stream Stream, string Message, CancellationToken Token = default)
         {
             Logger.LogDebug(Message);
-            await Stream.WriteAsync(Options.Encoding.GetBytes("[INFO] " + Message + Environment.NewLine).AsMemory(), Token);
+            await Stream.WriteAsync(Options.Encoding.GetBytes(string.Format(InfoPrefix, Message) + Environment.NewLine).AsMemory(), Token);
         }
 
         async Task PipingAsync(Stream RequestStream, CompletableQueueStream InfomationStream, IEnumerable<CompletableQueueStream> Buffers, int BufferSize, CancellationToken Token = default)
@@ -100,15 +103,15 @@ namespace Piping.Server.Core.Pipes
             using var finallyact = Disposable.Create(() =>
             {
                 foreach (var b in Buffers)
-                    b.CompleteAdding();
-                InfomationStream.CompleteAdding();
+                    b.Complete();
+                InfomationStream.Complete();
             });
             while ((bytesRead = await RequestStream.ReadAsync(buffer, Token).ConfigureAwait(false)) != 0)
             {
                 await Stream.WriteAsync(buffer.Slice(0, bytesRead), Token).ConfigureAwait(false);
                 byteCounter += bytesRead;
             }
-            await SendMessageAsync(InfomationStream, $"Sending successful! {byteCounter} bytes.");
+            await SendMessageAsync(InfomationStream, string.Format(SendingSuccessfulBytes, byteCounter));
         }
     }
 }

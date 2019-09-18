@@ -2,7 +2,13 @@
 {
     public class MultipartStreamConverterOption
     {
+        /// <summary>
+        /// multipart boundary length limit size.
+        /// </summary>
         public int MultipartBoundaryLengthLimit { get; set; } = 1024;
-        public int DefaultBufferSize { get; set; } = 1024 * 4;
+        /// <summary>
+        /// multipart parsing default buffer size.
+        /// </summary>
+        public int BufferSize { get; set; } = 1024 * 4;
     }
 }

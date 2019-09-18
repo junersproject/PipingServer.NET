@@ -8,6 +8,5 @@ namespace Piping.Server.Core.Pipes
         Task<ISenderPipe> GetSenderAsync(RequestKey Key, CancellationToken Token = default);
         Task<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default);
         Task<IPipe> GetAsync(RequestKey Key, CancellationToken Token = default);
-        Task<bool> TryRemoveAsync(IPipe Pipe);
     }
 }

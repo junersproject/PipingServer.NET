@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Pipes
 {
@@ -16,7 +16,7 @@ namespace Piping.Server.Core.Pipes
         readonly PipingOptions Options;
         readonly Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
         public PipingStore(ILoggerFactory LoggerFactory, IOptions<PipingOptions> Options)
-            => (this.Logger, this.Options, this.LoggerFactory) = (LoggerFactory.CreateLogger<PipingStore>(), Options.Value, LoggerFactory);
+            => (Logger, this.Options, this.LoggerFactory) = (LoggerFactory.CreateLogger<PipingStore>(), Options.Value, LoggerFactory);
         async Task<IPipe> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) => await GetAsync(Key, Token);
         internal Task<Pipe> GetAsync(RequestKey Key, CancellationToken Token = default)
         {
@@ -25,14 +25,14 @@ namespace Piping.Server.Core.Pipes
             {
                 if (_waiters.TryGetValue(Key, out var Waiter))
                 {
-                    Logger.LogDebug("GET " + Waiter);
+                    Logger.LogDebug(string.Format(PipingStore_Get, Waiter));
                 }
                 else
                 {
                     Waiter = new Pipe(Key, Options);
-                    Logger.LogDebug("CREATE " + Waiter);
+                    Logger.LogDebug(string.Format(PipingStore_Create, Waiter));
                     _waiters.Add(Key, Waiter);
-                    Waiter.OnFinally += (o, arg) => TryRemoveAsync(Waiter);
+                    Waiter.OnFinally += (o, arg) => RemoveAsync(Waiter);
                 }
                 return Task.FromResult(Waiter);
             }
@@ -43,8 +43,8 @@ namespace Piping.Server.Core.Pipes
             var Pipe = await GetAsync(Key, Token);
             Pipe.AssertKey(Key);
             if (Pipe.IsSetSenderComplete)
-                throw new InvalidOperationException("Connection sender over.");
-            return new SenderPipe(Pipe, Options, LoggerFactory.CreateLogger<ISenderPipe>());
+                throw new PipingException(ConnectionSenderOver, Pipe);
+            return new SenderPipe(Pipe, Options, LoggerFactory.CreateLogger<SenderPipe>());
         }
 
         public async Task<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default)
@@ -52,27 +52,18 @@ namespace Piping.Server.Core.Pipes
             var Pipe = await GetAsync(Key, Token);
             Pipe.AssertKey(Key);
             if (Pipe.ReceiversCount >= Pipe.Key.Receivers)
-                throw new InvalidOperationException($"Connection receivers over.");
-            return new RecivePipe(Pipe, LoggerFactory.CreateLogger<IRecivePipe>());
+                throw new PipingException(ConnectionReceiversOver, Pipe);
+            return new RecivePipe(Pipe, LoggerFactory.CreateLogger<RecivePipe>());
         }
 
-        public Task<bool> TryRemoveAsync(IPipe Pipe)
+        public Task<bool> RemoveAsync(IPipe Pipe)
         {
             lock (_waiters)
             {
-                bool Result;
-                if (Result = Pipe.IsRemovable)
-                {
-                    Logger.LogDebug("REMOVE " + Pipe);
-                    _waiters.Remove(Pipe.Key);
-                }
-                else
-                {
-                    Logger.LogDebug("KEEP " + Pipe);
-                }
-                return Task.FromResult(Result);
+                Logger.LogDebug(string.Format(PipingStore_Remove,Pipe));
+                _waiters.Remove(Pipe.Key);
+                return Task.FromResult(true);
             }
-
         }
         public IEnumerator<IPipe> GetEnumerator() => _waiters.Values.OfType<IPipe>().GetEnumerator();
 

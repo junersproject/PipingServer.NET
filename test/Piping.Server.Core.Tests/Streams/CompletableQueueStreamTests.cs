@@ -121,7 +121,7 @@ namespace Piping.Server.Streams.Tests
             using var stream = new CompletableQueueStream();
             Assert.AreEqual(true, stream.CanWrite);
             stream.Write(data.AsSpan());
-            stream.CompleteAdding();
+            stream.Complete();
             Assert.AreEqual(false, stream.CanWrite);
             Assert.ThrowsException<InvalidOperationException>(() => stream.Write(data.AsSpan()));
         }
@@ -145,7 +145,7 @@ namespace Piping.Server.Streams.Tests
             Assert.AreEqual(true, stream.CanWrite);
             using (var TokenSource = new CancellationTokenSource(Time))
                 await stream.WriteAsync(data, TokenSource.Token);
-            stream.CompleteAdding();
+            stream.Complete();
             Assert.AreEqual(false, stream.CanWrite);
             using (var TokenSource = new CancellationTokenSource(Time))
                 await Assert.ThrowsExceptionAsync<InvalidOperationException>(

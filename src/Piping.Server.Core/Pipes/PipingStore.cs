@@ -30,6 +30,7 @@ namespace Piping.Server.Core.Pipes
                 else
                 {
                     Waiter = new Pipe(Key, Options);
+                    Waiter.OnStatusChanged += (p, args) => OnStatusChanged?.Invoke(p, args);
                     Logger.LogDebug(string.Format(PipingStore_Create, Waiter));
                     _waiters.Add(Key, Waiter);
                     Waiter.OnFinally += (o, arg) => RemoveAsync(Waiter);
@@ -65,8 +66,9 @@ namespace Piping.Server.Core.Pipes
                 return Task.FromResult(true);
             }
         }
-        public IEnumerator<IPipe> GetEnumerator() => _waiters.Values.OfType<IPipe>().GetEnumerator();
+        public IEnumerator<IReadOnlyPipe> GetEnumerator() => _waiters.Values.OfType<IReadOnlyPipe>().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public event PipeStatusChangeEventHandler? OnStatusChanged;
     }
 }

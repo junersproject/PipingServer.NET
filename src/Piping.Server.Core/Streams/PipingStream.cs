@@ -159,10 +159,6 @@ namespace Piping.Server.Core.Streams
         public override void CopyTo(Stream destination, int bufferSize) => throw new NotSupportedException();
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken) => throw new NotSupportedException();
         #endregion
-        public override void Close()
-        {
-            base.Close();
-        }
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);

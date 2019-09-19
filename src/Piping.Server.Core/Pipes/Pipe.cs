@@ -78,7 +78,9 @@ namespace Piping.Server.Core.Pipes
                     return PipeStatus.ResponseStart;
                 if (IsReady)
                     return PipeStatus.Ready;
-                return PipeStatus.Wait;
+                if (IsSetSenderComplete || Receivers.Any())
+                    return PipeStatus.Wait;
+                return default;
             }
         }
         readonly IDisposable? CancelAction = null;

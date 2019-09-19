@@ -6,10 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Piping.Server.Core.Streams;
 using static DebugUtils;
 
-namespace Piping.Server.Streams.Tests
+namespace Piping.Server.Core.Streams.Tests
 {
     [TestClass]
     public class PipingStreamTests
@@ -35,7 +34,7 @@ namespace Piping.Server.Streams.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
             using var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1));
-            using var Buffers = new DisposableList<MemoryStream>(Enumerable.Range(0, 5).Select(v => new MemoryStream()));
+            using var Buffers = new DisposableList<PipelineStream>(Enumerable.Range(0, 5).Select(v => new PipelineStream()));
             using var Piping = new PipingStream(Buffers);
             var Token = TokenSource.Token;
             using (var writer = new StreamWriter(Piping, Encoding, 1024, true))
@@ -50,7 +49,6 @@ namespace Piping.Server.Streams.Tests
             foreach (var (os, index) in Buffers.Select((o, i) => (o, i)))
             {
                 using var reader = new StreamReader(os, Encoding, false, 1024, true);
-                os.Seek(0, SeekOrigin.Begin);
                 foreach (var ExpectText in Data)
                 {
 

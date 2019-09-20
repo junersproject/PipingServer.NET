@@ -10,7 +10,7 @@ using Piping.Server.Core.Streams;
 
 namespace Piping.Server.Mvc
 {
-    public class CompletableStreamResult : IActionResult, ICompletableStream
+    public class PipelineStreamResult : IActionResult, IPipelineStreamResult
     {
         public PipeType PipeType { get; set; } = PipeType.None;
         public PipelineStream Stream { get; set; } = PipelineStream.Empty;
@@ -30,18 +30,12 @@ namespace Piping.Server.Mvc
         }
         public int? StatusCode { get; set; }
         public IHeaderDictionary? Headers { get; set; } = null;
-        public long? ContentLength => long.TryParse(Headers?["Content-Length"] ?? string.Empty, out var ContentLength) ? ContentLength : (long?)null;
-        public string? ContentType => Headers?["Content-Type"];
-        public string? ContentDisposition => Headers?["Content-Disposition"];
-        public string? AccessControlAllowOrigin => Headers?["Access-Control-Allow-Origin"];
-        public string? AccessControlExposeHeaders => Headers?["Access-Control-Expose-Headers"];
-
-        public CompletableStreamResult() { }
+        public PipelineStreamResult() { }
         public Task ExecuteResultAsync(ActionContext context)
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
-            var executor = context.HttpContext.RequestServices.GetRequiredService<IActionResultExecutor<CompletableStreamResult>>();
+            var executor = context.HttpContext.RequestServices.GetRequiredService<IActionResultExecutor<PipelineStreamResult>>();
             return executor.ExecuteAsync(context, this);
         }
     }

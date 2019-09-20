@@ -28,12 +28,6 @@ namespace Piping.Server.Core.Pipes
         public int RequestedReceiversCount => Current.RequestedReceiversCount;
 
         public int ReceiversCount => Current.ReceiversCount;
-
-        public event EventHandler? OnFinally
-        {
-            add => Current.OnFinally += value;
-            remove => Current.OnFinally -= value;
-        }
         public event PipeStatusChangeEventHandler? OnStatusChanged
         {
             add => Current.OnStatusChanged += value;
@@ -44,10 +38,10 @@ namespace Piping.Server.Core.Pipes
 
         public async ValueTask SetHeadersAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, CancellationToken Token = default)
         {
-            await Current.SetHeadersAsync(DataTask, Token);
+            await Current.SetInputDataAsync(DataTask, Token);
         }
 
-        public async ValueTask ConnectionAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token = default)
+        public async ValueTask ConnectionAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, IPipelineStreamResult CompletableStream, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
             using var finallyremove = Disposable.Create(() => Current.TryRemove());
@@ -61,24 +55,27 @@ namespace Piping.Server.Core.Pipes
         }
         const string ContentTypeKey = "Content-Type";
         const string SenderResponseMessageMimeType = "text/plain;charset={0}";
-        void SetSenderCompletableStream(ICompletableStream CompletableStream)
+        void SetSenderCompletableStream(IPipelineStreamResult Result)
         {
-            CompletableStream.PipeType = PipeType.Sender;
-            if (CompletableStream.Stream == PipelineStream.Empty)
-                CompletableStream.Stream = new PipelineStream();
-            CompletableStream.Headers ??= new HeaderDictionary();
-            CompletableStream.Headers[ContentTypeKey] = string.Format(SenderResponseMessageMimeType, Options.Encoding.WebName);
-            CompletableStream.OnFinally += (o, arg) => Current.TryRemove();
+            Result.StatusCode = 200;
+            Result.PipeType = PipeType.Sender;
+            if (Result.Stream == PipelineStream.Empty)
+                Result.Stream = new PipelineStream();
+            Result.Headers ??= new HeaderDictionary();
+            Result.Headers[ContentTypeKey] = string.Format(SenderResponseMessageMimeType, Options.Encoding.WebName);
+            Result.OnFinally += (o, arg) => Current.TryRemove();
         }
-        async Task SetSenderAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, ICompletableStream CompletableStream, CancellationToken Token)
+        async Task SetSenderAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, IPipelineStreamResult CompletableStream, CancellationToken Token)
         {
             using var l = Logger?.LogDebugScope(nameof(SetSenderAsync));
             try
             {
+                using var s = Disposable.Create(() => CompletableStream.Stream.Complete());
                 var (Headers, Stream) = await DataTask;
-                var PipingTask = PipingAsync(Stream, CompletableStream.Stream, Current.Receivers.Select(v => v.Stream), Options.BufferSize, Token);
+                var PipingTask = Current.PipingAsync(Token);
                 await SendMessageAsync(CompletableStream.Stream, string.Format(StartSendingWithReceiversCountReceivers, Current.ReceiversCount));
-                await PipingTask;
+                var byteCounter = await PipingTask;
+                await SendMessageAsync(CompletableStream.Stream, string.Format(SendingSuccessfulBytes, byteCounter));
             }
             catch (Exception e)
             {
@@ -91,27 +88,6 @@ namespace Piping.Server.Core.Pipes
         {
             Logger.LogDebug(Message);
             await Stream.WriteAsync(Options.Encoding.GetBytes(string.Format(InfoPrefix, Message) + Environment.NewLine).AsMemory(), Token);
-        }
-
-        async Task PipingAsync(Stream RequestStream, PipelineStream InfomationStream, IEnumerable<PipelineStream> Buffers, int BufferSize, CancellationToken Token = default)
-        {
-            using var l = Logger.LogDebugScope(nameof(PipingAsync));
-            var buffer = new byte[BufferSize].AsMemory();
-            using var Stream = new PipingStream(Buffers);
-            int bytesRead;
-            var byteCounter = 0L;
-            using var finallyact = Disposable.Create(() =>
-            {
-                foreach (var b in Buffers)
-                    b.Complete();
-                InfomationStream.Complete();
-            });
-            while ((bytesRead = await RequestStream.ReadAsync(buffer, Token).ConfigureAwait(false)) != 0)
-            {
-                await Stream.WriteAsync(buffer.Slice(0, bytesRead), Token).ConfigureAwait(false);
-                byteCounter += bytesRead;
-            }
-            await SendMessageAsync(InfomationStream, string.Format(SendingSuccessfulBytes, byteCounter));
         }
     }
 }

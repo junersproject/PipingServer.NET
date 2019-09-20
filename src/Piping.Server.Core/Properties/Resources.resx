@@ -159,8 +159,11 @@
   <data name="PipingStore_Get" xml:space="preserve">
     <value>GET {0}</value>
   </data>
-  <data name="PipingStore_Remove" xml:space="preserve">
-    <value>REMOVE {0}</value>
+  <data name="PipingStore_Remove_Faild" xml:space="preserve">
+    <value>REMOVE FAILD {0}</value>
+  </data>
+  <data name="PipingStore_Remove_Success" xml:space="preserve">
+    <value>REMOVE SUCCESS {0}</value>
   </data>
   <data name="ReceiversCountReceiversHaveBeenConnected" xml:space="preserve">
     <value>{0} receiver(s) has/have been connected.</value>

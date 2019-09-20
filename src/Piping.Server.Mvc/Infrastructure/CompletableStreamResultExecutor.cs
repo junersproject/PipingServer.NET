@@ -10,7 +10,7 @@ using Piping.Server.Mvc.Internal;
 
 namespace Piping.Server.Mvc.Infrastructure
 {
-    public class CompletableStreamResultExecutor : IActionResultExecutor<CompletableStreamResult>
+    public class CompletableStreamResultExecutor : IActionResultExecutor<PipelineStreamResult>
     {
         readonly ILogger<CompletableStreamResultExecutor> logger;
         /// <summary>
@@ -33,7 +33,7 @@ namespace Piping.Server.Mvc.Infrastructure
         /// </summary>
         /// <param name="Result"></param>
         /// <param name="Response"></param>
-        protected void SetHeader(CompletableStreamResult Result, HttpResponse Response)
+        protected void SetHeader(PipelineStreamResult Result, HttpResponse Response)
         {
             if (Result.StatusCode is int _StatusCode)
                 Response.StatusCode = _StatusCode;
@@ -48,7 +48,7 @@ namespace Piping.Server.Mvc.Infrastructure
             Response.ContentLength = 0;
             Response.Headers["Connection"] = "Close";
         }
-        public async Task ExecuteAsync(ActionContext context, CompletableStreamResult result)
+        public async Task ExecuteAsync(ActionContext context, PipelineStreamResult result)
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));

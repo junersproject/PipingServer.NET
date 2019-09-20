@@ -9,7 +9,5 @@ namespace Piping.Server.Core.Pipes
         bool IsRemovable { get; }
         int RequestedReceiversCount { get; }
         int ReceiversCount { get; }
-        event PipeStatusChangeEventHandler? OnStatusChanged;
-        event EventHandler? OnFinally;
     }
 }

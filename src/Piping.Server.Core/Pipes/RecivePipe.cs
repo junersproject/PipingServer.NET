@@ -24,51 +24,36 @@ namespace Piping.Server.Core.Pipes
         public int RequestedReceiversCount => Current.RequestedReceiversCount;
 
         public int ReceiversCount => Current.ReceiversCount;
-
-        public event EventHandler? OnFinally
-        {
-            add => Current.OnFinally += value;
-            remove => Current.OnFinally -= value;
-        }
-        public event PipeStatusChangeEventHandler? OnStatusChanged
-        {
-            add => Current.OnStatusChanged += value;
-            remove => Current.OnStatusChanged -= value;
-        }
-        public async ValueTask ConnectionAsync(ICompletableStream CompletableStream, CancellationToken Token = default)
+        public async ValueTask ConnectionAsync(IPipelineStreamResult CompletableStream, CancellationToken Token = default)
         {
             using var finallyremove = Disposable.Create(() => Current.TryRemove());
             SetReceiverCompletableStream(CompletableStream);
-            AddReceiver(CompletableStream);
-            await Task.WhenAny(ReadyAsync().AsTask(), Token.AsTask());
+            Current.AddReceiver(CompletableStream);
+            await Current.ReadyAsync(Token);
         }
         const string AccessControlAllowOriginKey = "Access-Control-Allow-Origin";
         const string AccessControlAllowOriginValue = " * ";
         const string AccessControlExposeHeadersKey = "Access-Control-Expose-Headers";
         const string AccessControlExposeHeaderValue = "Content-Length, Content-Type";
-        void SetReceiverCompletableStream(ICompletableStream CompletableStream)
+        void SetReceiverCompletableStream(IPipelineStreamResult Result)
         {
-            CompletableStream.PipeType = PipeType.Receiver;
-            if (CompletableStream.Stream == PipelineStream.Empty)
-                CompletableStream.Stream = new PipelineStream();
-            CompletableStream.Headers ??= new HeaderDictionary();
-            CompletableStream.Headers[AccessControlAllowOriginKey] = AccessControlAllowOriginValue;
-            CompletableStream.Headers[AccessControlExposeHeadersKey] = AccessControlExposeHeaderValue;
-            CompletableStream.OnFinally += (o, arg) =>
+            Result.StatusCode = 200;
+            Result.PipeType = PipeType.Receiver;
+            if (Result.Stream == PipelineStream.Empty)
+                Result.Stream = new PipelineStream();
+            Result.Headers ??= new HeaderDictionary();
+            Result.Headers[AccessControlAllowOriginKey] = AccessControlAllowOriginValue;
+            Result.Headers[AccessControlExposeHeadersKey] = AccessControlExposeHeaderValue;
+            Result.OnFinally += (o, arg) =>
             {
-                var Removed = RemoveReceiver(CompletableStream);
+                var Removed = Current.RemoveReceiver(Result);
                 if (Removed)
-                    Logger.LogDebug(string.Format(StreamRemoveSuccess, CompletableStream));
+                    Logger.LogDebug(string.Format(StreamRemoveSuccess, Result));
                 else
-                    Logger.LogDebug(string.Format(StreamRemoveFaild, CompletableStream));
+                    Logger.LogDebug(string.Format(StreamRemoveFaild, Result));
                 Current.TryRemove();
             };
         }
-        public void AddReceiver(ICompletableStream Result) => Current.AddReceiver(Result);
-
-        public ValueTask ReadyAsync(CancellationToken Token = default) => Current.ReadyAsync(Token);
-
-        public bool RemoveReceiver(ICompletableStream Result) => Current.RemoveReceiver(Result);
-        public override string ToString() => Current?.ToString() ?? string.Empty;
+        public override string ToString() => Current.ToString()!;
     }
 }

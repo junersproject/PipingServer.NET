@@ -8,7 +8,7 @@ namespace Piping.Server.Core.Pipes
         /// <summary>
         /// Waiting Timeout Value.
         /// </summary>
-        public TimeSpan? WatingTimeout { get; set; } = null;
+        public TimeSpan? WaitingTimeout { get; set; } = null;
         public Encoding Encoding { get; set; } = Encoding.UTF8;
         public int BufferSize { get; set; } = 1024 * 4;
     }

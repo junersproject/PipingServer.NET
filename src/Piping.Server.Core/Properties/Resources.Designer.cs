@@ -187,11 +187,20 @@ namespace Piping.Server.Core.Properties {
         }
         
         /// <summary>
-        ///   REMOVE {0} に類似しているローカライズされた文字列を検索します。
+        ///   REMOVE FAILD {0} に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string PipingStore_Remove {
+        internal static string PipingStore_Remove_Faild {
             get {
-                return ResourceManager.GetString("PipingStore_Remove", resourceCulture);
+                return ResourceManager.GetString("PipingStore_Remove_Faild", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   REMOVE SUCCESS {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string PipingStore_Remove_Success {
+            get {
+                return ResourceManager.GetString("PipingStore_Remove_Success", resourceCulture);
             }
         }
         

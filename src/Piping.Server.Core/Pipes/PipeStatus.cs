@@ -6,6 +6,7 @@
         Wait,
         Ready,
         ResponseStart,
+        ResponseEnd,
         Canceled,
         Dispose,
     }

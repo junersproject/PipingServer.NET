@@ -27,14 +27,14 @@ namespace Piping.Server.Extensions
             return self;
         }
         public static IPipingBuilder AddExector<T>(this IPipingBuilder self)
-            where T : class, IActionResultExecutor<CompletableStreamResult>
+            where T : class, IActionResultExecutor<PipelineStreamResult>
         {
-            self.Services.AddTransient<IActionResultExecutor<CompletableStreamResult>, T>();
+            self.Services.AddTransient<IActionResultExecutor<PipelineStreamResult>, T>();
             return self;
         }
         public static IPipingBuilder UseDefaultExector(this IPipingBuilder self)
         {
-            self.Services.TryAddTransient<IActionResultExecutor<CompletableStreamResult>, CompletableStreamResultExecutor>();
+            self.Services.TryAddTransient<IActionResultExecutor<PipelineStreamResult>, CompletableStreamResultExecutor>();
             return self;
         }
     }

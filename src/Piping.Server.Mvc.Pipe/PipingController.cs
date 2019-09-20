@@ -51,7 +51,7 @@ namespace Piping.Server.Mvc.Pipe
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
                 var Token = HttpContext.RequestAborted;
-                var Result = new CompletableStreamResult();
+                var Result = new PipelineStreamResult();
                 var Send = await Store.GetSenderAsync(Key, Token);
                 await Send.ConnectionAsync(Sender.GetResultAsync(), Result, Token);
                 return Result;
@@ -85,7 +85,7 @@ namespace Piping.Server.Mvc.Pipe
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
                 var Token = HttpContext.RequestAborted;
-                var Result = new CompletableStreamResult();
+                var Result = new PipelineStreamResult();
                 var Receive = await Store.GetReceiveAsync(Key, Token);
                 await Receive.ConnectionAsync(Result, Token);
                 return Result;

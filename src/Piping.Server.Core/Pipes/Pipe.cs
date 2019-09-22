@@ -97,7 +97,7 @@ namespace Piping.Server.Core.Pipes
         {
             this.DataTask = DataTask;
             if (IsSetSenderComplete)
-                throw new InvalidOperationException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, RequestedReceiversCount, ReceiversCount));
+                throw new PipingException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, Key.Receivers, ReceiversCount), this);
             IsSetSenderComplete = true;
             if (Status == PipeStatus.None)
                 Status = PipeStatus.Wait;
@@ -111,9 +111,9 @@ namespace Piping.Server.Core.Pipes
         /// </summary>
         /// <param name="Token"></param>
         /// <returns></returns>
-        public async Task<IHeaderDictionary> GetHeadersAsync(CancellationToken Token = default)
+        public async ValueTask<IHeaderDictionary> GetHeadersAsync(CancellationToken Token = default)
         {
-            var (Headers, _) = await InputDataSource.Task;
+            var (Headers, _) = await InputDataSource.Task.ConfigureAwait(false);
             return Headers;
         }
         /// <summary>
@@ -132,7 +132,7 @@ namespace Piping.Server.Core.Pipes
             set
             {
                 if (_dataTask != null)
-                    throw new InvalidOperationException(string.Format(IsAlreadySet, nameof(DataTask)));
+                    throw new PipingException(string.Format(IsAlreadySet, nameof(DataTask)), this);
                 _dataTask = value;
                 _ = _dataTask?.ContinueWith(SetResult);
 
@@ -243,19 +243,6 @@ namespace Piping.Server.Core.Pipes
         /// </summary>
         public int ReceiversCount => Receivers.Count;
         /// <summary>
-        /// キーが登録できる状態であるか
-        /// </summary>
-        /// <param name="Key"></param>
-        public void AssertKey(RequestKey Key)
-        {
-            if (Status != PipeStatus.None && Status != PipeStatus.Wait)
-                // 登録できる状態でない
-                throw new InvalidOperationException(string.Format(ConnectionOnKeyHasBeenEstablishedAlready, Key));
-            else if (Key.Receivers != RequestedReceiversCount)
-                // 指定されている受取数に相違がある
-                throw new InvalidOperationException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, RequestedReceiversCount, Key.Receivers));
-        }
-        /// <summary>
         /// レシーバーの追加
         /// </summary>
         /// <param name="Result"></param>
@@ -277,10 +264,6 @@ namespace Piping.Server.Core.Pipes
         /// 受取数に達している
         /// </summary>
         public bool ReceiversIsAllSet => Receivers.Count >= Key.Receivers;
-        /// <summary>
-        /// 受取数
-        /// </summary>
-        public int RequestedReceiversCount => Key.Receivers;
         public override string? ToString()
         {
             return nameof(Pipe) + "{" + string.Join(", ", new[] {

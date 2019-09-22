@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -20,8 +19,6 @@ namespace Piping.Server.Core.Pipes
         public PipeStatus Status => Current.Status;
 
         public bool IsRemovable => Current.IsRemovable;
-
-        public int RequestedReceiversCount => Current.RequestedReceiversCount;
 
         public int ReceiversCount => Current.ReceiversCount;
         public async ValueTask ConnectionAsync(IPipelineStreamResult CompletableStream, CancellationToken Token = default)

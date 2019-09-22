@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 
@@ -33,7 +32,7 @@ namespace Piping.Server.Core
         public bool Equals(PathString Path) => this.Path == Path;
         public bool Equals(RequestKey Key) => Equals(Key.Path);
         public override string ToString()
-            => string.Join("",new string?[]{
+            => string.Join("", new string?[]{
                 $"{Path}",
                 (Receivers <= 1 ? null : $"?n={Receivers}")
             }.OfType<string>());

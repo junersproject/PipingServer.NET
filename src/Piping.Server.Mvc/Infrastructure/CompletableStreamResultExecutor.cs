@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Piping.Server.Mvc.Internal;
 
 namespace Piping.Server.Mvc.Infrastructure
 {
@@ -16,7 +15,7 @@ namespace Piping.Server.Mvc.Infrastructure
         /// <summary>
         /// piping allow headers
         /// </summary>
-        readonly static ISet<string> AllowHeaders = new HashSet<string>
+        static readonly ISet<string> AllowHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "content-type",
             "content-length",
@@ -54,40 +53,42 @@ namespace Piping.Server.Mvc.Infrastructure
                 throw new ArgumentNullException(nameof(context));
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
-            using var finallydispose = Disposable.Create(() => result.FireFinally(context));
-            var Response = context.HttpContext.Response;
-            SetHeader(result, Response);
-            var Token = context.HttpContext.RequestAborted;
-
-            try
+            using (result)
             {
-                var buffer = new byte[1024].AsMemory();
-                int length;
-                using (result.Stream)
+                var Response = context.HttpContext.Response;
+                SetHeader(result, Response);
+                var Token = context.HttpContext.RequestAborted;
+
+                try
                 {
-                    try
+                    var buffer = new byte[1024].AsMemory();
+                    int length;
+                    using (result.Stream)
                     {
-                        while (!Token.IsCancellationRequested
-                            && (length = await result.Stream.ReadAsync(buffer, Token)) > 0)
+                        try
                         {
-                            await Response.Body.WriteAsync(buffer.Slice(0, length), Token);
+                            while (!Token.IsCancellationRequested
+                                && (length = await result.Stream.ReadAsync(buffer, Token)) > 0)
+                            {
+                                await Response.Body.WriteAsync(buffer.Slice(0, length), Token);
+                            }
                         }
-                    }
-                    finally
-                    {
-                        await Response.Body.FlushAsync(Token);
-                    }
+                        finally
+                        {
+                            await Response.Body.FlushAsync(Token);
+                        }
 
+                    }
                 }
-            }
-            catch (OperationCanceledException e)
-            {
-                logger.LogError(e, "[CANCELED] " + e.Message);
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, "[ERROR] " + e.Message);
-                throw;
+                catch (OperationCanceledException e)
+                {
+                    logger.LogError(e, "[CANCELED] " + e.Message);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "[ERROR] " + e.Message);
+                    throw;
+                }
             }
         }
     }

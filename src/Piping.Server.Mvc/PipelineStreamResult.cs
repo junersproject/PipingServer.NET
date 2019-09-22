@@ -10,24 +10,11 @@ using Piping.Server.Core.Streams;
 
 namespace Piping.Server.Mvc
 {
-    public class PipelineStreamResult : IActionResult, IPipelineStreamResult
+    public class PipelineStreamResult : IActionResult, IPipelineStreamResult, IDisposable
     {
         public PipeType PipeType { get; set; } = PipeType.None;
         public PipelineStream Stream { get; set; } = PipelineStream.Empty;
         public event EventHandler? OnFinally;
-        public void FireFinally(ActionContext? context = null)
-        {
-            try
-            {
-                OnFinally?.Invoke(context, new EventArgs());
-            }
-            catch (Exception)
-            {
-
-            }
-            foreach (var d in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
-                OnFinally -= d;
-        }
         public int? StatusCode { get; set; }
         public IHeaderDictionary? Headers { get; set; } = null;
         public PipelineStreamResult() { }
@@ -38,5 +25,29 @@ namespace Piping.Server.Mvc
             var executor = context.HttpContext.RequestServices.GetRequiredService<IActionResultExecutor<PipelineStreamResult>>();
             return executor.ExecuteAsync(context, this);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // 重複する呼び出しを検出するには
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    OnFinally?.Invoke(this, new EventArgs());
+                    foreach (var d in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()).Cast<EventHandler>())
+                        OnFinally -= d;
+                }
+                disposedValue = true;
+            }
+        }
+        ~PipelineStreamResult() => Dispose(false);
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

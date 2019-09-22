@@ -214,6 +214,15 @@ namespace Piping.Server.Core.Properties {
         }
         
         /// <summary>
+        ///   text/plain; charset={0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string SenderResponseMessageMimeType {
+            get {
+                return ResourceManager.GetString("SenderResponseMessageMimeType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sending successful! {0} bytes. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string SendingSuccessfulBytes {

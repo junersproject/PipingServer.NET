@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
-using Piping.Server.Core;
 using Piping.Server.Core.Converters;
 
 namespace Piping.Server.Mvc.Binder

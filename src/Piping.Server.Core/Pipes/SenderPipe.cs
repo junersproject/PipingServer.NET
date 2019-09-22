@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -25,8 +23,6 @@ namespace Piping.Server.Core.Pipes
 
         public bool IsRemovable => Current.IsRemovable;
 
-        public int RequestedReceiversCount => Current.RequestedReceiversCount;
-
         public int ReceiversCount => Current.ReceiversCount;
         public event PipeStatusChangeEventHandler? OnStatusChanged
         {
@@ -48,13 +44,12 @@ namespace Piping.Server.Core.Pipes
             using var l = Logger?.LogDebugScope(nameof(ConnectionAsync));
             SetSenderCompletableStream(CompletableStream);
             var SetHeaderTask = SetHeadersAsync(DataTask, Token);
-            await SendMessageAsync(CompletableStream.Stream, string.Format(WaitingForRequestedReceiversCountReceivers, Current.RequestedReceiversCount), Token);
+            await SendMessageAsync(CompletableStream.Stream, string.Format(WaitingForRequestedReceiversCountReceivers, Current.Key.Receivers), Token);
             await SendMessageAsync(CompletableStream.Stream, string.Format(ReceiversCountReceiversHaveBeenConnected, Current.ReceiversCount), Token);
             await SetHeaderTask;
             _ = SetSenderAsync(DataTask, CompletableStream, Token);
         }
         const string ContentTypeKey = "Content-Type";
-        const string SenderResponseMessageMimeType = "text/plain;charset={0}";
         void SetSenderCompletableStream(IPipelineStreamResult Result)
         {
             Result.StatusCode = 200;
@@ -62,7 +57,7 @@ namespace Piping.Server.Core.Pipes
             if (Result.Stream == PipelineStream.Empty)
                 Result.Stream = new PipelineStream();
             Result.Headers ??= new HeaderDictionary();
-            Result.Headers[ContentTypeKey] = string.Format(SenderResponseMessageMimeType, Options.Encoding.WebName);
+            Result.Headers[ContentTypeKey] = string.Format(Options.SenderResponseMessageContentType ?? SenderResponseMessageMimeType, Options.Encoding.WebName);
             Result.OnFinally += (o, arg) => Current.TryRemove();
         }
         async Task SetSenderAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, IPipelineStreamResult CompletableStream, CancellationToken Token)

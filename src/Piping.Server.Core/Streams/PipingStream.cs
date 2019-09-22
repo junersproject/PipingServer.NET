@@ -23,7 +23,8 @@ namespace Piping.Server.Core.Streams
                 PipeWriteAsync += WriteAsync;
                 PipeFlush += Flush;
                 PipeFlushAsync += FlushAsync;
-                disposable = Disposable.Create(() => {
+                disposable = Disposable.Create(() =>
+                {
                     PipeWrite -= Write;
                     PipeWriteAsync -= WriteAsync;
                     PipeFlush -= Flush;
@@ -35,7 +36,8 @@ namespace Piping.Server.Core.Streams
                     try
                     {
                         stream.WriteByte(value);
-                    }catch (Exception)
+                    }
+                    catch (Exception)
                     {
                         disposable?.Dispose();
                     }
@@ -105,7 +107,7 @@ namespace Piping.Server.Core.Streams
                 await Task.WhenAll(Tasks);
 #pragma warning restore CS8604 // Null 参照引数の可能性があります。
         }
-#endregion
+        #endregion
         #region seek is not support
         public override bool CanSeek => false;
         public override long Seek(long offset, SeekOrigin origin)
@@ -119,7 +121,7 @@ namespace Piping.Server.Core.Streams
         #region length is not support
         public override void SetLength(long value) => throw new NotSupportedException();
         public override long Length => throw new NotSupportedException();
-#endregion
+        #endregion
         #region read is not support
         public override bool CanRead => false;
         public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan().Slice(offset, count));

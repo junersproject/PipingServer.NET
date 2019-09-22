@@ -35,8 +35,9 @@ namespace Piping.Server.Core.Streams
 
         public override long Position { get => throw new NotSupportedException(); set => throw new NotImplementedException(); }
         #region flush is noop
-        public override void Flush() {
-            _ = Pipe.Writer.FlushAsync().ConfigureAwait(false).GetAwaiter().GetResult(); 
+        public override void Flush()
+        {
+            _ = Pipe.Writer.FlushAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
         public override Task FlushAsync(CancellationToken cancellationToken) => Pipe.Writer.FlushAsync(cancellationToken).AsTask();
         #endregion

@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Piping.Server.Core;
 using Piping.Server.Mvc.Binder;
 
 namespace Piping.Server.Mvc.Models

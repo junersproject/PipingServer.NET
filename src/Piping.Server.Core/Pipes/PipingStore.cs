@@ -20,10 +20,11 @@ namespace Piping.Server.Core.Pipes
         readonly Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
         public PipingStore(ILoggerFactory LoggerFactory, IOptions<PipingOptions> Options)
             => (Logger, this.Options, this.LoggerFactory) = (LoggerFactory.CreateLogger<PipingStore>(), Options.Value, LoggerFactory);
-        async Task<IReadOnlyPipe> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) => await GetAsync(Key, Token);
-        internal Task<Pipe> GetAsync(RequestKey Key, CancellationToken Token = default)
+        async ValueTask<IReadOnlyPipe> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) => await GetAsync(Key, Token);
+        internal async ValueTask<Pipe> GetAsync(RequestKey Key, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
+            await Task.CompletedTask;
             lock (_waiters)
             {
                 if (_waiters.TryGetValue(Key, out var Waiter))
@@ -38,29 +39,41 @@ namespace Piping.Server.Core.Pipes
                     _waiters.Add(Key, Waiter);
                     Waiter.OnFinally += (o, arg) => RemoveAsync(Key);
                 }
-                return Task.FromResult(Waiter);
+                return Waiter;
             }
         }
 
-        public async Task<ISenderPipe> GetSenderAsync(RequestKey Key, CancellationToken Token = default)
+        public async ValueTask<ISenderPipe> GetSenderAsync(RequestKey Key, CancellationToken Token = default)
         {
             var Pipe = await GetAsync(Key, Token);
-            Pipe.AssertKey(Key);
+            AssertKey(Pipe, Key);
             if (Pipe.IsSetSenderComplete)
                 throw new PipingException(ConnectionSenderOver, Pipe);
             return new SenderPipe(Pipe, Options, LoggerFactory.CreateLogger<SenderPipe>());
         }
 
-        public async Task<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default)
+        public async ValueTask<IRecivePipe> GetReceiveAsync(RequestKey Key, CancellationToken Token = default)
         {
             var Pipe = await GetAsync(Key, Token);
-            Pipe.AssertKey(Key);
+            AssertKey(Pipe, Key);
             if (Pipe.ReceiversCount >= Pipe.Key.Receivers)
                 throw new PipingException(ConnectionReceiversOver, Pipe);
             return new RecivePipe(Pipe, LoggerFactory.CreateLogger<RecivePipe>());
         }
-
-        public Task<bool> RemoveAsync(RequestKey Key)
+        /// <summary>
+        /// キーが登録できる状態であるか
+        /// </summary>
+        /// <param name="Key"></param>
+        void AssertKey(Pipe Pipe, RequestKey Key)
+        {
+            if (Pipe.Status != PipeStatus.None && Pipe.Status != PipeStatus.Wait)
+                // 登録できる状態でない
+                throw new PipingException(string.Format(ConnectionOnKeyHasBeenEstablishedAlready, Key), Pipe);
+            else if (Key.Receivers != Pipe.Key.Receivers)
+                // 指定されている受取数に相違がある
+                throw new PipingException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, Pipe.Key.Receivers, Key.Receivers), Pipe);
+        }
+        Task<bool> RemoveAsync(RequestKey Key)
         {
             lock (_waiters)
             {

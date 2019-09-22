@@ -168,6 +168,9 @@
   <data name="ReceiversCountReceiversHaveBeenConnected" xml:space="preserve">
     <value>{0} receiver(s) has/have been connected.</value>
   </data>
+  <data name="SenderResponseMessageMimeType" xml:space="preserve">
+    <value>text/plain; charset={0}</value>
+  </data>
   <data name="SendingSuccessfulBytes" xml:space="preserve">
     <value>Sending successful! {0} bytes.</value>
   </data>

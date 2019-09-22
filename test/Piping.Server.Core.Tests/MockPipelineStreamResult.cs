@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Piping.Server.Core.Pipes;
 using Piping.Server.Core.Streams;
-using System;
-using System.Linq;
 
 namespace Piping.Server.Core.Tests
 {
@@ -10,7 +10,7 @@ namespace Piping.Server.Core.Tests
     {
         public PipeType PipeType { get; set; }
         public PipelineStream Stream { get; set; } = PipelineStream.Empty;
-        public int? StatusCode { get; set;}
+        public int? StatusCode { get; set; }
         public IHeaderDictionary? Headers { get; set; }
 
         public event EventHandler? OnFinally;

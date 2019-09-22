@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace Piping.Server.Core.Internal
@@ -16,7 +14,8 @@ namespace Piping.Server.Core.Internal
             {
                 Logger.Log(LogLevel, Prefix + Start);
                 return Stoped;
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Logger.LogError(e, Prefix + Error);
                 Stoped.Dispose();

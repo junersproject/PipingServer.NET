@@ -1,12 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Piping.Server.Core.Streams;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static DebugUtils;
 
 namespace Piping.Server.Core.Streams.Tests
@@ -33,7 +31,7 @@ namespace Piping.Server.Core.Streams.Tests
 
             Stream.Complete();
             var WriteMessage2 = "HI!";
-            Assert.ThrowsException<InvalidOperationException>(()=> Stream.Write(Encoding.GetBytes(WriteMessage2)));
+            Assert.ThrowsException<InvalidOperationException>(() => Stream.Write(Encoding.GetBytes(WriteMessage2)));
         }
 
         [TestMethod]
@@ -56,7 +54,7 @@ namespace Piping.Server.Core.Streams.Tests
             Assert.IsTrue(Stream.CanRead);
             Assert.IsFalse(Stream.CanWrite);
             var WriteMessage2 = "HI!";
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async() => await Stream.WriteAsync(Encoding.GetBytes(WriteMessage2)));
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () => await Stream.WriteAsync(Encoding.GetBytes(WriteMessage2)));
         }
 
         [TestMethod]
@@ -100,7 +98,7 @@ namespace Piping.Server.Core.Streams.Tests
             var Message = "HELLO WORLD.";
             using var Stream = new PipelineStream();
             Assert.AreEqual(0, Stream.Length);
-            await using(var Writer = new StreamWriter(Stream, Encoding, 1024, true))
+            await using (var Writer = new StreamWriter(Stream, Encoding, 1024, true))
                 await Writer.WriteLineAsync(Message);
             Assert.AreNotEqual(0, Stream.Length);
             using (var Reader = new StreamReader(Stream, Encoding, false, 1024, true))

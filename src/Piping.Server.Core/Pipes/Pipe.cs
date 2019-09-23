@@ -149,17 +149,11 @@ namespace Piping.Server.Core.Pipes
             if (!_DataTask.IsCompleted)
                 throw new InvalidOperationException(string.Format(IsNotComplete, nameof(DataTask)));
             if (_DataTask.IsFaulted && _DataTask.Exception is Exception e)
-            {
                 InputDataSource.TrySetException(e);
-            }
             else if (_DataTask.IsCanceled)
-            {
                 InputDataSource.TrySetCanceled();
-            }
             else if (_DataTask.IsCompletedSuccessfully)
-            {
                 InputDataSource.TrySetResult(await _DataTask);
-            }
         }
         #endregion
         #region Ready Source

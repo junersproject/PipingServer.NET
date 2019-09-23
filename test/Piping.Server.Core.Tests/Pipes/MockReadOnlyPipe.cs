@@ -12,7 +12,7 @@ namespace Piping.Server.Core.Pipes.Tests
     public class MockReadOnlyPipe : IReadOnlyPipe, IEquatable<IReadOnlyPipe>, IEquatable<MockReadOnlyPipe>
     {
         public static Comparable Comparer = new Comparable();
-        public MockReadOnlyPipe(){ }
+        public MockReadOnlyPipe() { }
         public MockReadOnlyPipe(IReadOnlyPipe ReadOnlyPipe)
         {
             Key = ReadOnlyPipe.Key;
@@ -48,13 +48,13 @@ namespace Piping.Server.Core.Pipes.Tests
             throw new NotImplementedException();
         }
         public override string ToString()
-            => nameof(MockReadOnlyPipe) + "{" 
-            + string .Join(", ", new[] { 
+            => nameof(MockReadOnlyPipe) + "{"
+            + string.Join(", ", new[] {
                 $"{nameof(Key)}:{Key}",
                 $"{nameof(Status)}:{Status}",
                 $"{nameof(IsRemovable)}:{IsRemovable}",
                 $"{nameof(ReceiversCount)}:{ReceiversCount}",
-                Headers.Any() ? $"[{string.Join(", ", Headers.Select(v => $"{v.Key}: {v.Value}"))}]" : null, 
+                Headers.Any() ? $"[{string.Join(", ", Headers.Select(v => $"{v.Key}: {v.Value}"))}]" : null,
             }.OfType<string>()) + "}";
         public override bool Equals(object? obj)
         {
@@ -78,7 +78,7 @@ namespace Piping.Server.Core.Pipes.Tests
                    Key.Equals(_other.Key) &&
                    Status == _other.Status &&
                    IsRemovable == _other.IsRemovable &&
-                   ReceiversCount == _other.ReceiversCount && 
+                   ReceiversCount == _other.ReceiversCount &&
                    Equals(Headers, _other.Headers);
         }
         private bool Equals(IHeaderDictionary a, IHeaderDictionary b)

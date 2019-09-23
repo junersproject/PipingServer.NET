@@ -46,6 +46,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -62,6 +63,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -78,6 +80,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -94,6 +97,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -112,6 +116,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -129,6 +134,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -147,6 +153,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -163,6 +170,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }
@@ -179,6 +187,7 @@ namespace Piping.Server.App.APITests
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
+                ThrowIfHostIsUnknown(e);
                 throw;
             }
         }

@@ -106,7 +106,7 @@ namespace Piping.Server.Core.Pipes.Tests
                 SenderResult.Dispose();
             }
             Debug.WriteLine(nameof(StatusList));
-            foreach(var s in StatusList)
+            foreach (var s in StatusList)
                 Debug.WriteLine(s);
             var ExpectStatusList = new[] {
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Wait, IsRemovable = false, ReceiversCount = 1 },

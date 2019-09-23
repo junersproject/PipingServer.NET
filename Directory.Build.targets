@@ -3,13 +3,15 @@
     <PackageReference Update="Microsoft.AspNetCore.Mvc.Analyzers" Version="3.0.0-preview3-19153-02" />
     <PackageReference Update="Microsoft.AspNetCore.Mvc.Testing" Version="3.0.0-preview9.19424.4" />
     <PackageReference Update="Microsoft.AspNetCore.Mvc.Analyzers"  Version="3.0.0-preview3-19153-02" />
-    <PackageReference Update="Microsoft.Extensions.Logging" Version="3.0.0-preview9.19423.4" />
-    <PackageReference Update="Microsoft.Extensions.Primitives" Version="3.0.0-preview9.19423.4" />
-    <PackageReference Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0-preview9.19423.4" />
     <PackageReference Update="Microsoft.AspNetCore.TestHost" Version="3.0.0-rc1.19457.4" />
+    <PackageReference Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0-preview9.19423.4" />
+    <PackageReference Update="Microsoft.Extensions.Logging" Version="3.0.0-preview9.19423.4" />
+    <PackageReference Update="Microsoft.Extensions.Primitives" Version="3.0.0-rc1.19456.10" />
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.3.0"/>
+    <PackageReference Update="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
+    <PackageReference Update="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0-rc1-19462-10" />
     <PackageReference Update="MSTest.TestAdapter" Version="2.0.0" />
     <PackageReference Update="MSTest.TestFramework" Version="2.0.0" />
-    <PackageReference Update="System.IO.Pipelines" Version="4.6.0-preview9.19421.4" />
+    <PackageReference Update="System.IO.Pipelines" Version="4.6.0-rc1.19456.4" />
   </ItemGroup>
 </Project>

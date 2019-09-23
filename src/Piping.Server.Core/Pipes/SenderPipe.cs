@@ -67,6 +67,7 @@ namespace Piping.Server.Core.Pipes
             {
                 using var s = Disposable.Create(() => CompletableStream.Stream.Complete());
                 var (Headers, Stream) = await DataTask;
+                LoggingHeader(Headers);
                 var PipingTask = Current.PipingAsync(Token);
                 await SendMessageAsync(CompletableStream.Stream, string.Format(StartSendingWithReceiversCountReceivers, Current.ReceiversCount));
                 var byteCounter = await PipingTask;
@@ -77,7 +78,14 @@ namespace Piping.Server.Core.Pipes
                 Logger.LogError(e, nameof(SetSenderAsync));
             }
         }
-
+        void LoggingHeader(IHeaderDictionary Headers)
+        {
+            if (Logger?.IsEnabled(LogLevel.Information) ?? false)
+            {
+                foreach (var header in Headers)
+                    Logger.LogInformation($"SENDER HEADER: {header.Key}: {header.Value}");
+            }
+        }
 
         async Task SendMessageAsync(Stream Stream, string Message, CancellationToken Token = default)
         {

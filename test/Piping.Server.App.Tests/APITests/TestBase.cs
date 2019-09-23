@@ -23,12 +23,15 @@ namespace Piping.Server.App.APITests
             Trace.WriteLine($"VERSION: {Version}");
             await PutAndGetTextMessageSimple(CreateClient, SendUri, message, Token: Token);
         }
+        protected Version MultipartSupportVersion = new Version(0, 8, 3);
         protected async Task PostAndOneGetTextMultipart(Func<HttpClient> CreateClient, string SendUri = nameof(PostAndOneGetTextMultipart), CancellationToken Token = default)
         {
             var message1 = "Hello World.";
             Trace.WriteLine($"TARGET URL: {SendUri}");
             var (_, _, _, Version) = await GetVersionAsync(CreateClient);
             Trace.WriteLine($"VERSION: {Version}");
+            if (new Version(Version) < MultipartSupportVersion)
+                throw new AssertInconclusiveException($"Multipart Support Version is {MultipartSupportVersion} or later.");
             await PostAndGetMultipartTestMessageSimple(CreateClient, SendUri, message1, Token: Token);
         }
         protected async Task PostAndOneGetFileMultipart(Func<HttpClient> CreateClient, string SendUri = nameof(PostAndOneGetFileMultipart), CancellationToken Token = default)
@@ -37,6 +40,8 @@ namespace Piping.Server.App.APITests
             Trace.WriteLine($"TARGET URL: {SendUri}");
             var (_, _, _, Version) = await GetVersionAsync(CreateClient);
             Trace.WriteLine($"VERSION: {Version}");
+            if (new Version(Version) < MultipartSupportVersion)
+                throw new AssertInconclusiveException($"Multipart Support Version is {MultipartSupportVersion} or later.");
             var FileName = "test.txt";
             var MediaType = "text/plain";
             var FileData = Encoding.UTF8.GetBytes(message);
@@ -101,12 +106,28 @@ namespace Piping.Server.App.APITests
             Trace.WriteLine(BodyText);
             Assert.AreEqual(HttpStatusCode.BadRequest, Status);
         }
+        /// <summary>
+        /// リモート名の解決に失敗
+        /// </summary>
+        /// <param name="e"></param>
         public void ThrowIfCoundNotResolveRemoteName(HttpRequestException e)
         {
             if (e.HResult == -2146233088)
             {
                 Trace.WriteLine(e);
-                throw new AssertInconclusiveException("リモート名の解決に失敗", e);
+                throw new AssertInconclusiveException(e.Message, e);
+            }
+        }
+        /// <summary>
+        /// ホストが見つかりません
+        /// </summary>
+        /// <param name="e"></param>
+        public void ThrowIfHostIsUnknown(HttpRequestException e)
+        {
+            if (e.HResult == -2147467259)
+            {
+                Trace.WriteLine(e);
+                throw new AssertInconclusiveException(e.Message, e);
             }
         }
         readonly Encoding Encoding = Encoding.UTF8;
@@ -397,6 +418,7 @@ namespace Piping.Server.App.APITests
                     using var stream = await response.Content.ReadAsStreamAsync();
                     foreach (var (Key, Value) in response.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                         Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
+                    Assert.IsNotNull(response.Content.Headers.ContentType);
                     ContentType = response.Content.Headers.ContentType.MediaType;
                     FileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName ?? null;
                     using var streamDispose = Token.Register(() => stream.Dispose());

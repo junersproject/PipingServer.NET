@@ -16,12 +16,12 @@ namespace Piping.Server.Mvc.Commands
             this.Logger = Logger;
             this.Encoding = Encoding ?? new UTF8Encoding(false);
         }
-        internal Version GetVersion() => GetType()?.Assembly?.GetName()?.Version ?? throw new InvalidOperationException();
+        internal Version GetVersion() => typeof(Core.RequestKey)?.Assembly?.GetName()?.Version ?? throw new InvalidOperationException();
         /// <summary>
         /// ルートへのアクセス
         /// </summary>
         /// <returns></returns>
-        [HttpGet("/")]
+        [HttpGet(DefaultPath.Root)]
         public IActionResult Index() => Content(Properties.Resources.Index, $"text/html; charset={Encoding.WebName}", Encoding);
         /// <summary>
         /// ヘルプ
@@ -95,6 +95,8 @@ curl {url}/mypath | openssl aes-256-cbc -d";
         [HttpPut(DefaultPath.Robots)]
         [HttpPost(DefaultPath.Help)]
         [HttpPut(DefaultPath.Help)]
+        [HttpPost(DefaultPath.Root)]
+        [HttpPut(DefaultPath.Root)]
         public IActionResult ErrorAccess()
         {
             var RelativeUri = HttpContext.Request.Path;

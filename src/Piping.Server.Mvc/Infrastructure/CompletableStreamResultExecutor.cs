@@ -39,7 +39,10 @@ namespace Piping.Server.Mvc.Infrastructure
             if (Result.Headers is IHeaderDictionary Headers)
                 foreach (var kv in Headers.ToList())
                     if (AllowHeaders.Contains(kv.Key.ToLower()))
+                    {
                         Response.Headers[kv.Key] = kv.Value;
+                        logger.LogInformation($"{Result.PipeType} SET HEADER: {kv.Key}: {kv.Value}");
+                    }
         }
         protected void SetTimeout(HttpResponse Response)
         {

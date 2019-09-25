@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.Threading;
 using Piping.Server.Core.Internal;
+using Piping.Server.Core.Options;
 using Piping.Server.Core.Streams;
 using static Piping.Server.Core.Properties.Resources;
 

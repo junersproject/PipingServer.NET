@@ -35,7 +35,10 @@ namespace Piping.Server.Mvc.Infrastructure
         protected void SetHeader(PipelineStreamResult Result, HttpResponse Response)
         {
             if (Result.StatusCode is int _StatusCode)
+            {
                 Response.StatusCode = _StatusCode;
+                logger.LogInformation($"SET STATUS CODE: {_StatusCode}");
+            }
             if (Result.Headers is IHeaderDictionary Headers)
                 foreach (var kv in Headers.ToList())
                     if (AllowHeaders.Contains(kv.Key.ToLower()))
@@ -43,12 +46,6 @@ namespace Piping.Server.Mvc.Infrastructure
                         Response.Headers[kv.Key] = kv.Value;
                         logger.LogInformation($"{Result.PipeType} SET HEADER: {kv.Key}: {kv.Value}");
                     }
-        }
-        protected void SetTimeout(HttpResponse Response)
-        {
-            Response.StatusCode = 408;
-            Response.ContentLength = 0;
-            Response.Headers["Connection"] = "Close";
         }
         public async Task ExecuteAsync(ActionContext context, PipelineStreamResult result)
         {

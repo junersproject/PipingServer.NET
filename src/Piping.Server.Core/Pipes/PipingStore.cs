@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.Threading;
+using Piping.Server.Core.Options;
 using static Piping.Server.Core.Properties.Resources;
 
 namespace Piping.Server.Core.Pipes
@@ -20,7 +21,20 @@ namespace Piping.Server.Core.Pipes
         readonly Dictionary<RequestKey, Pipe> _waiters = new Dictionary<RequestKey, Pipe>();
         public PipingStore(ILoggerFactory LoggerFactory, IOptions<PipingOptions> Options)
             => (Logger, this.Options, this.LoggerFactory) = (LoggerFactory.CreateLogger<PipingStore>(), Options.Value, LoggerFactory);
-        async ValueTask<IReadOnlyPipe> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) => await GetAsync(Key, Token);
+        public async ValueTask<bool> HasAsync(RequestKey Key, CancellationToken Token = default)
+        {
+            Token.ThrowIfCancellationRequested();
+            await Task.CompletedTask;
+            lock (_waiters)
+            {
+                return _waiters.TryGetValue(Key, out _);
+            }
+        }
+        async ValueTask<IReadOnlyPipe?> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) {
+            Token.ThrowIfCancellationRequested();
+            await Task.CompletedTask;
+            return _waiters.TryGetValue(Key, out var Waiter) ? Waiter : null;
+        }
         internal async ValueTask<Pipe> GetAsync(RequestKey Key, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();

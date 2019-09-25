@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Piping.Server.Core.Options;
 using Piping.Server.Core.Tests;
 using static DebugUtils;
 

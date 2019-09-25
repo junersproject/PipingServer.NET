@@ -7,10 +7,12 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Piping.Server.Core;
+using Piping.Server.Core.Options;
 using Piping.Server.Core.Pipes;
 using Piping.Server.Mvc.Attributes;
 using Piping.Server.Mvc.Binder;
 using Piping.Server.Mvc.Models;
+using static Piping.Server.Mvc.Pipe.Properties.Resources;
 
 namespace Piping.Server.Mvc.Pipe
 {
@@ -32,85 +34,105 @@ namespace Piping.Server.Mvc.Pipe
         [HttpPost("/{**Path}")]
         public async Task<IActionResult> Upload([ModelBinder(typeof(RequestKeyBinder))] RequestKey Key, SendData Sender)
         {
-            if (!ModelState.IsValid)
-            {
-                if (!(ModelState.Values.FirstOrDefault()?.Errors?.FirstOrDefault() is ModelError me))
-                    return BadRequest();
-                if (me?.Exception is Exception e)
-                {
-                    Logger.LogError(e, "validate fail.");
-                    return BadRequest("[ERROR] " + e.Message);
-                }
-                if (me?.ErrorMessage is string message)
-                {
-                    Logger.LogError(message, "validate fail.");
-                    return BadRequest("[ERROR] " + message);
-                }
-            }
+            if (GetValidateResult() is IActionResult ErrorResult)
+                return ErrorResult;
+            var Token = HttpContext.RequestAborted;
             try
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
-                var Token = HttpContext.RequestAborted;
                 var Result = new PipelineStreamResult();
                 var Send = await Store.GetSenderAsync(Key, Token);
                 await Send.ConnectionAsync(Sender.GetResultAsync(), Result, Token);
                 return Result;
             }
+            catch (OperationCanceledException e)
+            {
+                if (Token.IsCancellationRequested)
+                {
+                    Logger.LogInformation(e.Message);
+                    return BadRequest(string.Format(CancelMessage, e.Message));
+                }
+                Logger.LogInformation(ConnectionTimeout);
+                return BadRequest(string.Format(TimeoutMessage,ConnectionTimeout));
+            }
             catch (InvalidOperationException e)
             {
-                Logger.LogError(e, "upload fail.");
-                return BadRequest("[ERROR] " + e.Message);
+                Logger.LogError(e, UploadFail);
+                return BadRequest(string.Format(ErrorMessage, e.Message));
             }
         }
 
         [HttpGet("/{**Path}")]
         public async Task<IActionResult> Download([ModelBinder(typeof(RequestKeyBinder))] RequestKey Key)
         {
-            if (!ModelState.IsValid)
-            {
-                if (!(ModelState.Values.FirstOrDefault()?.Errors?.FirstOrDefault() is ModelError me))
-                    return BadRequest();
-                if (me?.Exception is Exception e)
-                {
-                    Logger.LogError(e, "validate fail.");
-                    return BadRequest("[ERROR] " + e.Message);
-                }
-                if (me?.ErrorMessage is string message)
-                {
-                    Logger.LogError(message, "validate fail.");
-                    return BadRequest("[ERROR] " + message);
-                }
-            }
+            if (GetValidateResult() is IActionResult ErrorResult)
+                return ErrorResult;
+            var Token = HttpContext.RequestAborted;
             try
             {
                 var Path = HttpContext.Request.Path + HttpContext.Request.QueryString;
-                var Token = HttpContext.RequestAborted;
                 var Result = new PipelineStreamResult();
                 var Receive = await Store.GetReceiveAsync(Key, Token);
                 await Receive.ConnectionAsync(Result, Token);
                 return Result;
             }
+            catch (OperationCanceledException e)
+            {
+                if (Token.IsCancellationRequested)
+                    return BadRequest(string.Format(CancelMessage, e.Message));
+                return BadRequest(string.Format(TimeoutMessage, ConnectionTimeout));
+            }
             catch (InvalidOperationException e)
             {
-                Logger.LogError(e, "download fail.");
-                return BadRequest("[ERROR] " + e.Message);
+                Logger.LogError(e, DownloadFail);
+                return BadRequest(string.Format(ErrorMessage, e.Message));
             }
         }
-
+        IActionResult? GetValidateResult()
+        {
+            if (!ModelState.IsValid)
+            {
+                if (!(ModelState.Values.FirstOrDefault(v => v.ValidationState == ModelValidationState.Invalid)?.Errors?.FirstOrDefault() is ModelError me))
+                    return BadRequest();
+                if (me?.Exception is Exception e)
+                {
+                    Logger.LogError(e, ValidateFail);
+                    return BadRequest(string.Format(ErrorMessage, e.Message));
+                }
+                if (me?.ErrorMessage is string message)
+                {
+                    Logger.LogError(message, ValidateFail);
+                    return BadRequest(string.Format(ErrorMessage, message));
+                }
+            }
+            return null;
+        }
         [HttpOptions()]
         public IActionResult Options()
         {
             var Response = HttpContext.Response;
             Response.StatusCode = 200;
-            Response.Headers.Add("Access-Control-Allow-Origin", "*");
-            Response.Headers.Add("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, OPTIONS");
-            Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Content-Disposition");
-            Response.Headers.Add("Access-Control-Max-Age", "86400");
+            foreach (var kv in Option.Option.Headers)
+                Response.Headers.Add(kv.Key, kv.Value);
             return new EmptyResult();
         }
+
+        [HttpGet("/{**Path}")]
+        public async ValueTask<IActionResult> Options([ModelBinder(typeof(RequestKeyBinder))]RequestKey Key)
+        {
+            var Token = HttpContext.RequestAborted;
+            var pipe = await Store.GetAsync(Key, Token);
+            var Headers = HttpContext.Response.Headers;
+            Headers.Add("Access-Control-Allow-Origin", "*");
+            Headers.Add("Access-Control-Allow-Methods", "");
+            // TODO ;
+            throw new NotImplementedException();
+        }
+
+        const string BadRequestMimeTypeFormat = "text/plain; charset={0}";
         protected ContentResult BadRequest(string Message)
         {
-            var Content = this.Content(Message, $"text/plain; charset={Option.Encoding.WebName}", Option.Encoding);
+            var Content = this.Content(Message, string.Format(BadRequestMimeTypeFormat, Option.Encoding.WebName), Option.Encoding);
             Content.StatusCode = 400;
             return Content;
         }

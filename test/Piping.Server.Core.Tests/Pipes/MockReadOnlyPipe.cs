@@ -17,6 +17,7 @@ namespace Piping.Server.Core.Pipes.Tests
         {
             Key = ReadOnlyPipe.Key;
             Status = ReadOnlyPipe.Status;
+            Required = ReadOnlyPipe.Required;
             IsRemovable = ReadOnlyPipe.IsRemovable;
             ReceiversCount = ReadOnlyPipe.ReceiversCount;
             var Task = ReadOnlyPipe.GetHeadersAsync();
@@ -24,8 +25,10 @@ namespace Piping.Server.Core.Pipes.Tests
                 Headers = new HeaderDictionary(Task.Result.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase));
         }
         public RequestKey Key { get; set; }
-
         public PipeStatus Status { get; set; }
+
+        public PipeType Required { get; set; }
+
 
         public bool IsRemovable { get; set; }
 
@@ -52,6 +55,7 @@ namespace Piping.Server.Core.Pipes.Tests
             + string.Join(", ", new[] {
                 $"{nameof(Key)}:{Key}",
                 $"{nameof(Status)}:{Status}",
+                $"{nameof(Required)}:{Required}",
                 $"{nameof(IsRemovable)}:{IsRemovable}",
                 $"{nameof(ReceiversCount)}:{ReceiversCount}",
                 Headers.Any() ? $"[{string.Join(", ", Headers.Select(v => $"{v.Key}: {v.Value}"))}]" : null,
@@ -68,6 +72,7 @@ namespace Piping.Server.Core.Pipes.Tests
                 : other is IReadOnlyPipe _other &&
                 Key.Equals(_other.Key) &&
                 Status == _other.Status &&
+                Required == _other.Required &&
                 IsRemovable == _other.IsRemovable &&
                 ReceiversCount == _other.ReceiversCount;
         }
@@ -75,17 +80,19 @@ namespace Piping.Server.Core.Pipes.Tests
         public bool Equals([AllowNull] MockReadOnlyPipe? other)
         {
             return other is MockReadOnlyPipe _other &&
-                   Key.Equals(_other.Key) &&
-                   Status == _other.Status &&
-                   IsRemovable == _other.IsRemovable &&
-                   ReceiversCount == _other.ReceiversCount &&
-                   Equals(Headers, _other.Headers);
+                Key.Equals(_other.Key) &&
+                Status == _other.Status &&
+                Required == _other.Required &&
+                IsRemovable == _other.IsRemovable &&
+                ReceiversCount == _other.ReceiversCount &&
+                Equals(Headers, _other.Headers);
         }
         private bool Equals(IHeaderDictionary a, IHeaderDictionary b)
-            => a.OrderBy(v => v.Key.ToLower())
-                .Zip(b.OrderBy(v => v.Key.ToLower()))
-                .All(v => string.Equals(v.First.Key, v.Second.Key, StringComparison.OrdinalIgnoreCase)
-                    && v.First.Value == v.Second.Value);
+            => a.ContentLength == b.ContentLength && 
+                a.OrderBy(v => v.Key.ToLower())
+                    .Zip(b.OrderBy(v => v.Key.ToLower()))
+                    .All(v => string.Equals(v.First.Key, v.Second.Key, StringComparison.OrdinalIgnoreCase)
+                        && v.First.Value == v.Second.Value);
         public override int GetHashCode()
             => HashCode.Combine(Key, Status, IsRemovable, ReceiversCount, Headers);
         public static bool operator ==(MockReadOnlyPipe left, MockReadOnlyPipe right)

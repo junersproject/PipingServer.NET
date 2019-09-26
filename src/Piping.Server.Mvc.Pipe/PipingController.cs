@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -107,6 +108,13 @@ namespace Piping.Server.Mvc.Pipe
             }
             return null;
         }
+        static readonly Dictionary<string, string> DefaultOptions = new Dictionary<string, string>
+        {
+            { "Access-Control-Allow-Origin", "*" },
+            { "Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, OPTIONS" },
+            { "Access-Control-Allow-Headers", "Content-Type, Content-Disposition" },
+            { "Access-Control-Max-Age", "86400" },
+        };
         [HttpOptions()]
         public IActionResult Options()
         {
@@ -116,16 +124,24 @@ namespace Piping.Server.Mvc.Pipe
                 Response.Headers.Add(kv.Key, kv.Value);
             return new EmptyResult();
         }
-
+        static readonly IReadOnlyCollection<string> AccessControlAllowMethods = Enumerable.Empty<string>()
+            .Append(HttpMethods.Get)
+            .Append(HttpMethods.Post)
+            .Append(HttpMethods.Put)
+            .Append(HttpMethods.Head)
+            .Append(HttpMethods.Options)
+            .ToList().AsReadOnly();
         [HttpGet("/{**Path}")]
         public async ValueTask<IActionResult> Options([ModelBinder(typeof(RequestKeyBinder))]RequestKey Key)
         {
             var Token = HttpContext.RequestAborted;
             var pipe = await Store.GetAsync(Key, Token);
+            var AccessControlAllowMethods = new HashSet<string>(PipingController.AccessControlAllowMethods);
+            //TODO 条件
             var Headers = HttpContext.Response.Headers;
             Headers.Add("Access-Control-Allow-Origin", "*");
             Headers.Add("Access-Control-Allow-Methods", "");
-            // TODO ;
+            
             throw new NotImplementedException();
         }
 

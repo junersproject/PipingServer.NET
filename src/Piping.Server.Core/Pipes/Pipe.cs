@@ -68,6 +68,15 @@ namespace Piping.Server.Core.Pipes
                 t => Status = PipeStatus.Ready
                 , TaskContinuationOptions.OnlyOnRanToCompletion);
         }
+        #region Required
+        public PipeType Required => (Status, IsSetSenderComplete, IsSetReceiversComplete) switch
+        {
+            (PipeStatus.Wait, true, false) => PipeType.Receiver,
+            (PipeStatus.Wait, false, true) => PipeType.Sender,
+            _ => PipeType.None,
+        };
+
+        #endregion
         #region Status
         PipeStatus status;
         public PipeStatus Status
@@ -264,6 +273,7 @@ namespace Piping.Server.Core.Pipes
             return nameof(Pipe) + "{" + string.Join(", ", new[] {
                 nameof(Key) + ":" + Key,
                 nameof(Status) + ":" + Status,
+                nameof(Required) + ":" + Required,
                 nameof(IsRemovable) + ":" + IsRemovable,
                 nameof(ReceiversCount) + ":" + ReceiversCount,
             }.OfType<string>()) + "}";

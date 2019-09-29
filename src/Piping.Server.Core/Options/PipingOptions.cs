@@ -13,19 +13,8 @@ namespace Piping.Server.Core.Options
         public Encoding Encoding { get; set; } = Encoding.UTF8;
         public int BufferSize { get; set; } = 1024 * 4;
         public string? SenderResponseMessageContentType { get; set; } = null;
-        public PipingOption Option = new PipingOption
-        {
-            Headers = {
-                { "Access-Control-Allow-Origin", "*" },
-                { "Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, OPTIONS" },
-                { "Access-Control-Allow-Headers", "Content-Type, Content-Disposition" },
-                { "Access-Control-Max-Age", "86400" },
-            }
-        };
-    }
-    public class PipingOption
-    {
-        public IDictionary<string, string> Headers = new Dictionary<string, string>();
+        public bool EnableContentOfHeadMethod { get; set; } = true;
+        public bool EnableContentOfOptionsMethod { get; set; } = true;
     }
 
 }

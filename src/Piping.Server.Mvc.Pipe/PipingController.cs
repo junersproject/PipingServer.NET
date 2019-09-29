@@ -115,13 +115,15 @@ namespace Piping.Server.Mvc.Pipe
             { "Access-Control-Allow-Headers", "Content-Type, Content-Disposition" },
             { "Access-Control-Max-Age", "86400" },
         };
-        [HttpOptions()]
+        [HttpOptions("/")]
         public IActionResult Options()
         {
             var Response = HttpContext.Response;
             Response.StatusCode = 200;
-            foreach (var kv in Option.Option.Headers)
+            foreach (var kv in DefaultOptions)
                 Response.Headers.Add(kv.Key, kv.Value);
+            if (Option.EnableContentOfHeadMethod)
+                Response.Headers["Access-Control-Max-Age"] = "-1";
             return new EmptyResult();
         }
         static readonly IReadOnlyCollection<string> AccessControlAllowMethods = Enumerable.Empty<string>()
@@ -131,13 +133,15 @@ namespace Piping.Server.Mvc.Pipe
             .Append(HttpMethods.Head)
             .Append(HttpMethods.Options)
             .ToList().AsReadOnly();
-        [HttpGet("/{**Path}")]
+        [HttpOptions("/{**Path}")]
         public async ValueTask<IActionResult> Options([ModelBinder(typeof(RequestKeyBinder))]RequestKey Key)
         {
             var Token = HttpContext.RequestAborted;
+            if (Option.EnableContentOfHeadMethod)
+                return Options();
             var pipe = await Store.GetAsync(Key, Token);
             var AccessControlAllowMethods = new HashSet<string>(PipingController.AccessControlAllowMethods);
-            //TODO 条件
+            // TODO 条件
             var Headers = HttpContext.Response.Headers;
             Headers.Add("Access-Control-Allow-Origin", "*");
             Headers.Add("Access-Control-Allow-Methods", "");

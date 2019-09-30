@@ -1,11 +1,12 @@
 <Project>
   <PropertyGroup>
+    <TargetFramework>netcoreapp3.0;netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
     <Copyright>MIT</Copyright>
     <PackageProjectUrl>https://github.com/junersproject/PipingServer.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/junersproject/PipingServer.NET.git</RepositoryUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\LICENSE.txt">

@@ -36,8 +36,8 @@ namespace Piping.Server.Core.Pipes.Tests
 
         event PipeStatusChangeEventHandler? IReadOnlyPipe.OnStatusChanged
         {
-            add => throw new NotImplementedException();
-            remove => throw new NotImplementedException();
+            add => throw new NotSupportedException();
+            remove => throw new NotSupportedException();
         }
         public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
         public async ValueTask<IHeaderDictionary> GetHeadersAsync(CancellationToken Token = default)
@@ -48,7 +48,7 @@ namespace Piping.Server.Core.Pipes.Tests
 
         public IAsyncEnumerable<PipeStatus> OrLaterEventAsync(CancellationToken Token = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
         public override string ToString()
             => nameof(MockReadOnlyPipe) + "{"

@@ -19,8 +19,10 @@ namespace Piping.Server.Core
         /// 送信先数
         /// </summary>
         public readonly int Receivers;
-        public RequestKey(PathString Path, IQueryCollection Query)
+        public RequestKey(PathString Path, IQueryCollection? Query)
         {
+            if (!(Query is IQueryCollection))
+                Query = QueryCollection.Empty;
             this.Path = ((string)Path).ToLower();
             this.Query = Query;
             Receivers = Query.TryGetValue("n", out var _n) && int.TryParse(_n, out var __n) ? __n : 1;

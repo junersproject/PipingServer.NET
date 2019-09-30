@@ -139,13 +139,11 @@ namespace Piping.Server.Mvc.Pipe
             var Token = HttpContext.RequestAborted;
             if (Option.EnableContentOfHeadMethod)
                 return Options();
-            var pipe = await Store.GetAsync(Key, Token);
-            var AccessControlAllowMethods = new HashSet<string>(PipingController.AccessControlAllowMethods);
-            // TODO 条件
+            var AccessControlAllowMethods = await Store.GetOptionMethodsAsync(Key, Token);
             var Headers = HttpContext.Response.Headers;
             Headers.Add("Access-Control-Allow-Origin", "*");
-            Headers.Add("Access-Control-Allow-Methods", "");
-            
+            Headers.Add("Access-Control-Allow-Methods", string.Join(", ", AccessControlAllowMethods));
+            Headers.Add("Access-Control-Max-Age", "-1");
             throw new NotImplementedException();
         }
 

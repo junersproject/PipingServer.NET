@@ -126,13 +126,6 @@ namespace Piping.Server.Mvc.Pipe
                 Response.Headers["Access-Control-Max-Age"] = "-1";
             return new EmptyResult();
         }
-        static readonly IReadOnlyCollection<string> AccessControlAllowMethods = Enumerable.Empty<string>()
-            .Append(HttpMethods.Get)
-            .Append(HttpMethods.Post)
-            .Append(HttpMethods.Put)
-            .Append(HttpMethods.Head)
-            .Append(HttpMethods.Options)
-            .ToList().AsReadOnly();
         [HttpOptions("/{**Path}")]
         public async ValueTask<IActionResult> Options([ModelBinder(typeof(RequestKeyBinder))]RequestKey Key)
         {

@@ -12,18 +12,26 @@ namespace Piping.Server.Core.Pipes
         {
             if (Pipe is IReadOnlyPipe)
             {
-                var Required = Pipe.Required;
-                if ((Required & PipeType.Sender) > 0)
+                if (Pipe.Status == PipeStatus.Dispose)
                 {
-                    yield return HttpMethods.Post;
-                    yield return HttpMethods.Put;
-                } else if ((Required & PipeType.Receiver) > 0)
-                {
-                    yield return HttpMethods.Get;
+                    // noop
                 }
-                if ((Required & PipeType.Sender) == 0)
+                else
                 {
-                    yield return HttpMethods.Head;
+                    var Required = Pipe.Required;
+                    if ((Required & PipeType.Sender) > 0)
+                    {
+                        yield return HttpMethods.Post;
+                        yield return HttpMethods.Put;
+                    }
+                    else if ((Required & PipeType.Receiver) > 0)
+                    {
+                        yield return HttpMethods.Get;
+                    }
+                    if ((Required & PipeType.Sender) == 0)
+                    {
+                        yield return HttpMethods.Head;
+                    }
                 }
             } else {
                 yield return HttpMethods.Get;

@@ -110,6 +110,7 @@ namespace Piping.Server.Core.Pipes.Tests
                     new []
                     {
                         HttpMethods.Options,
+                        HttpMethods.Head,
                     }
                 };
                 yield return new object[]

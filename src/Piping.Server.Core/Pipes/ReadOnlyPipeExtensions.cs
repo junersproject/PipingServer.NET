@@ -10,7 +10,7 @@ namespace Piping.Server.Core.Pipes
     {
         public static IEnumerable<string> ToOptionMethods(this IReadOnlyPipe? Pipe)
         {
-            if (Pipe is IReadOnlyPipe)
+            if (Pipe is IReadOnlyPipe && Pipe.Status != PipeStatus.None)
             {
                 if (Pipe.Status == PipeStatus.Dispose)
                 {

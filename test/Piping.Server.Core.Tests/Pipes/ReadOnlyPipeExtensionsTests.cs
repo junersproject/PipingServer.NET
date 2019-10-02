@@ -50,6 +50,7 @@ namespace Piping.Server.Core.Pipes.Tests
                     {
                         HttpMethods.Options,
                         HttpMethods.Get,
+                        HttpMethods.Head,
                     }
                 };
                 yield return new object[]
@@ -98,6 +99,7 @@ namespace Piping.Server.Core.Pipes.Tests
                     },
                     new []
                     {
+                        HttpMethods.Head,
                         HttpMethods.Options,
                     }
                 };

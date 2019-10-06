@@ -46,7 +46,8 @@ namespace Piping.Server.Core.Pipes.Tests
         public async Task ConnectionAsyncTestOneToOne()
         {
             using var provider = CreateProvider();
-            var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(5));
+            using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(5));
+            var Token = TokenSource.Token;
             var Store = provider.GetRequiredService<PipingStore>();
             var StatusList = new List<MockReadOnlyPipe>();
             Store.OnStatusChanged += (s, arg) =>
@@ -74,14 +75,15 @@ namespace Piping.Server.Core.Pipes.Tests
                 var DataTask = Task.FromResult(SendData);
                 var senderTask = Task.Run(async () =>
                 {
-                    var sender = await Store.GetSenderAsync(RequestKey, TokenSource.Token);
-                    await sender.ConnectionAsync(DataTask, SenderResult, TokenSource.Token);
-                });
+                    var sender = await Store.GetSenderAsync(RequestKey, Token);
+                    await sender.ConnectionAsync(DataTask, SenderResult, Token);
+                },Token);
+                await Task.Delay(TimeSpan.FromMilliseconds(10), Token);
                 var receiverTask = Task.Run(async () =>
                 {
-                    var receiver = await Store.GetReceiveAsync(RequestKey, TokenSource.Token);
-                    await receiver.ConnectionAsync(ReceiverResult, TokenSource.Token);
-                });
+                    var receiver = await Store.GetReceiveAsync(RequestKey, Token);
+                    await receiver.ConnectionAsync(ReceiverResult, Token);
+                }, Token);
                 await Task.WhenAll(senderTask, receiverTask);
                 Assert.AreEqual(PipeType.Sender, SenderResult.PipeType, "sender pipe type");
                 Assert.AreEqual("text/plain; charset=utf-8"
@@ -111,7 +113,7 @@ namespace Piping.Server.Core.Pipes.Tests
                 Debug.WriteLine(s);
             var ExpectStatusList = new[] {
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Wait, IsRemovable = false, ReceiversCount = 1 },
-                new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Ready, IsRemovable = false, ReceiversCount = 1, Headers = SendData.Headers },
+                new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Ready, IsRemovable = false, ReceiversCount = 1 },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.ResponseStart, IsRemovable =false, ReceiversCount = 1, Headers = SendData.Headers },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.ResponseEnd, IsRemovable = false, ReceiversCount = 1, Headers = SendData.Headers },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Dispose, IsRemovable = true, ReceiversCount = 0, Headers = SendData.Headers },

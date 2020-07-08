@@ -16,7 +16,6 @@ namespace Piping.Server.App.APITests
             get
             {
                 yield return new object[] { new Uri("https://ppng.ml") };
-                yield return new object[] { new Uri("https://piping.arukascloud.io") };
                 yield return new object[] { new Uri("https://piping-92sr2pvuwg14.runkit.sh") };
             }
         }
@@ -43,6 +42,10 @@ namespace Piping.Server.App.APITests
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await PutAndOneGet(GetCreateClient(provider), Token: Source.Token);
             }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
+            }
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
@@ -59,6 +62,10 @@ namespace Piping.Server.App.APITests
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.PostAndOneGetTextMultipart(GetCreateClient(provider), Token: Source.Token);
+            }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
             {
@@ -77,6 +84,10 @@ namespace Piping.Server.App.APITests
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.PostAndOneGetFileMultipart(GetCreateClient(provider), Token: Source.Token);
             }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
+            }
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
@@ -93,6 +104,10 @@ namespace Piping.Server.App.APITests
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.GetVersion(GetCreateClient(provider), Token: Source.Token);
+            }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
             {
@@ -113,6 +128,10 @@ namespace Piping.Server.App.APITests
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.GetRoot(GetCreateClient(provider), Token: Source.Token);
             }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
+            }
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
@@ -130,6 +149,10 @@ namespace Piping.Server.App.APITests
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.GetRoot2(GetCreateClient(provider), Token: Source.Token);
+            }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
             {
@@ -150,6 +173,10 @@ namespace Piping.Server.App.APITests
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.GetHelp(GetCreateClient(provider), Token: Source.Token);
             }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
+            }
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
@@ -167,6 +194,10 @@ namespace Piping.Server.App.APITests
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.OptionsRoot(GetCreateClient(provider), Token: Source.Token);
             }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
+            }
             catch (HttpRequestException e)
             {
                 ThrowIfCoundNotResolveRemoteName(e);
@@ -183,6 +214,10 @@ namespace Piping.Server.App.APITests
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await base.PostRoot(GetCreateClient(provider), Token: Source.Token);
+            }
+            catch (AssertFailedException e)
+            {
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
             {

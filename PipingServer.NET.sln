@@ -11,9 +11,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		src\Directory.Build.props = src\Directory.Build.props
 		app\Directory.Build.props = app\Directory.Build.props
+		test\Directory.Build.props = test\Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
 		src\Directory.Build.targets = src\Directory.Build.targets
 		app\Directory.Build.targets = app\Directory.Build.targets
+		test\Directory.Build.targets = test\Directory.Build.targets
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 	EndProjectSection

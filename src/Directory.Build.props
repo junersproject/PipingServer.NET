@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;netstandard2.1</TargetFrameworks>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>true</IsPackable>
     <Copyright>MIT</Copyright>
     <PackageProjectUrl>https://github.com/junersproject/PipingServer.NET</PackageProjectUrl>

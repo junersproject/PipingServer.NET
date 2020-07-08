@@ -18,8 +18,4 @@
     <ProjectReference Include="..\..\src\Piping.Server.Mvc.Pipe\Piping.Server.Mvc.Pipe.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>

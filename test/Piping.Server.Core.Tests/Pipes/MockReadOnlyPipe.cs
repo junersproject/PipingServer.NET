@@ -26,9 +26,9 @@ namespace Piping.Server.Core.Pipes.Tests
         }
         public RequestKey Key { get; set; }
         public PipeStatus Status { get; set; }
-
         public PipeType Required { get; set; }
-
+        public bool IsSetSenderComplete { get; set; }
+        public bool IsSetReceiversComplete { get; set; }
 
         public bool IsRemovable { get; set; }
 
@@ -40,14 +40,26 @@ namespace Piping.Server.Core.Pipes.Tests
             remove => throw new NotSupportedException();
         }
         public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
+        bool IReadOnlyPipe.IsSetSenderComplete => IsSetSenderComplete;
+
+        bool IReadOnlyPipe.IsSetReceiversComplete => IsSetReceiversComplete;
+
+        PipeStatus IPipe.Status => Status;
+
+        bool IPipe.IsRemovable => IsRemovable;
+
+        int IPipe.ReceiversCount => ReceiversCount;
+
         public async ValueTask<IHeaderDictionary> GetHeadersAsync(CancellationToken Token = default)
         {
+            Token.ThrowIfCancellationRequested();
             await Task.CompletedTask;
             return Headers;
         }
 
         public IAsyncEnumerable<PipeStatus> OrLaterEventAsync(CancellationToken Token = default)
         {
+            Token.ThrowIfCancellationRequested();
             throw new NotSupportedException();
         }
         public override string ToString()
@@ -95,6 +107,17 @@ namespace Piping.Server.Core.Pipes.Tests
                         && v.First.Value == v.Second.Value);
         public override int GetHashCode()
             => HashCode.Combine(Key, Status, IsRemovable, ReceiversCount, Headers);
+
+        ValueTask<IHeaderDictionary> IReadOnlyPipe.GetHeadersAsync(CancellationToken Token)
+        {
+            throw new NotImplementedException();
+        }
+
+        IAsyncEnumerable<PipeStatus> IReadOnlyPipe.OrLaterEventAsync(CancellationToken Token)
+        {
+            throw new NotImplementedException();
+        }
+
         public static bool operator ==(MockReadOnlyPipe left, MockReadOnlyPipe right)
         {
             return EqualityComparer<MockReadOnlyPipe>.Default.Equals(left, right);

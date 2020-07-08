@@ -6,5 +6,6 @@
         PipeStatus Status { get; }
         bool IsRemovable { get; }
         int ReceiversCount { get; }
+        PipeType Required { get; }
     }
 }

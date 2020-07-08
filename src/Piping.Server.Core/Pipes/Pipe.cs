@@ -68,15 +68,6 @@ namespace Piping.Server.Core.Pipes
                 t => Status = PipeStatus.Ready
                 , TaskContinuationOptions.OnlyOnRanToCompletion);
         }
-        #region Required
-        public PipeType Required => (Status, IsSetSenderComplete, IsSetReceiversComplete) switch
-        {
-            (PipeStatus.Wait, true, false) => PipeType.Receiver,
-            (PipeStatus.Wait, false, true) => PipeType.Sender,
-            _ => PipeType.None,
-        };
-
-        #endregion
         #region Status
         PipeStatus status;
         public PipeStatus Status
@@ -96,7 +87,8 @@ namespace Piping.Server.Core.Pipes
         /// <summary>
         /// Sender が設定済み
         /// </summary>
-        internal bool IsSetSenderComplete { private set; get; }
+        internal bool IsSetSenderComplete { private set; get; } = false;
+        bool IReadOnlyPipe.IsSetSenderComplete => IsSetSenderComplete;
         /// <summary>
         /// <see cref="PipeStatus.ResponseStart"/>の前までに実施される
         /// </summary>
@@ -200,6 +192,7 @@ namespace Piping.Server.Core.Pipes
         /// Receivers が設定済み
         /// </summary>
         public bool IsSetReceiversComplete => IsEstablished ? true : ReceiversIsAllSet;
+        bool IReadOnlyPipe.IsSetReceiversComplete => IsSetReceiversComplete;
         /// <summary>
         /// 削除かのうであるかどうか
         /// </summary>
@@ -273,7 +266,7 @@ namespace Piping.Server.Core.Pipes
             return nameof(Pipe) + "{" + string.Join(", ", new[] {
                 nameof(Key) + ":" + Key,
                 nameof(Status) + ":" + Status,
-                nameof(Required) + ":" + Required,
+                nameof(IReadOnlyPipe.Required) + ":" + ((IReadOnlyPipe)this).Required,
                 nameof(IsRemovable) + ":" + IsRemovable,
                 nameof(ReceiversCount) + ":" + ReceiversCount,
             }.OfType<string>()) + "}";

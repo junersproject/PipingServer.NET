@@ -108,13 +108,12 @@ namespace Piping.Server.Core.Pipes.Tests
         {
             public bool Equals([AllowNull] MockReadOnlyPipe x, [AllowNull] MockReadOnlyPipe y)
             {
-                var XIsNotNull = x is MockReadOnlyPipe;
-                var YIsNoNull = y is MockReadOnlyPipe;
-                if (!XIsNotNull && !YIsNoNull)
+                if (x is null && y is null)
                     return true;
-                else if (XIsNotNull != YIsNoNull)
+                else if (x is null || y is null)
                     return false;
-                return x.Equals(y);
+                else 
+                    return x.Equals(y);
             }
 
             public int GetHashCode([DisallowNull] MockReadOnlyPipe obj)
@@ -122,7 +121,7 @@ namespace Piping.Server.Core.Pipes.Tests
                 throw new NotImplementedException();
             }
 
-            public int Compare(MockReadOnlyPipe x, MockReadOnlyPipe y)
+            public int Compare(MockReadOnlyPipe? x, MockReadOnlyPipe? y)
             {
                 if (Equals(x, y))
                     return 0;

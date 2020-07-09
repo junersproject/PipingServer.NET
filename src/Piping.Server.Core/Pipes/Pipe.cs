@@ -77,7 +77,7 @@ namespace Piping.Server.Core.Pipes
                 if (((byte)status) >= (byte)value)
                     return;
                 status = value;
-                OnStatusChanged?.Invoke(this, new PipeStatusChangedArgs(value));
+                OnStatusChanged?.Invoke(this, new PipeStatusChangedArgs(this));
             }
             get => status;
         }

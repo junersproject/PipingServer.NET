@@ -54,7 +54,7 @@ namespace Piping.Server.Mvc.Pipe
                     return BadRequest(string.Format(CancelMessage, e.Message));
                 }
                 Logger.LogInformation(ConnectionTimeout);
-                return BadRequest(string.Format(TimeoutMessage,ConnectionTimeout));
+                return BadRequest(string.Format(TimeoutMessage, ConnectionTimeout));
             }
             catch (InvalidOperationException e)
             {
@@ -127,7 +127,7 @@ namespace Piping.Server.Mvc.Pipe
             return new EmptyResult();
         }
         [HttpOptions("/{**Path}")]
-        public async ValueTask<IActionResult> Options([ModelBinder(typeof(RequestKeyBinder))]RequestKey Key)
+        public async ValueTask<IActionResult> Options([ModelBinder(typeof(RequestKeyBinder))] RequestKey Key)
         {
             var Token = HttpContext.RequestAborted;
             if (Option.EnableContentOfHeadMethod)

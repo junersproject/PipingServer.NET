@@ -30,7 +30,8 @@ namespace Piping.Server.Core.Pipes
                 return _waiters.TryGetValue(Key, out _);
             }
         }
-        async ValueTask<IReadOnlyPipe?> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token) {
+        async ValueTask<IReadOnlyPipe?> IPipingStore.GetAsync(RequestKey Key, CancellationToken Token)
+        {
             Token.ThrowIfCancellationRequested();
             await Task.CompletedTask;
             return _waiters.TryGetValue(Key, out var Waiter) ? Waiter : null;
@@ -107,7 +108,7 @@ namespace Piping.Server.Core.Pipes
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public event PipeStatusChangeEventHandler? OnStatusChanged;
-        public async IAsyncEnumerable<(IReadOnlyPipe Sender, PipeStatus Status)> OrLaterEventAsync([EnumeratorCancellation]CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<(IReadOnlyPipe Sender, PipeStatus Status)> OrLaterEventAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var queue = new AsyncQueue<(IReadOnlyPipe Sender, PipeStatus Status)>();
             void Enqueue(object? sender, PipeStatusChangedArgs args)

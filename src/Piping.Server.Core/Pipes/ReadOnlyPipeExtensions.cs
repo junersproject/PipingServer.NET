@@ -33,7 +33,9 @@ namespace Piping.Server.Core.Pipes
                         yield return HttpMethods.Head;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 yield return HttpMethods.Get;
                 yield return HttpMethods.Post;
                 yield return HttpMethods.Put;

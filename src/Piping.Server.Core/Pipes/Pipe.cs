@@ -285,7 +285,7 @@ namespace Piping.Server.Core.Pipes
             }
             return Removable;
         }
-        public async IAsyncEnumerable<PipeStatus> OrLaterEventAsync([EnumeratorCancellation]CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<PipeStatus> OrLaterEventAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var queue = new AsyncQueue<PipeStatus>();
             void Enqueue(object? sender, PipeStatusChangedArgs args) => queue.Enqueue(args.Status);

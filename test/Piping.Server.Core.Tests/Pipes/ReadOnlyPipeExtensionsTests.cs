@@ -1,10 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Piping.Server.Core.Pipes;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Piping.Server.Core.Pipes.Tests
 {
@@ -133,7 +130,7 @@ namespace Piping.Server.Core.Pipes.Tests
         {
             var ExpectArray = ExpectResult.OrderBy(v => v).ToArray();
             var ResultArray = Pipe.ToOptionMethods().OrderBy(v => v).ToArray();
-            CollectionAssert.AreEqual(ExpectArray, ResultArray, $"[{string.Join(", ",ExpectArray)}] と [{string.Join(", ", ResultArray)}] で違います。");
+            CollectionAssert.AreEqual(ExpectArray, ResultArray, $"[{string.Join(", ", ExpectArray)}] と [{string.Join(", ", ResultArray)}] で違います。");
         }
     }
 }

@@ -100,7 +100,7 @@ namespace Piping.Server.Core.Pipes.Tests
                 Equals(Headers, _other.Headers);
         }
         private bool Equals(IHeaderDictionary a, IHeaderDictionary b)
-            => a.ContentLength == b.ContentLength && 
+            => a.ContentLength == b.ContentLength &&
                 a.OrderBy(v => v.Key.ToLower())
                     .Zip(b.OrderBy(v => v.Key.ToLower()))
                     .All(v => string.Equals(v.First.Key, v.Second.Key, StringComparison.OrdinalIgnoreCase)
@@ -135,7 +135,7 @@ namespace Piping.Server.Core.Pipes.Tests
                     return true;
                 else if (x is null || y is null)
                     return false;
-                else 
+                else
                     return x.Equals(y);
             }
 

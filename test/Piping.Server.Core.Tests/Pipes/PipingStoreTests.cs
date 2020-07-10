@@ -112,7 +112,7 @@ namespace Piping.Server.Core.Pipes.Tests
             foreach (var s in StatusList)
                 Debug.WriteLine(s);
             var ExpectStatusList = new[] {
-                new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Wait, Required = PipeType.Sender, IsRemovable = false, ReceiversCount = 1 },
+                new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Wait, Required = PipeType.Receiver, IsRemovable = false, ReceiversCount = 0 },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Ready, Required = PipeType.None, IsRemovable = false, ReceiversCount = 1 },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.ResponseStart,Required = PipeType.None, IsRemovable =false, ReceiversCount = 1, Headers = SendData.Headers },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.ResponseEnd,Required = PipeType.None, IsRemovable = false, ReceiversCount = 1, Headers = SendData.Headers },

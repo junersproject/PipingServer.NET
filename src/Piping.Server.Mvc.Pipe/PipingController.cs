@@ -33,6 +33,7 @@ namespace Piping.Server.Mvc.Pipe
         }
         [HttpPut("/{**Path}")]
         [HttpPost("/{**Path}")]
+        [DisableRequestSizeLimit]
         public async Task<IActionResult> Upload([ModelBinder(typeof(RequestKeyBinder))] RequestKey Key, SendData Sender)
         {
             if (GetValidateResult() is IActionResult ErrorResult)

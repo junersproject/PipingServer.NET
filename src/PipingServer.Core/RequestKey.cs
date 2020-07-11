@@ -30,7 +30,7 @@ namespace PipingServer.Core
                 throw new InvalidOperationException($"n should > 0, but n = ${Receivers}.");
         }
         public override int GetHashCode() => Path.GetHashCode();
-        public override bool Equals(object? obj) => obj is RequestKey other ? other.Path == Path : false;
+        public override bool Equals(object? obj) => obj is RequestKey other && other.Path == Path;
         public bool Equals(PathString Path) => this.Path == Path;
         public bool Equals(RequestKey Key) => Equals(Key.Path);
         public override string ToString()

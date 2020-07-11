@@ -191,7 +191,7 @@ namespace PipingServer.Core.Pipes
         /// <summary>
         /// Receivers が設定済み
         /// </summary>
-        public bool IsSetReceiversComplete => IsEstablished ? true : ReceiversIsAllSet;
+        public bool IsSetReceiversComplete => IsEstablished || ReceiversIsAllSet;
         bool IReadOnlyPipe.IsSetReceiversComplete => IsSetReceiversComplete;
         /// <summary>
         /// 削除かのうであるかどうか

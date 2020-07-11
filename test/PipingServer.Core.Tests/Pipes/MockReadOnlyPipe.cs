@@ -77,8 +77,7 @@ namespace PipingServer.Core.Pipes.Tests
         public override bool Equals(object? obj)
         {
             return obj is MockReadOnlyPipe mrop ? Equals(mrop)
-                : obj is IReadOnlyPipe rop ? Equals(rop)
-                : false;
+                : obj is IReadOnlyPipe rop && Equals(rop);
         }
         public bool Equals([AllowNull] IReadOnlyPipe other)
         {

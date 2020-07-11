@@ -35,7 +35,7 @@ namespace PipingServer.Mvc.Commands
             return Content(GetHelpText(RequestBaseUri, GetVersion()), $"text/plain; chaset={Encoding.WebName}", Encoding);
         }
         internal static string GetHelpText(string url, Version version)
-            => $@"Help for piping-server {version.ToString()}
+            => $@"Help for piping-server {version}
 (Repository: https://github.com/nwtgck/piping-server)
 
 ======= Get  =======

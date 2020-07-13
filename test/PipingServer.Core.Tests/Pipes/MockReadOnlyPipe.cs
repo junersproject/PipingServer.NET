@@ -114,11 +114,6 @@ namespace PipingServer.Core.Pipes.Tests
             throw new NotImplementedException();
         }
 
-        IAsyncEnumerable<PipeStatus> IReadOnlyPipe.OrLaterEventAsync(CancellationToken Token)
-        {
-            throw new NotImplementedException();
-        }
-
         public static bool operator ==(MockReadOnlyPipe left, MockReadOnlyPipe right)
         {
             return EqualityComparer<MockReadOnlyPipe>.Default.Equals(left, right);

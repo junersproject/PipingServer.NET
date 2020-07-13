@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.Threading;
 using PipingServer.Core.Options;
 using static PipingServer.Core.Properties.Resources;
 
@@ -108,26 +107,6 @@ namespace PipingServer.Core.Pipes
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public event PipeStatusChangeEventHandler? OnStatusChanged;
-        public async IAsyncEnumerable<(IReadOnlyPipe Sender, PipeStatus Status)> OrLaterEventAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            var queue = new AsyncQueue<(IReadOnlyPipe Sender, PipeStatus Status)>();
-            void Enqueue(object? sender, PipeStatusChangedArgs args)
-            {
-                if (!(sender is IReadOnlyPipe pipe))
-                    return;
-                queue.Enqueue((pipe, args.Status));
-            }
-            OnStatusChanged += Enqueue;
-            try
-            {
-                while ((await queue.DequeueAsync(cancellationToken)) is (IReadOnlyPipe Sender, PipeStatus Status) values)
-                    yield return values;
-            }
-            finally
-            {
-                OnStatusChanged -= Enqueue;
-            }
-        }
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 

@@ -9,7 +9,6 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Primitives" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="16.3.52" />
     <PackageReference Include="System.IO.Pipelines" />
   </ItemGroup>
   <ItemGroup>

@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.VisualStudio.Threading;
 using PipingServer.Core.Internal;
 using PipingServer.Core.Options;
 using PipingServer.Core.Streams;
@@ -284,25 +283,6 @@ namespace PipingServer.Core.Pipes
                 Dispose();
             }
             return Removable;
-        }
-        public async IAsyncEnumerable<PipeStatus> OrLaterEventAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            var queue = new AsyncQueue<PipeStatus>();
-            void Enqueue(object? sender, PipeStatusChangedArgs args) => queue.Enqueue(args.Status);
-            OnStatusChanged += Enqueue;
-            try
-            {
-                while (await queue.DequeueAsync(cancellationToken) is PipeStatus Status)
-                {
-                    yield return Status;
-                    if (Status == PipeStatus.Dispose)
-                        break;
-                }
-            }
-            finally
-            {
-                OnStatusChanged -= Enqueue;
-            }
         }
         void Dispose(bool disposing)
         {

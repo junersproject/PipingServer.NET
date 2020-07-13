@@ -418,7 +418,7 @@ namespace PipingServer.App.APITests
                     using var stream = await response.Content.ReadAsStreamAsync();
                     foreach (var (Key, Value) in response.Content.Headers.Where(v => v.Value.Any()).Select(kv => (kv.Key, kv.Value)))
                         Trace.WriteLine($"[RESPONSE CONTENT HEADER] : {Key} : [{string.Join(", ", Value)}]");
-                    Assert.IsNotNull(response.Content.Headers.ContentType);
+                    Assert.IsNotNull(response.Content.Headers.ContentType, "RESPONSE CONTENT-TYPE IS NULL.");
                     ContentType = response.Content.Headers.ContentType.MediaType;
                     FileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName ?? null;
                     using var streamDispose = Token.Register(() => stream.Dispose());

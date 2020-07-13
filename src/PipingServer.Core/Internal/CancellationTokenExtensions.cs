@@ -9,22 +9,16 @@ namespace PipingServer.Core.Internal
         {
             if (cancellationToken == null)
                 return Task.CompletedTask;
-            else
-                return AsTask((CancellationToken)cancellationToken);
+            return AsTask((CancellationToken)cancellationToken);
         }
 
         public static Task AsTask(this CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
-            {
                 return Task.FromCanceled(cancellationToken);
-            }
-            else
-            {
-                var taskCompletionSource = new TaskCompletionSource<bool>();
-                cancellationToken.Register(() => taskCompletionSource.TrySetCanceled(cancellationToken), useSynchronizationContext: false);
-                return taskCompletionSource.Task;
-            }
+            var taskCompletionSource = new TaskCompletionSource<bool>();
+            cancellationToken.Register(() => taskCompletionSource.TrySetCanceled(cancellationToken), useSynchronizationContext: false);
+            return taskCompletionSource.Task;
         }
     }
 }

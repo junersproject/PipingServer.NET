@@ -132,29 +132,29 @@ namespace PipingServer.Core.Pipes
             }
             set
             {
-                if (_dataTask != null)
+                if (!(_dataTask is null))
                     throw new PipingException(string.Format(IsAlreadySet, nameof(DataTask)), this);
+                if (value is null)
+                    throw new ArgumentNullException(nameof(value));
                 _dataTask = value;
-                _ = _dataTask?.ContinueWith(SetResult);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var result = await _dataTask;
+                        InputDataSource.TrySetResult(result);
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        InputDataSource.TrySetCanceled(e.CancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        InputDataSource.TrySetException(e);
+                    }
+                });
 
             }
-        }
-        /// <summary>
-        /// <see cref="DataTask"/> setter use. callback
-        /// </summary>
-        /// <param name="DataTask"></param>
-        async void SetResult(Task<(IHeaderDictionary Header, Stream Stream)>? DataTask)
-        {
-            if (!(DataTask is Task<(IHeaderDictionary Header, Stream Stream)> _DataTask))
-                throw new ArgumentNullException(nameof(DataTask));
-            if (!_DataTask.IsCompleted)
-                throw new InvalidOperationException(string.Format(IsNotComplete, nameof(DataTask)));
-            if (_DataTask.IsFaulted && _DataTask.Exception is Exception e)
-                InputDataSource.TrySetException(e);
-            else if (_DataTask.IsCanceled)
-                InputDataSource.TrySetCanceled();
-            else if (_DataTask.IsCompletedSuccessfully)
-                InputDataSource.TrySetResult(await _DataTask);
         }
         #endregion
         #region Ready Source

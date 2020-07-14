@@ -26,12 +26,14 @@ namespace PipingServer.Core.Pipes
             using var finallyremove = Disposable.Create(() => Current.TryRemove());
             SetReceiverCompletableStream(CompletableStream);
             Current.AddReceiver(CompletableStream);
-            await Current.ReadyAsync(Token);
+            await Current.ResponseReady(Token);
         }
         const string AccessControlAllowOriginKey = "Access-Control-Allow-Origin";
         const string AccessControlAllowOriginValue = " * ";
         const string AccessControlExposeHeadersKey = "Access-Control-Expose-Headers";
         const string AccessControlExposeHeaderValue = "Content-Length, Content-Type";
+        const string XContentTypeOptionsKey = "X-Content-Type-Options";
+        const string XContentTypeOptionsValue = "nosniff";
         void SetReceiverCompletableStream(IPipelineStreamResult Result)
         {
             Result.StatusCode = 200;
@@ -41,6 +43,7 @@ namespace PipingServer.Core.Pipes
             Result.Headers ??= new HeaderDictionary();
             Result.Headers[AccessControlAllowOriginKey] = AccessControlAllowOriginValue;
             Result.Headers[AccessControlExposeHeadersKey] = AccessControlExposeHeaderValue;
+            Result.Headers[XContentTypeOptionsKey] = XContentTypeOptionsValue;
             Result.OnFinally += (o, arg) =>
             {
                 var Removed = Current.RemoveReceiver(Result);

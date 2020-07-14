@@ -16,7 +16,7 @@ namespace PipingServer.Mvc
         public PipelineStream Stream { get; set; } = PipelineStream.Empty;
         public event EventHandler? OnFinally;
         public int? StatusCode { get; set; }
-        public IHeaderDictionary? Headers { get; set; } = null;
+        public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
         public PipelineStreamResult() { }
         public Task ExecuteResultAsync(ActionContext context)
         {

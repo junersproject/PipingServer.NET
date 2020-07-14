@@ -8,6 +8,11 @@ namespace PipingServer.Core.Pipes
 {
     public static class ReadOnlyPipeExtensions
     {
+        const string POST = "POST";
+        const string PUT = "PUT";
+        const string GET = "GET";
+        const string HEAD = "HEAD";
+        const string OPTIONS = "OPTIONS";
         public static IEnumerable<string> ToOptionMethods(this IReadOnlyPipe? Pipe)
         {
             if (Pipe is IReadOnlyPipe && Pipe.Status != PipeStatus.None)
@@ -21,26 +26,26 @@ namespace PipingServer.Core.Pipes
                     var Required = Pipe.Required;
                     if ((Required & PipeType.Sender) > 0)
                     {
-                        yield return HttpMethods.Post;
-                        yield return HttpMethods.Put;
+                        yield return POST;
+                        yield return PUT;
                     }
                     else if ((Required & PipeType.Receiver) > 0)
                     {
-                        yield return HttpMethods.Get;
+                        yield return GET;
                     }
                     if ((Required & PipeType.Sender) == 0)
                     {
-                        yield return HttpMethods.Head;
+                        yield return HEAD;
                     }
                 }
             }
             else
             {
-                yield return HttpMethods.Get;
-                yield return HttpMethods.Post;
-                yield return HttpMethods.Put;
+                yield return GET;
+                yield return POST;
+                yield return PUT;
             }
-            yield return HttpMethods.Options;
+            yield return OPTIONS;
         }
         public static async ValueTask<IEnumerable<string>> GetOptionMethodsAsync(this IPipingStore Store, RequestKey Key, CancellationToken Token = default)
             => (await (Store ?? throw new ArgumentNullException(nameof(Store)))

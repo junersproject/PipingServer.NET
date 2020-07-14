@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using PipingServer.Core.Converters;
@@ -20,7 +21,7 @@ namespace PipingServer.Mvc.Binder
             try
             {
                 var Sender = new Models.SendData();
-                Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Request, bindingContext.HttpContext.RequestAborted, Logger));
+                Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Features.Get<IHttpRequestFeature>(), bindingContext.HttpContext.RequestAborted, Logger));
                 bindingContext.Result = ModelBindingResult.Success(Sender);
             }
             catch (Exception e)

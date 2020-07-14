@@ -57,7 +57,6 @@ namespace PipingServer.Core.Pipes
             Result.PipeType = PipeType.Sender;
             if (Result.Stream == PipelineStream.Empty)
                 Result.Stream = new PipelineStream();
-            Result.Headers ??= new HeaderDictionary();
             Result.Headers[ContentTypeKey] = string.Format(Options.SenderResponseMessageContentType ?? SenderResponseMessageMimeType, Options.Encoding.WebName);
             Result.OnFinally += (o, arg) => Current.TryRemove();
         }

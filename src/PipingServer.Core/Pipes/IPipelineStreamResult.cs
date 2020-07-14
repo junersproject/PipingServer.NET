@@ -10,6 +10,6 @@ namespace PipingServer.Core.Pipes
         PipelineStream Stream { get; set; }
         event EventHandler? OnFinally;
         int? StatusCode { get; set; }
-        IHeaderDictionary? Headers { get; set; }
+        IHeaderDictionary Headers { get; set; }
     }
 }

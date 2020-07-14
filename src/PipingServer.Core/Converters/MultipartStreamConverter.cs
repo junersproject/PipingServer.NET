@@ -1,10 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HttpMultipartParser;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using PipingServer.Core.Streams;
 using static PipingServer.Core.Properties.Resources;
 
@@ -14,13 +17,24 @@ namespace PipingServer.Core.Converters
     {
         readonly MultipartStreamConverterOption Option;
         public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value;
-        const string MultipartMimeTypeStart = "multipart/";
+        const string MultipartMimeTypeStart = "multipart/form-data";
         const string ContentTypeHeaderName = "Content-Type";
         const string ContentDispositionHeaderName = "Content-Disposition";
         bool IsMultipartContentType(string contentType)
         {
             return !string.IsNullOrEmpty(contentType)
                    && contentType.IndexOf(MultipartMimeTypeStart, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+        string GetBoundary(StringValues contentType)
+        {
+            var hasBoundary = contentType.First(text => text.IndexOf("boundary=") >= 0);
+            var start = hasBoundary.IndexOf("boundary=") + "boundary=".Length;
+            var last = hasBoundary.IndexOf(";", start);
+            if (last >= 0)
+                hasBoundary = hasBoundary.Substring(start, last - start);
+            else
+                hasBoundary = hasBoundary.Substring(start);
+            return hasBoundary.Trim('"');
         }
         public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))[ContentTypeHeaderName]);
 
@@ -33,12 +47,16 @@ namespace PipingServer.Core.Converters
             if (!Body.CanRead)
                 throw new ArgumentException(NotReadableStream);
             var source = new TaskCompletionSource<(IHeaderDictionary Header, Stream Stream)>();
-            var parser = new StreamingMultipartFormDataParser(Body)
+            var boundary = GetBoundary(Headers[ContentTypeHeaderName]);
+            var parser = new StreamingMultipartFormDataParser(Body, boundary)
             {
                 BinaryBufferSize = Option.BufferSize,
             };
             bool isFirst = true;
-            void ParameterHandler(ParameterPart parameter) { }
+            void ParameterHandler(ParameterPart parameter) {
+                var bytes = Encoding.UTF8.GetBytes(parameter.Data);
+                FileHandler(parameter.Name, string.Empty, "text/plain", string.Empty, bytes, bytes.Length, 0);
+            }
             var Stream = new PipelineStream();
             void FileHandler(string Name, string FileName, string ContentType, string ContentDisposition, byte[] buffer, int bytes, int partNumber)
             {
@@ -87,9 +105,17 @@ namespace PipingServer.Core.Converters
                     await parser.RunAsync(Token).ConfigureAwait(false);
                 } catch (OperationCanceledException e) {
                     source.TrySetCanceled(e.CancellationToken);
+                    Stream.Dispose();
                 } catch (Exception e)
                 {
                     source.TrySetException(e);
+                    Stream.Dispose();
+                }
+                finally
+                {
+                    source.TrySetCanceled();
+                    if (!Stream.IsAddingCompleted)
+                        Stream.Complete();
                 }
             });
             return source.Task;

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PipingServer.App.Tests;
 using static DebugUtils;
@@ -19,6 +20,7 @@ namespace PipingServer.App.APITests
         public void Initialize()
         {
             var builder = WebHost.CreateDefaultBuilder()
+                .ConfigureLogging(logging => logging.ClearProviders())
                 .UseStartup<Startup>();
             var server = new TestServer(builder);
             var list = new DisposableList

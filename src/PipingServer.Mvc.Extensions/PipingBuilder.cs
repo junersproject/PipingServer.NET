@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace PipingServer.Extensions
+namespace PipingServer.Mvc.Extensions
 {
     public interface IPipingBuilder
     {

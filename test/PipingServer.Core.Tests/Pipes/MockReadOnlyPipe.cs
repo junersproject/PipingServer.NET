@@ -24,7 +24,11 @@ namespace PipingServer.Core.Pipes.Tests
                 return;
             var Task = ReadOnlyPipe.GetHeadersAsync();
             if (Task.IsCompletedSuccessfully)
-                Headers = new HeaderDictionary(Task.Result.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase));
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    var result = await Task;
+                    Headers = new HeaderDictionary(result.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase));
+                });
         }
         public RequestKey Key { get; set; }
         public PipeStatus Status { get; set; }

@@ -34,12 +34,12 @@ namespace PipingServer.App.APITests
             disposable!.Dispose();
         }
         [TestMethod, TestCategory("Example")]
-        public async Task PutAndOneGet()
+        public async Task PutAndOneGetAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await PutAndOneGet(GetCreateClient!, Token: Source.Token);
+                await _PutAndOneGetAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -48,12 +48,12 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example")]
-        public async Task PostAndOneGetTextMultipart()
+        public async Task PostAndOneGetTextMultipartAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await PostAndOneGetTextMultipart(GetCreateClient!, Token: Source.Token);
+                await _PostAndOneGetTextMultipartAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -62,12 +62,12 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example")]
-        public async Task PostAndOneGetFileMultipart()
+        public async Task PostAndOneGetFileMultipartAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await PostAndOneGetFileMultipart(GetCreateClient!, Token: Source.Token);
+                await _PostAndOneGetFileMultipartAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -76,12 +76,12 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example")]
-        public async Task GetVersion()
+        public async Task GetVersionAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await GetVersion(GetCreateClient!, Token: Source.Token);
+                await _GetVersionAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -92,12 +92,12 @@ namespace PipingServer.App.APITests
 
         [TestMethod, TestCategory("Example")]
         [Description("piping-server の / を取得する")]
-        public async Task GetRoot()
+        public async Task GetRootAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await GetRoot(GetCreateClient!, Token: Source.Token);
+                await _GetRootAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -107,12 +107,12 @@ namespace PipingServer.App.APITests
         }
         [TestMethod, TestCategory("Example")]
         [Description("piping-server の ルート を取得する")]
-        public async Task GetRoot2()
+        public async Task GetRoot2Async()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await GetRoot2(GetCreateClient!, Token: Source.Token);
+                await _GetRoot2Async(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -123,12 +123,12 @@ namespace PipingServer.App.APITests
 
         [TestMethod, TestCategory("Example")]
         [Description("piping-server の /help の取得を試みる。")]
-        public async Task GetHelp()
+        public async Task GetHelpAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await GetHelp(GetCreateClient!, Token: Source.Token);
+                await GetHelpAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -137,12 +137,12 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example")]
-        public async Task OptionsRoot()
+        public async Task OptionsRootAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await OptionsRoot(GetCreateClient!, Token: Source.Token);
+                await _OptionsRootAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -151,12 +151,12 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example")]
-        public async Task PostRoot()
+        public async Task PostRootAsync()
         {
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await PostRoot(GetCreateClient!, Token: Source.Token);
+                await _PostRootAsync(GetCreateClient!, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {

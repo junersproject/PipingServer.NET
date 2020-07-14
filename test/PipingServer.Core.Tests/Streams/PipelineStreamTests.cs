@@ -35,7 +35,7 @@ namespace PipingServer.Core.Streams.Tests
         }
 
         [TestMethod]
-        public async Task CompleteAsyncTest()
+        public async Task CompleteAsyncTestAsync()
         {
             using var Stream = new PipelineStream();
             Assert.AreEqual(0, Stream.Length);
@@ -43,7 +43,7 @@ namespace PipingServer.Core.Streams.Tests
             Assert.IsTrue(Stream.CanWrite);
             var WriteMessage1 = "HELLO";
             await Stream.WriteAsync(Encoding.GetBytes(WriteMessage1));
-            Stream.Complete();
+            await Stream.CompleteAsync();
             await Stream.FlushAsync();
             var ReadCount = Encoding.GetByteCount(WriteMessage1);
             Assert.AreEqual(ReadCount, Stream.Length);
@@ -93,7 +93,7 @@ namespace PipingServer.Core.Streams.Tests
         }
 
         [TestMethod]
-        public async Task FlushAsyncTest()
+        public async Task FlushAsyncTestAsync()
         {
             var Message = "HELLO WORLD.";
             using var Stream = new PipelineStream();
@@ -142,7 +142,7 @@ namespace PipingServer.Core.Streams.Tests
             Assert.ThrowsException<InvalidOperationException>(() => stream.Write(data.AsSpan()));
         }
         [TestMethod]
-        public async Task WriteAsyncTest()
+        public async Task WriteAsyncTestAsync()
         {
             var Time = TimeSpan.FromMilliseconds(100);
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
@@ -152,7 +152,7 @@ namespace PipingServer.Core.Streams.Tests
             await stream.WriteAsync(data, TokenSource.Token);
         }
         [TestMethod]
-        public async Task WriteAsyncAndCompleteAddingTest()
+        public async Task WriteAsyncAndCompleteAddingTestAsync()
         {
             var Time = TimeSpan.FromMilliseconds(100);
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
@@ -161,24 +161,24 @@ namespace PipingServer.Core.Streams.Tests
             Assert.AreEqual(true, stream.CanWrite);
             using (var TokenSource = new CancellationTokenSource(Time))
                 await stream.WriteAsync(data, TokenSource.Token);
-            stream.Complete();
+            await stream.CompleteAsync();
             Assert.AreEqual(false, stream.CanWrite);
             using (var TokenSource = new CancellationTokenSource(Time))
                 await Assert.ThrowsExceptionAsync<InvalidOperationException>(
                     async () => await stream.WriteAsync(data, TokenSource.Token));
         }
         [TestMethod, TestCategory("ShortTime")]
-        public void StoppedReadAsyncTest1()
+        public async Task StoppedReadAsyncTest1Async()
         {
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(10);
             using var stream = new PipelineStream();
             using var TokenSource = CreateTokenSource(Time);
-            Assert.ThrowsExceptionAsync<OperationCanceledException>(
+            await Assert.ThrowsExceptionAsync<OperationCanceledException>(
                 async () => await stream.ReadAsync(buffer.AsMemory(), TokenSource.Token));
         }
         [TestMethod, TestCategory("ShortTime")]
-        public async Task StartReadAsyncTest1()
+        public async Task StartReadAsyncTest1Async()
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];
@@ -200,17 +200,17 @@ namespace PipingServer.Core.Streams.Tests
             Assert.AreEqual(buffer.Length, ReadBytes);
         }
         [TestMethod, TestCategory("ShortTime")]
-        public void StoppedReadAsyncTest2()
+        public async Task StoppedReadAsyncTest2Async()
         {
             var buffer = new byte[100];
             var Time = TimeSpan.FromMilliseconds(10);
             using var stream = new PipelineStream();
             using var TokenSource = CreateTokenSource(Time);
-            Assert.ThrowsExceptionAsync<OperationCanceledException>(
+            await Assert.ThrowsExceptionAsync<OperationCanceledException>(
                 () => stream.ReadAsync(buffer, 0, buffer.Length, TokenSource.Token));
         }
         [TestMethod, TestCategory("ShortTime")]
-        public async Task StartReadAsyncTest2()
+        public async Task StartReadAsyncTest2Async()
         {
             var data = Enumerable.Range(0, 200).Select(v => (byte)v).ToArray();
             var buffer = new byte[100];

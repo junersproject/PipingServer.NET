@@ -34,13 +34,13 @@ namespace PipingServer.App.APITests
             return () => factory.CreateClient("piping-server");
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task PutAndOneGetExample(Uri pipingServerUrl)
+        public async Task PutAndOneGetExampleAsync(Uri pipingServerUrl)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await PutAndOneGet(GetCreateClient(provider), Token: Source.Token);
+                await _PutAndOneGetAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -54,14 +54,14 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task PostAndOneGetTextMultipartExample(Uri pipingServerUrl)
+        public async Task PostAndOneGetTextMultipartExampleAsync(Uri pipingServerUrl)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.PostAndOneGetTextMultipart(GetCreateClient(provider), Token: Source.Token);
+                await base._PostAndOneGetTextMultipartAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -75,14 +75,14 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task PostAndOneGetFileMultipartExample(Uri pipingServerUrl)
+        public async Task PostAndOneGetFileMultipartExampleAsync(Uri pipingServerUrl)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.PostAndOneGetFileMultipart(GetCreateClient(provider), Token: Source.Token);
+                await base._PostAndOneGetFileMultipartAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -96,14 +96,14 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task GetVersionExample(Uri pipingServerUrl)
+        public async Task GetVersionExampleAsync(Uri pipingServerUrl)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.GetVersion(GetCreateClient(provider), Token: Source.Token);
+                await base._GetVersionAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -119,14 +119,14 @@ namespace PipingServer.App.APITests
 
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         [Description("piping-server の / を取得する")]
-        public async Task GetRootExample(Uri pipingServerUri)
+        public async Task GetRootExampleAsync(Uri pipingServerUri)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.GetRoot(GetCreateClient(provider), Token: Source.Token);
+                await base._GetRootAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -141,14 +141,14 @@ namespace PipingServer.App.APITests
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         [Description("piping-server の ルート を取得する")]
-        public async Task GetRootExample2(Uri pipingServerUri)
+        public async Task GetRootExample2Async(Uri pipingServerUri)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.GetRoot2(GetCreateClient(provider), Token: Source.Token);
+                await base._GetRoot2Async(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -164,14 +164,14 @@ namespace PipingServer.App.APITests
 
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         [Description("piping-server の /help の取得を試みる。")]
-        public async Task GetHelpExample(Uri pipingServerUri)
+        public async Task GetHelpExampleAsync(Uri pipingServerUri)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.GetHelp(GetCreateClient(provider), Token: Source.Token);
+                await base.GetHelpAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -185,14 +185,14 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task OptionsRootExample(Uri pipingServerUri)
+        public async Task OptionsRootExampleAsync(Uri pipingServerUri)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.OptionsRoot(GetCreateClient(provider), Token: Source.Token);
+                await base._OptionsRootAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -206,14 +206,14 @@ namespace PipingServer.App.APITests
             }
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        public async Task PostRootExample(Uri pipingServerUri)
+        public async Task PostRootExampleAsync(Uri pipingServerUri)
         {
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.PostRoot(GetCreateClient(provider), Token: Source.Token);
+                await base._PostRootAsync(GetCreateClient(provider), Token: Source.Token);
             }
             catch (AssertFailedException e)
             {

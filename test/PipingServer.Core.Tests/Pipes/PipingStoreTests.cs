@@ -43,7 +43,7 @@ namespace PipingServer.Core.Pipes.Tests
             Assert.AreEqual(0, Store.Count());
         }
         [TestMethod]
-        public async Task ConnectionAsyncTestOneToOneFirstSender()
+        public async Task ConnectionAsyncTestOneToOneFirstSenderAsync()
         {
             using var provider = CreateProvider();
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(5));
@@ -125,7 +125,7 @@ namespace PipingServer.Core.Pipes.Tests
             CollectionAssert.AreEqual(ExpectStatusList, StatusList, MockReadOnlyPipe.Comparer);
         }
         [TestMethod]
-        public async Task ConnectionAsyncTestOneToOneFirstReceiver()
+        public async Task ConnectionAsyncTestOneToOneFirstReceiverAsync()
         {
             using var provider = CreateProvider();
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(5));

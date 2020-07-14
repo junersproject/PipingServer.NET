@@ -15,16 +15,16 @@ namespace PipingServer.App.APITests
 {
     public abstract class TestBase
     {
-        protected async Task PutAndOneGet(Func<HttpClient> CreateClient, string SendUri = nameof(PutAndOneGet), CancellationToken Token = default)
+        protected async Task _PutAndOneGetAsync(Func<HttpClient> CreateClient, string SendUri = nameof(_PutAndOneGetAsync), CancellationToken Token = default)
         {
             var message = "Hello World.";
             Trace.WriteLine($"TARGET URL: {SendUri}");
             var (_, _, _, Version) = await GetVersionAsync(CreateClient);
             Trace.WriteLine($"VERSION: {Version}");
-            await PutAndGetTextMessageSimple(CreateClient, SendUri, message, Token: Token);
+            await PutAndGetTextMessageSimpleAsync(CreateClient, SendUri, message, Token: Token);
         }
         protected Version MultipartSupportVersion = new Version(0, 8, 3);
-        protected async Task PostAndOneGetTextMultipart(Func<HttpClient> CreateClient, string SendUri = nameof(PostAndOneGetTextMultipart), CancellationToken Token = default)
+        protected async Task _PostAndOneGetTextMultipartAsync(Func<HttpClient> CreateClient, string SendUri = nameof(_PostAndOneGetTextMultipartAsync), CancellationToken Token = default)
         {
             var message1 = "Hello World.";
             Trace.WriteLine($"TARGET URL: {SendUri}");
@@ -32,9 +32,9 @@ namespace PipingServer.App.APITests
             Trace.WriteLine($"VERSION: {Version}");
             if (new Version(Version) < MultipartSupportVersion)
                 throw new AssertInconclusiveException($"Multipart Support Version is {MultipartSupportVersion} or later.");
-            await PostAndGetMultipartTestMessageSimple(CreateClient, SendUri, message1, Token: Token);
+            await PostAndGetMultipartTestMessageSimpleAsync(CreateClient, SendUri, message1, Token: Token);
         }
-        protected async Task PostAndOneGetFileMultipart(Func<HttpClient> CreateClient, string SendUri = nameof(PostAndOneGetFileMultipart), CancellationToken Token = default)
+        protected async Task _PostAndOneGetFileMultipartAsync(Func<HttpClient> CreateClient, string SendUri = nameof(_PostAndOneGetFileMultipartAsync), CancellationToken Token = default)
         {
             var message = "Hello World.";
             Trace.WriteLine($"TARGET URL: {SendUri}");
@@ -45,10 +45,10 @@ namespace PipingServer.App.APITests
             var FileName = "test.txt";
             var MediaType = "text/plain";
             var FileData = Encoding.UTF8.GetBytes(message);
-            await PostAndGetMultipartTestFileSimple(CreateClient, SendUri, FileName, MediaType, FileData, Token);
+            await PostAndGetMultipartTestFileSimpleAsync(CreateClient, SendUri, FileName, MediaType, FileData, Token);
         }
         [Description("piping-server の /version を取得する")]
-        protected async Task GetVersion(Func<HttpClient> CreateClient, CancellationToken Token = default)
+        protected async Task _GetVersionAsync(Func<HttpClient> CreateClient, CancellationToken Token = default)
         {
             var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(CreateClient, "version", HttpMethod.Get, Token);
             Trace.WriteLine(Status);
@@ -59,7 +59,7 @@ namespace PipingServer.App.APITests
         }
 
         [Description("piping-server の / を取得する")]
-        protected async Task GetRoot(Func<HttpClient> CreateClient, CancellationToken Token = default)
+        protected async Task _GetRootAsync(Func<HttpClient> CreateClient, CancellationToken Token = default)
         {
             var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(CreateClient, "/", HttpMethod.Get, Token);
             Trace.WriteLine(Status);
@@ -69,7 +69,7 @@ namespace PipingServer.App.APITests
             Assert.AreEqual(HttpStatusCode.OK, Status);
         }
         [Description("piping-server の ルート を取得する")]
-        protected async Task GetRoot2(Func<HttpClient> CreateClient, CancellationToken Token = default)
+        protected async Task _GetRoot2Async(Func<HttpClient> CreateClient, CancellationToken Token = default)
         {
             var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(CreateClient, "/", HttpMethod.Get, Token);
             Trace.WriteLine(Status);
@@ -79,7 +79,7 @@ namespace PipingServer.App.APITests
             Assert.AreEqual(HttpStatusCode.OK, Status);
         }
         [Description("piping-server の /help の取得を試みる。")]
-        protected async Task GetHelp(Func<HttpClient> CreateClient, CancellationToken Token = default)
+        protected async Task GetHelpAsync(Func<HttpClient> CreateClient, CancellationToken Token = default)
         {
             var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(CreateClient, "/help", HttpMethod.Get, Token);
             Trace.WriteLine(Status);
@@ -88,7 +88,7 @@ namespace PipingServer.App.APITests
             Trace.WriteLine(BodyText);
             Assert.AreEqual(HttpStatusCode.OK, Status);
         }
-        protected async Task OptionsRoot(Func<HttpClient> CreateClient, CancellationToken Token = default)
+        protected async Task _OptionsRootAsync(Func<HttpClient> CreateClient, CancellationToken Token = default)
         {
             var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(CreateClient, "/", HttpMethod.Options, Token);
             Trace.WriteLine(Status);
@@ -97,7 +97,7 @@ namespace PipingServer.App.APITests
             Trace.WriteLine(BodyText);
             Assert.AreEqual(HttpStatusCode.OK, Status);
         }
-        protected async Task PostRoot(Func<HttpClient> CreateClient, CancellationToken Token = default)
+        protected async Task _PostRootAsync(Func<HttpClient> CreateClient, CancellationToken Token = default)
         {
             var (Status, Headers, Cheaders, BodyText) = await GetResponseAsync(CreateClient, "/", HttpMethod.Post, Token);
             Trace.WriteLine(Status);
@@ -142,7 +142,7 @@ namespace PipingServer.App.APITests
             return (response.StatusCode, response.Headers, response.Content.Headers, await reader.ReadToEndAsync());
         }
 
-        private async Task PutAndGetTextMessageSimple(Func<HttpClient> CreateClient, string Path, string message, CancellationToken Token = default)
+        private async Task PutAndGetTextMessageSimpleAsync(Func<HttpClient> CreateClient, string Path, string message, CancellationToken Token = default)
         {
             var sender = Task.Run(async () =>
             {
@@ -237,7 +237,7 @@ namespace PipingServer.App.APITests
             await Task.WhenAll(sender, receiver);
             Assert.AreEqual(message, await receiver);
         }
-        private async Task PostAndGetMultipartTestMessageSimple(Func<HttpClient> CreateClient, string Path, string message1, CancellationToken Token = default)
+        private async Task PostAndGetMultipartTestMessageSimpleAsync(Func<HttpClient> CreateClient, string Path, string message1, CancellationToken Token = default)
         {
 
             var sender = Task.Run(async () =>
@@ -339,7 +339,7 @@ namespace PipingServer.App.APITests
             await Task.WhenAll(sender, receiver);
             Assert.AreEqual(message1, await receiver);
         }
-        private async Task PostAndGetMultipartTestFileSimple(Func<HttpClient> CreateClient, string Path, string FileName, string MediaType, byte[] FileData, CancellationToken Token = default)
+        private async Task PostAndGetMultipartTestFileSimpleAsync(Func<HttpClient> CreateClient, string Path, string FileName, string MediaType, byte[] FileData, CancellationToken Token = default)
         {
 
             var sender = Task.Run(async () =>

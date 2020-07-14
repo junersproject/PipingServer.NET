@@ -14,7 +14,7 @@
     <PackageReference Include="System.IO.Pipelines" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PipingServer.Extensions\PipingServer.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\PipingServer.Mvc.Extensions\PipingServer.Mvc.Extensions.csproj" />
     <ProjectReference Include="..\..\src\PipingServer.Mvc.Commands\PipingServer.Mvc.Commands.csproj" />
     <ProjectReference Include="..\..\src\PipingServer.Mvc.Pipe\PipingServer.Mvc.Pipe.csproj" />
   </ItemGroup>

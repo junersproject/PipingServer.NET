@@ -32,7 +32,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Commands",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Core.Tests", "test\PipingServer.Core.Tests\PipingServer.Core.Tests.csproj", "{400E0B84-9FE7-448A-B746-6CA546015111}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Extensions", "src\PipingServer.Extensions\PipingServer.Extensions.csproj", "{61B69D68-571E-4107-8C77-EF27FADD4665}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Extensions", "src\PipingServer.Mvc.Extensions\PipingServer.Mvc.Extensions.csproj", "{61B69D68-571E-4107-8C77-EF27FADD4665}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

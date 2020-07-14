@@ -6,7 +6,7 @@ using PipingServer.Core.Pipes;
 using PipingServer.Mvc;
 using PipingServer.Mvc.Infrastructure;
 
-namespace PipingServer.Extensions
+namespace PipingServer.Mvc.Extensions
 {
     public static class PipingBuilderExtensions
     {

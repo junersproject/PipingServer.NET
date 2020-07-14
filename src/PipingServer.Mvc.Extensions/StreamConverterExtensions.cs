@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using PipingServer.Core.Converters;
 
-namespace PipingServer.Extensions
+namespace PipingServer.Mvc.Extensions
 {
     public static class StreamConverterExtensions
     {

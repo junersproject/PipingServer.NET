@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PipingServer.Extensions;
+using PipingServer.Mvc.Extensions;
 using PipingServer.Mvc.Commands;
 using PipingServer.Mvc.Pipe;
 

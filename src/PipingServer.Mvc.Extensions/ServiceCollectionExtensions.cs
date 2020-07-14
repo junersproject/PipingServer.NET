@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace PipingServer.Extensions
+namespace PipingServer.Mvc.Extensions
 {
     public static class ServiceCollectionExtensions
     {

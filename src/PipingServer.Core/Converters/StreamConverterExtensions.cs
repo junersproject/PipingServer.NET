@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
 using static PipingServer.Core.Properties.Resources;
 
@@ -10,7 +11,7 @@ namespace PipingServer.Core.Converters
 {
     public static class StreamConverterExtensions
     {
-        public static Task<(IHeaderDictionary Headers, Stream Stream)> GetDataAsync(this IEnumerable<IStreamConverter> Converters, HttpRequest Request, CancellationToken Token = default, ILogger? Logger = null)
+        public static Task<(IHeaderDictionary Headers, Stream Stream)> GetDataAsync(this IEnumerable<IStreamConverter> Converters, IHttpRequestFeature Request, CancellationToken Token = default, ILogger? Logger = null)
         {
             foreach (var c in Converters)
                 if (!(c is DefaultStreamConverter) && c.IsUse(Request.Headers))

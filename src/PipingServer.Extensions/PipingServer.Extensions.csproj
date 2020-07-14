@@ -4,9 +4,8 @@
     <PackageTags>piping-server</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\PipingServer.Mvc\PipingServer.Mvc.csproj" />
   </ItemGroup>
 </Project>

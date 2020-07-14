@@ -46,7 +46,7 @@ namespace PipingServer.Core.Tests
         public void RequestKeyTest1(PathString path, IQueryCollection query, PathString ExpectedLocalPath, int ExpectedReceivers, string ExpectToString)
         {
             var Key = new RequestKey(path, query);
-            Assert.AreEqual(ExpectedLocalPath, Key.Path);
+            Assert.AreEqual((string)ExpectedLocalPath, Key.Path);
             Assert.AreEqual(ExpectedReceivers, Key.Receivers);
             Assert.AreEqual(ExpectToString, Key.ToString());
         }

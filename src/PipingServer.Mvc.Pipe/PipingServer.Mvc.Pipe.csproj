@@ -4,6 +4,7 @@
     <PackageTags>piping-server</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\PipingServer.Mvc\PipingServer.Mvc.csproj" />
   </ItemGroup>
   <ItemGroup>

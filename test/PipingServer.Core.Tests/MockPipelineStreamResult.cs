@@ -11,7 +11,7 @@ namespace PipingServer.Core.Tests
         public PipeType PipeType { get; set; }
         public PipelineStream Stream { get; set; } = PipelineStream.Empty;
         public int? StatusCode { get; set; }
-        public IHeaderDictionary? Headers { get; set; }
+        public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
 
         public event EventHandler? OnFinally;
 

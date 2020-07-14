@@ -3,10 +3,11 @@
     <Version>0.8.3.0</Version>
     <FileVersion>0.8.3.0</FileVersion>
     <PackageTags>piping-server</PackageTags>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="HttpMultipartParser" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Primitives" />
     <PackageReference Include="System.IO.Pipelines" />

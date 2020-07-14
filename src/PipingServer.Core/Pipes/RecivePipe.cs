@@ -40,7 +40,6 @@ namespace PipingServer.Core.Pipes
             Result.PipeType = PipeType.Receiver;
             if (Result.Stream == PipelineStream.Empty)
                 Result.Stream = new PipelineStream();
-            Result.Headers ??= new HeaderDictionary();
             Result.Headers[AccessControlAllowOriginKey] = AccessControlAllowOriginValue;
             Result.Headers[AccessControlExposeHeadersKey] = AccessControlExposeHeaderValue;
             Result.Headers[XContentTypeOptionsKey] = XContentTypeOptionsValue;

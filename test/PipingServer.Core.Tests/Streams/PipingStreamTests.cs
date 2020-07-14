@@ -74,7 +74,7 @@ namespace PipingServer.Core.Streams.Tests
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(PipingStreamAsyncSyncTestData))]
-        public async Task PipingStreamAsyncSyncTest(int receivers)
+        public async Task PipingStreamAsyncSyncTestAsync(int receivers)
         {
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}\r\n").ToArray();
@@ -119,7 +119,7 @@ namespace PipingServer.Core.Streams.Tests
             }
         }
         [TestMethod, TestCategory("ShortTime"), DynamicData(nameof(PipingStreamAsyncTestData))]
-        public async Task PipingStreamAsyncTest(int receivers)
+        public async Task PipingStreamAsyncTestAsync(int receivers)
         {
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}\r\n").ToArray();

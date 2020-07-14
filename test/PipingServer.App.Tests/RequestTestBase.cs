@@ -34,7 +34,7 @@ namespace PipingServer.App.Tests
             return (response.StatusCode, response.Headers, response.Content.Headers, await reader.ReadToEndAsync());
         }
 
-        protected async Task PutAndGetTextMessageSimple(Uri SendUri, string message, CancellationToken Token = default)
+        protected async Task PutAndGetTextMessageSimpleAsync(Uri SendUri, string message, CancellationToken Token = default)
         {
             var sender = Task.Run(async () =>
             {
@@ -135,7 +135,7 @@ namespace PipingServer.App.Tests
             await Task.WhenAll(sender, receiver);
             Assert.AreEqual(message, await receiver);
         }
-        protected async Task PostAndGetMultipartTestMessageSimple(Uri SendUri, string message1, CancellationToken Token = default)
+        protected async Task PostAndGetMultipartTestMessageSimpleAsync(Uri SendUri, string message1, CancellationToken Token = default)
         {
 
             var sender = Task.Run(async () =>
@@ -243,7 +243,7 @@ namespace PipingServer.App.Tests
             await Task.WhenAll(sender, receiver);
             Assert.AreEqual(message1, await receiver);
         }
-        protected async Task PostAndGetMultipartTestFileSimple(Uri SendUri, string FileName, string MediaType, byte[] FileData, CancellationToken Token = default)
+        protected async Task PostAndGetMultipartTestFileSimpleAsync(Uri SendUri, string FileName, string MediaType, byte[] FileData, CancellationToken Token = default)
         {
 
             var sender = Task.Run(async () =>

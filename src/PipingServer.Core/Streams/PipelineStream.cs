@@ -20,13 +20,13 @@ namespace PipingServer.Core.Streams
         public void Reset() => Pipe.Reset();
         public void Complete(Exception? ex = null)
         {
-            Pipe.Writer.Complete(ex);
             IsAddingCompleted = true;
+            Pipe.Writer.Complete(ex);
         }
         public async ValueTask CompleteAsync(Exception? ex = null)
         {
-            await Pipe.Writer.CompleteAsync(ex);
             IsAddingCompleted = true;
+            await Pipe.Writer.CompleteAsync(ex);
         }
         public PipelineStream() : this(PipeOptions.Default) { }
         public PipelineStream(PipeOptions options) => Pipe = new Pipe(options);

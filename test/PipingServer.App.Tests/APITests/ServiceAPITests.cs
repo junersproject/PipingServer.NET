@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
@@ -20,7 +21,10 @@ namespace PipingServer.App.APITests
         public void Initialize()
         {
             var builder = WebHost.CreateDefaultBuilder()
-                .ConfigureLogging(logging => logging.ClearProviders())
+                .ConfigureLogging(logging => {
+                    if (!Debugger.IsAttached)
+                        logging.ClearProviders();
+                })
                 .UseStartup<Startup>();
             var server = new TestServer(builder);
             var list = new DisposableList

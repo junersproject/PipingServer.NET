@@ -178,8 +178,7 @@ namespace PipingServer.Core.Pipes
         {
             if (ResponseTaskSource.Task.IsCompleted)
                 return;
-            if (InputDataSource.Task.IsCompleted)
-                await Task.WhenAny(Task.WhenAll(ReadyTaskSource.Task, ResponseTaskSource.Task), Token.AsTask());
+            await Task.WhenAny(ResponseTaskSource.Task, Token.AsTask());
         }
         #endregion
         public bool IsWaitCanceled => ReadyTaskSource.Task.IsCanceled;

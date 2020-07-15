@@ -53,7 +53,8 @@ namespace PipingServer.Core.Converters
                 BinaryBufferSize = Option.BufferSize,
             };
             bool isFirst = true;
-            void ParameterHandler(ParameterPart parameter) {
+            void ParameterHandler(ParameterPart parameter)
+            {
                 var bytes = Encoding.UTF8.GetBytes(parameter.Data);
                 FileHandler(parameter.Name, string.Empty, "text/plain", string.Empty, bytes, bytes.Length, 0);
             }
@@ -64,7 +65,8 @@ namespace PipingServer.Core.Converters
                 {
                     isFirst = false;
                     string DispositionString = string.Empty;
-                    if (!string.IsNullOrEmpty(ContentDisposition)) {
+                    if (!string.IsNullOrEmpty(ContentDisposition))
+                    {
                         DispositionString = ContentDisposition;
                         if (!string.IsNullOrEmpty(Name))
                             DispositionString += ";name=" + Name;
@@ -78,7 +80,8 @@ namespace PipingServer.Core.Converters
                     }
                     source.TrySetResult((Headers, Stream));
 
-                } else if (partNumber == 0)
+                }
+                else if (partNumber == 0)
                 {
                     if (!Stream.IsAddingCompleted)
                         Stream.Complete();
@@ -103,10 +106,13 @@ namespace PipingServer.Core.Converters
                 try
                 {
                     await parser.RunAsync(Token).ConfigureAwait(false);
-                } catch (OperationCanceledException e) {
+                }
+                catch (OperationCanceledException e)
+                {
                     source.TrySetCanceled(e.CancellationToken);
                     Stream.Dispose();
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     source.TrySetException(e);
                     Stream.Dispose();

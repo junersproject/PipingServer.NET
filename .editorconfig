@@ -6,6 +6,14 @@
 [*] 
 indent_style = space 
 # Code files 
+[*.{xml,csproj,vsproj,Build.targets,Build.props}]
+max_line_length = off
+end_of_line = lf
+indent_style = space
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+indent_size = 2
 [*.{cs,csx,vb,vbx}] 
 indent_size = 4 
 insert_final_newline = true 

@@ -21,7 +21,8 @@ namespace PipingServer.App.APITests
         public void Initialize()
         {
             var builder = WebHost.CreateDefaultBuilder()
-                .ConfigureLogging(logging => {
+                .ConfigureLogging(logging =>
+                {
                     if (!Debugger.IsAttached)
                         logging.ClearProviders();
                 })

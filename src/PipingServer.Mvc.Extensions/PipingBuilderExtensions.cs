@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using PipingServer.Core.Converters;
 using PipingServer.Core.Pipes;
-using PipingServer.Mvc;
+using PipingServer.Mvc.Converters;
 using PipingServer.Mvc.Infrastructure;
 
 namespace PipingServer.Mvc.Extensions

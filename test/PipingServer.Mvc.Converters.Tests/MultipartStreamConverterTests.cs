@@ -13,7 +13,7 @@ using IEnumerableHeader = System.Collections.Generic.IEnumerable<System.Collecti
 using HeaderDictionary = System.Collections.Generic.Dictionary<string, Microsoft.Extensions.Primitives.StringValues>;
 using System.Linq;
 
-namespace PipingServer.Core.Converters.Tests
+namespace PipingServer.Mvc.Converters.Tests
 {
     [TestClass()]
     public class MultipartStreamConverterTests

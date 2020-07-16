@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HttpMultipartParser;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using PipingServer.Core.Streams;
@@ -15,19 +15,23 @@ namespace PipingServer.Core.Converters
 {
     public class MultipartStreamConverter : IStreamConverter
     {
+        static readonly Encoding Encoding = new UTF8Encoding(false);
         readonly MultipartStreamConverterOption Option;
         public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value;
         const string MultipartMimeTypeStart = "multipart/form-data";
         const string ContentTypeHeaderName = "Content-Type";
         const string ContentDispositionHeaderName = "Content-Disposition";
+        const string ParameterMimeType = "text/plain";
         bool IsMultipartContentType(string contentType)
         {
             return !string.IsNullOrEmpty(contentType)
                    && contentType.IndexOf(MultipartMimeTypeStart, StringComparison.OrdinalIgnoreCase) >= 0;
         }
-        string GetBoundary(StringValues contentType)
+        string? GetBoundary(StringValues contentType)
         {
-            var hasBoundary = contentType.First(text => text.IndexOf("boundary=") >= 0);
+            var hasBoundary = contentType.FirstOrDefault(text => text.IndexOf("boundary=") >= 0);
+            if (hasBoundary is null)
+                return null;
             var start = hasBoundary.IndexOf("boundary=") + "boundary=".Length;
             var last = hasBoundary.IndexOf(";", start);
             if (last >= 0)
@@ -36,9 +40,13 @@ namespace PipingServer.Core.Converters
                 hasBoundary = hasBoundary.Substring(start);
             return hasBoundary.Trim('"');
         }
-        public bool IsUse(IHeaderDictionary Headers) => IsMultipartContentType((Headers ?? throw new ArgumentNullException(nameof(Headers)))[ContentTypeHeaderName]);
+        public bool IsUse<IHeaderDictionary>(IDictionary<string, StringValues> Headers)
+            where IHeaderDictionary : IDictionary<string, StringValues>
+            => (Headers ?? throw new ArgumentNullException(nameof(Headers)))
+            .TryGetValue(ContentTypeHeaderName, out var value) && IsMultipartContentType(value);
 
-        public Task<(IHeaderDictionary Headers, Stream Stream)> GetStreamAsync(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
+        public Task<(IHeaderDictionary Headers, Stream Stream)> GetStreamAsync<IHeaderDictionary>(IHeaderDictionary Headers, Stream Body, CancellationToken Token = default)
+            where IHeaderDictionary : IDictionary<string, StringValues>
         {
             if (Headers is null)
                 throw new ArgumentNullException(nameof(Headers));
@@ -47,16 +55,13 @@ namespace PipingServer.Core.Converters
             if (!Body.CanRead)
                 throw new ArgumentException(NotReadableStream);
             var source = new TaskCompletionSource<(IHeaderDictionary Header, Stream Stream)>();
-            var boundary = GetBoundary(Headers[ContentTypeHeaderName]);
-            var parser = new StreamingMultipartFormDataParser(Body, boundary)
-            {
-                BinaryBufferSize = Option.BufferSize,
-            };
+            var boundary = Headers.TryGetValue(ContentTypeHeaderName, out var value) ? GetBoundary(value) : null;
+            var parser = new StreamingMultipartFormDataParser(Body, boundary, Encoding, Option.BufferSize);
             bool isFirst = true;
             void ParameterHandler(ParameterPart parameter)
             {
-                var bytes = Encoding.UTF8.GetBytes(parameter.Data);
-                FileHandler(parameter.Name, string.Empty, "text/plain", string.Empty, bytes, bytes.Length, 0);
+                var bytes = Encoding.GetBytes(parameter.Data);
+                FileHandler(parameter.Name, string.Empty, ParameterMimeType, string.Empty, bytes, bytes.Length, 0);
             }
             var Stream = new PipelineStream();
             void FileHandler(string Name, string FileName, string ContentType, string ContentDisposition, byte[] buffer, int bytes, int partNumber)
@@ -64,15 +69,15 @@ namespace PipingServer.Core.Converters
                 if (isFirst && partNumber == 0)
                 {
                     isFirst = false;
-                    string DispositionString = string.Empty;
+                    var DispositionString = new List<string>();
                     if (!string.IsNullOrEmpty(ContentDisposition))
                     {
-                        DispositionString = ContentDisposition;
+                        DispositionString.Add(ContentDisposition);
                         if (!string.IsNullOrEmpty(Name))
-                            DispositionString += ";name=" + Name;
+                            DispositionString.Add("name=" + Name);
                         if (!string.IsNullOrEmpty(FileName))
-                            DispositionString += ";filename=" + FileName;
-                        Headers[ContentDispositionHeaderName] = DispositionString;
+                            DispositionString.Add("filename=" + FileName);
+                        Headers[ContentDispositionHeaderName] = string.Join(';', DispositionString);
                     }
                     if (!string.IsNullOrEmpty(ContentType))
                     {

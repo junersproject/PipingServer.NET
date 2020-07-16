@@ -21,7 +21,7 @@ namespace PipingServer.Mvc.Binder
             try
             {
                 var Sender = new Models.SendData();
-                Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Features.Get<IHttpRequestFeature>(), bindingContext.HttpContext.RequestAborted, Logger));
+                Sender.SetResult(Converters.GetDataAsync(bindingContext.HttpContext.Features, bindingContext.HttpContext.RequestAborted, Logger));
                 bindingContext.Result = ModelBindingResult.Success(Sender);
             }
             catch (Exception e)

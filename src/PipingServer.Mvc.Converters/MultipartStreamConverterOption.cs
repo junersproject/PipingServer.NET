@@ -1,4 +1,4 @@
-﻿namespace PipingServer.Core.Converters
+﻿namespace PipingServer.Mvc.Converters
 {
     public class MultipartStreamConverterOption
     {

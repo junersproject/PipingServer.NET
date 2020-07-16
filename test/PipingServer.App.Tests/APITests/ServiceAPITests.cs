@@ -28,10 +28,7 @@ namespace PipingServer.App.APITests
                 })
                 .UseStartup<Startup>();
             var server = new TestServer(builder);
-            var list = new DisposableList
-            {
-                server
-            };
+            var list = DisposableList.Create(server);
             GetCreateClient = server.CreateClient;
             disposable = list;
         }

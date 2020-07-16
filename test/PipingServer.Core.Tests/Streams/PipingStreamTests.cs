@@ -34,7 +34,7 @@ namespace PipingServer.Core.Streams.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}").ToArray();
             using var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1));
-            using var Buffers = new DisposableList<PipelineStream>(Enumerable.Range(0, 5).Select(v => new PipelineStream()));
+            using var Buffers = DisposableList.Create(Enumerable.Range(0, 5).Select(v => new PipelineStream()));
             using var Piping = new PipingStream(Buffers);
             var Token = TokenSource.Token;
             using (var writer = new StreamWriter(Piping, Encoding, 1024, true))
@@ -79,7 +79,7 @@ namespace PipingServer.Core.Streams.Tests
             var Encoding = new UTF8Encoding(false);
             var Data = Enumerable.Range(0, 5).Select(v => $"number: {v}\r\n").ToArray();
             using var TokenSource = CreateTokenSource(TimeSpan.FromMinutes(1));
-            using var Buffers = new DisposableList<PipelineStream>(Enumerable.Range(0, receivers).Select(v => new PipelineStream()));
+            using var Buffers = DisposableList.Create(Enumerable.Range(0, receivers).Select(v => new PipelineStream()));
             using var Piping = new PipingStream(Buffers);
             var Token = TokenSource.Token;
             foreach (var Text in Data)
@@ -126,7 +126,7 @@ namespace PipingServer.Core.Streams.Tests
             var Time = TimeSpan.FromMinutes(1);
             var Delay = Time / (5 * 2);
             using var TokenSource = CreateTokenSource(Time);
-            using var Buffers = new DisposableList<PipelineStream>(Enumerable.Range(0, receivers).Select(v => new PipelineStream()));
+            using var Buffers = DisposableList.Create(Enumerable.Range(0, receivers).Select(v => new PipelineStream()));
             using var Piping = new PipingStream(Buffers);
             var ExpectText = Data.Aggregate(string.Empty, (v1, v2) => v1 + v2);
             var bufferCount = Encoding.GetByteCount(ExpectText);

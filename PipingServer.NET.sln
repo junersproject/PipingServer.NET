@@ -38,7 +38,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Converters
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Converters.Tests", "test\PipingServer.Mvc.Converters.Tests\PipingServer.Mvc.Converters.Tests.csproj", "{89960FB8-5260-40ED-8842-3C4099AF71D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServer.Mvc.Binding", "src\PipingServer.Mvc.Binding\PipingServer.Mvc.Binding.csproj", "{9F163BB2-8638-4C17-8CC5-8C99355BE77E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Binding", "src\PipingServer.Mvc.Binding\PipingServer.Mvc.Binding.csproj", "{9F163BB2-8638-4C17-8CC5-8C99355BE77E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServer.Core.Abstract", "src\PipingServer.Core.Abstract\PipingServer.Core.Abstract.csproj", "{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,6 +92,10 @@ Global
 		{9F163BB2-8638-4C17-8CC5-8C99355BE77E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F163BB2-8638-4C17-8CC5-8C99355BE77E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F163BB2-8638-4C17-8CC5-8C99355BE77E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

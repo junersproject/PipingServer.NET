@@ -117,58 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ConnectionOnKeyHasBeenEstablishedAlready" xml:space="preserve">
-    <value>Connection on '{0}' has been established already.</value>
-  </data>
-  <data name="ConnectionReceiversOver" xml:space="preserve">
-    <value>Connection receivers over.</value>
-  </data>
-  <data name="ConnectionSenderOver" xml:space="preserve">
-    <value>Connection sender over.</value>
-  </data>
-  <data name="InfoPrefix" xml:space="preserve">
-    <value>[INFO] {0}</value>
-  </data>
-  <data name="IsAlreadySet" xml:space="preserve">
-    <value>{0} is already set.</value>
-  </data>
-  <data name="NameIsValue1RequiredNameIsValue2Over" xml:space="preserve">
-    <value>{0} is {1}. required {0} is {2} over.</value>
-  </data>
-  <data name="PipingStore_Create" xml:space="preserve">
-    <value>CREATE {0}</value>
-  </data>
-  <data name="PipingStore_Get" xml:space="preserve">
-    <value>GET {0}</value>
-  </data>
-  <data name="PipingStore_Remove_Faild" xml:space="preserve">
-    <value>REMOVE FAILD {0}</value>
-  </data>
-  <data name="PipingStore_Remove_Success" xml:space="preserve">
-    <value>REMOVE SUCCESS {0}</value>
-  </data>
-  <data name="ReceiversCountReceiversHaveBeenConnected" xml:space="preserve">
-    <value>{0} receiver(s) has/have been connected.</value>
-  </data>
-  <data name="SenderResponseMessageMimeType" xml:space="preserve">
-    <value>text/plain; charset={0}</value>
-  </data>
-  <data name="SendingSuccessfulBytes" xml:space="preserve">
-    <value>Sending successful! {0} bytes.</value>
-  </data>
-  <data name="StartSendingWithReceiversCountReceivers" xml:space="preserve">
-    <value>Start sending with {0} receiver(s)!</value>
-  </data>
-  <data name="StreamRemoveFaild" xml:space="preserve">
-    <value>STREAM REMOVED FAILD {0}</value>
-  </data>
-  <data name="StreamRemoveSuccess" xml:space="preserve">
-    <value>STREAM REMOVE SUCCESS. {0}</value>
-  </data>
-  <data name="TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount" xml:space="preserve">
-    <value>The number of receivers should be {0} but {1}.</value>
-  </data>
-  <data name="WaitingForRequestedReceiversCountReceivers" xml:space="preserve">
-    <value>Waiting for {0} receiver(s)...</value>
+  <data name="CannotSeekIn" xml:space="preserve">
+    <value>Cannot seek in {0}</value>
   </data>
 </root>

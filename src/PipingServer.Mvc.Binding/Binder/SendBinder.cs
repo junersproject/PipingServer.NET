@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
-using PipingServer.Core.Converters;
+using PipingServer.Mvc.Converters;
 
-namespace PipingServer.Mvc.Binder
+namespace PipingServer.Mvc.Binding.Binder
 {
     public class SendBinder : IModelBinder
     {

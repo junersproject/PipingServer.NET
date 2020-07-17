@@ -11,8 +11,8 @@ using PipingServer.Core;
 using PipingServer.Core.Options;
 using PipingServer.Core.Pipes;
 using PipingServer.Mvc.Attributes;
-using PipingServer.Mvc.Binder;
-using PipingServer.Mvc.Models;
+using PipingServer.Mvc.Binding.Binder;
+using PipingServer.Mvc.Binding.Models;
 using static PipingServer.Mvc.Pipe.Properties.Resources;
 
 namespace PipingServer.Mvc.Pipe

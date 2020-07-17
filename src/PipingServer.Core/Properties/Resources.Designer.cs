@@ -115,56 +115,11 @@ namespace PipingServer.Core.Properties {
         }
         
         /// <summary>
-        ///   {0} is not complete. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string IsNotComplete {
-            get {
-                return ResourceManager.GetString("IsNotComplete", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Missing content-type boundary. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string MissingContentTypeBoundary {
-            get {
-                return ResourceManager.GetString("MissingContentTypeBoundary", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Multipart boundary length limit {0} exceeded. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string MultipartBoundaryLengthLimitExceeded {
-            get {
-                return ResourceManager.GetString("MultipartBoundaryLengthLimitExceeded", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   {0} is {1}. required {0} is {2} over. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string NameIsValue1RequiredNameIsValue2Over {
             get {
                 return ResourceManager.GetString("NameIsValue1RequiredNameIsValue2Over", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   No Data Stream. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string NoDataStream {
-            get {
-                return ResourceManager.GetString("NoDataStream", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Not Readable Stream. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string NotReadableStream {
-            get {
-                return ResourceManager.GetString("NotReadableStream", resourceCulture);
             }
         }
         
@@ -241,15 +196,6 @@ namespace PipingServer.Core.Properties {
         }
         
         /// <summary>
-        ///   USE {0}. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string StreamConverterExtensions_GetDataAsync_UseType {
-            get {
-                return ResourceManager.GetString("StreamConverterExtensions_GetDataAsync_UseType", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   STREAM REMOVED FAILD {0} に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string StreamRemoveFaild {
@@ -273,15 +219,6 @@ namespace PipingServer.Core.Properties {
         internal static string TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount {
             get {
                 return ResourceManager.GetString("TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   The number of receivers should be {0} but {1}. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount_ {
-            get {
-                return ResourceManager.GetString("TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount.", resourceCulture);
             }
         }
         

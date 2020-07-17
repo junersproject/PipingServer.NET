@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -79,7 +77,7 @@ namespace PipingServer.Mvc.Converters.Tests
                     => new object[] { Converter, Headers, Body, ExpectedHeaders, ExpectedBody };
             }
         }
-        [TestMethod, DynamicData(nameof(GetStreamAsyncTestData)),Ignore]
+        [TestMethod, DynamicData(nameof(GetStreamAsyncTestData)), Ignore]
         public async Task GetStreamAsyncTestAsync(MultipartStreamConverter Converter, IHeaderDictionary Headers, Stream Body, IEnumerableHeader ExpectedHeaders, byte[] ExpectedBody)
         {
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(30));

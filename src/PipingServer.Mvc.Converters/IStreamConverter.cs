@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Primitives;
 
-namespace PipingServer.Core.Converters
+namespace PipingServer.Mvc.Converters
 {
     public interface IStreamConverter
     {

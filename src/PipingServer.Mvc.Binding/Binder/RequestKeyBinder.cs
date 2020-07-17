@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using PipingServer.Core;
 
-namespace PipingServer.Mvc.Binder
+namespace PipingServer.Mvc.Binding.Binder
 {
     public class RequestKeyBinder : IModelBinder
     {

@@ -6,9 +6,11 @@
     <PackageReference Update="Microsoft.AspNetCore.Mvc.Analyzers"  Version="3.1.5" />
     <PackageReference Update="Microsoft.AspNetCore.Http.Features" Version="3.1.5" />
     <PackageReference Update="Microsoft.AspNetCore.TestHost" Version="3.1.5" />
-    <PackageReference Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.5" />
-    <PackageReference Update="Microsoft.Extensions.Logging" Version="3.1.5" />
-    <PackageReference Update="Microsoft.Extensions.Primitives" Version="3.1.5" />
+    <PackageReference Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.6" />
+    <PackageReference Update="Microsoft.Extensions.Logging" Version="3.1.6" />
+    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="3.1.6" />
+    <PackageReference Update="Microsoft.Extensions.Options" Version="3.1.6" />
+    <PackageReference Update="Microsoft.Extensions.Primitives" Version="3.1.6" />
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.3.0"/>
     <PackageReference Update="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
     <PackageReference Update="Microsoft.VisualStudio.Threading" Version="16.6.13" />

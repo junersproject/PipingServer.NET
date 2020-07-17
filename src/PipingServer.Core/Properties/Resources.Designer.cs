@@ -61,15 +61,6 @@ namespace PipingServer.Core.Properties {
         }
         
         /// <summary>
-        ///   Cannot seek in {0} に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CannotSeekIn {
-            get {
-                return ResourceManager.GetString("CannotSeekIn", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Connection on &apos;{0}&apos; has been established already. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string ConnectionOnKeyHasBeenEstablishedAlready {

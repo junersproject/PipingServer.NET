@@ -6,6 +6,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <ProjectReference Include="..\PipingServer.Mvc.Binding\PipingServer.Mvc.Binding.csproj" />
     <ProjectReference Include="..\PipingServer.Mvc\PipingServer.Mvc.csproj" />
     <ProjectReference Include="..\PipingServer.Mvc.Converters\PipingServer.Mvc.Converters.csproj" />
   </ItemGroup>

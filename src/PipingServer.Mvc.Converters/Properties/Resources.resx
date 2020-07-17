@@ -129,4 +129,7 @@
   <data name="NotReadableStream" xml:space="preserve">
     <value>Not Readable Stream.</value>
   </data>
+  <data name="StreamConverterExtensions_GetDataAsync_UseType" xml:space="preserve">
+    <value>USE {0}.</value>
+  </data>
 </root>

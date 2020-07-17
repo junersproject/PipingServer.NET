@@ -3,9 +3,9 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PipingServer.Mvc.Binder;
+using PipingServer.Mvc.Binding.Binder;
 
-namespace PipingServer.Mvc.Models
+namespace PipingServer.Mvc.Binding.Models
 {
     [ModelBinder(typeof(SendBinder))]
     public class SendData : IDisposable

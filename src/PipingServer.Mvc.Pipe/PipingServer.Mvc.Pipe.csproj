@@ -1,10 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Version>0.8.3.0</Version>
     <PackageTags>piping-server</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\PipingServer.Mvc.Binding\PipingServer.Mvc.Binding.csproj" />
     <ProjectReference Include="..\PipingServer.Mvc\PipingServer.Mvc.csproj" />
   </ItemGroup>
   <ItemGroup>

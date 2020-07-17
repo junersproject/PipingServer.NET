@@ -135,23 +135,8 @@
   <data name="IsAlreadySet" xml:space="preserve">
     <value>{0} is already set.</value>
   </data>
-  <data name="IsNotComplete" xml:space="preserve">
-    <value>{0} is not complete.</value>
-  </data>
-  <data name="MissingContentTypeBoundary" xml:space="preserve">
-    <value>Missing content-type boundary.</value>
-  </data>
-  <data name="MultipartBoundaryLengthLimitExceeded" xml:space="preserve">
-    <value>Multipart boundary length limit {0} exceeded.</value>
-  </data>
   <data name="NameIsValue1RequiredNameIsValue2Over" xml:space="preserve">
     <value>{0} is {1}. required {0} is {2} over.</value>
-  </data>
-  <data name="NoDataStream" xml:space="preserve">
-    <value>No Data Stream.</value>
-  </data>
-  <data name="NotReadableStream" xml:space="preserve">
-    <value>Not Readable Stream.</value>
   </data>
   <data name="PipingStore_Create" xml:space="preserve">
     <value>CREATE {0}</value>
@@ -177,9 +162,6 @@
   <data name="StartSendingWithReceiversCountReceivers" xml:space="preserve">
     <value>Start sending with {0} receiver(s)!</value>
   </data>
-  <data name="StreamConverterExtensions_GetDataAsync_UseType" xml:space="preserve">
-    <value>USE {0}.</value>
-  </data>
   <data name="StreamRemoveFaild" xml:space="preserve">
     <value>STREAM REMOVED FAILD {0}</value>
   </data>
@@ -187,9 +169,6 @@
     <value>STREAM REMOVE SUCCESS. {0}</value>
   </data>
   <data name="TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount" xml:space="preserve">
-    <value>The number of receivers should be {0} but {1}.</value>
-  </data>
-  <data name="TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount." xml:space="preserve">
     <value>The number of receivers should be {0} but {1}.</value>
   </data>
   <data name="WaitingForRequestedReceiversCountReceivers" xml:space="preserve">

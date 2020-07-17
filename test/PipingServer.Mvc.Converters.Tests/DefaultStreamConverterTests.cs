@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace PipingServer.Core.Converters.Tests
+namespace PipingServer.Mvc.Converters.Tests
 {
     [TestClass()]
     public class DefaultStreamConverterTests

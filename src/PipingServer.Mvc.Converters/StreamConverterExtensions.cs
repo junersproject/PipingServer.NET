@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using static PipingServer.Core.Properties.Resources;
+using static PipingServer.Mvc.Converters.Properties.Resources;
 
-namespace PipingServer.Core.Converters
+namespace PipingServer.Mvc.Converters
 {
     public static class StreamConverterExtensions
     {

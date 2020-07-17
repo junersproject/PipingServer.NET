@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using PipingServer.Core.Converters;
 using static PipingServer.Mvc.Converters.Properties.Resources;
 using Microsoft.Net.Http.Headers;
 

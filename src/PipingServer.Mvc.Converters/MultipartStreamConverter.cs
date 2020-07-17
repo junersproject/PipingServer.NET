@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using PipingServer.Core.Streams;
 using PipingServer.Core.Converters;
 using static PipingServer.Mvc.Converters.Properties.Resources;
 using Microsoft.Net.Http.Headers;
@@ -22,8 +20,6 @@ namespace PipingServer.Mvc.Converters
         public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value;
         const string MultipartMimeTypeStart = "multipart/form-data";
         const string ContentTypeHeaderName = "Content-Type";
-        const string ContentDispositionHeaderName = "Content-Disposition";
-        const string ParameterMimeType = "text/plain";
         bool IsMultipartContentType(string contentType)
         {
             return !string.IsNullOrEmpty(contentType)

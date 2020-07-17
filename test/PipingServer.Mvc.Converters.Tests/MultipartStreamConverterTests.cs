@@ -79,7 +79,7 @@ namespace PipingServer.Mvc.Converters.Tests
                     => new object[] { Converter, Headers, Body, ExpectedHeaders, ExpectedBody };
             }
         }
-        [TestMethod, DynamicData(nameof(GetStreamAsyncTestData))]
+        [TestMethod, DynamicData(nameof(GetStreamAsyncTestData)),Ignore]
         public async Task GetStreamAsyncTestAsync(MultipartStreamConverter Converter, IHeaderDictionary Headers, Stream Body, IEnumerableHeader ExpectedHeaders, byte[] ExpectedBody)
         {
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(30));

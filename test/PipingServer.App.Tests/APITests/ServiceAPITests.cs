@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PipingServer.Client;
+using static PipingServer.App.APITests.HttpClientFactory;
 using static DebugUtils;
 
 namespace PipingServer.App.APITests
@@ -15,7 +17,7 @@ namespace PipingServer.App.APITests
     public class ServiceAPITests : TestBase
     {
         IDisposable? disposable;
-        Func<HttpClient>? GetCreateClient;
+        IHttpClientFactory HttpClientFactory = null!;
         [TestInitialize]
         public void Initialize()
         {
@@ -28,7 +30,7 @@ namespace PipingServer.App.APITests
                 .UseStartup<Startup>();
             var server = new TestServer(builder);
             var list = DisposableList.Create(server);
-            GetCreateClient = server.CreateClient;
+            HttpClientFactory = Create(server);
             disposable = list;
         }
         [TestCleanup]
@@ -42,7 +44,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _PutAndOneGetAsync(GetCreateClient!, Token: Source.Token);
+                await _PutAndOneGetAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -56,7 +58,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _PostAndOneGetTextMultipartAsync(GetCreateClient!, Token: Source.Token);
+                await _PostAndOneGetTextMultipartAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -70,7 +72,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _PostAndOneGetFileMultipartAsync(GetCreateClient!, Token: Source.Token);
+                await _PostAndOneGetFileMultipartAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -84,7 +86,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _GetVersionAsync(GetCreateClient!, Token: Source.Token);
+                await _GetVersionAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -100,7 +102,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _GetRootAsync(GetCreateClient!, Token: Source.Token);
+                await _GetRootAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -115,7 +117,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _GetRoot2Async(GetCreateClient!, Token: Source.Token);
+                await _GetRoot2Async(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -131,7 +133,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await GetHelpAsync(GetCreateClient!, Token: Source.Token);
+                await GetHelpAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -145,7 +147,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _OptionsRootAsync(GetCreateClient!, Token: Source.Token);
+                await _OptionsRootAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {
@@ -159,7 +161,7 @@ namespace PipingServer.App.APITests
             try
             {
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _PostRootAsync(GetCreateClient!, Token: Source.Token);
+                await _PostRootAsync(HttpClientFactory, Token: Source.Token);
             }
             catch (HttpRequestException e)
             {

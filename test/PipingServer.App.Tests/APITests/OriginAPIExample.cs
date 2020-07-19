@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static DebugUtils;
 
@@ -15,23 +16,19 @@ namespace PipingServer.App.APITests
         {
             get
             {
-                yield return new object[] { new Uri("https://ppng.ml") };
-                yield return new object[] { new Uri("https://piping-92sr2pvuwg14.runkit.sh") };
+                yield return OriginPipingServerUrls(new Uri("https://ppng.ml"));
+                yield return OriginPipingServerUrls(new Uri("https://piping-92sr2pvuwg14.runkit.sh"));
+                static object[] OriginPipingServerUrls(Uri Uri) => new object[] { Uri, };
             }
         }
         private ServiceProvider CreateProvider(Uri pipingServerUrl)
         {
             var services = new ServiceCollection();
-            services.AddHttpClient("piping-server", c =>
+            services.AddHttpClient(Options.DefaultName, c =>
             {
                 c.BaseAddress = pipingServerUrl;
             });
             return services.BuildServiceProvider();
-        }
-        private Func<HttpClient> GetCreateClient(IServiceProvider provider)
-        {
-            var factory = provider.GetRequiredService<IHttpClientFactory>();
-            return () => factory.CreateClient("piping-server");
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         public async Task PutAndOneGetExampleAsync(Uri pipingServerUrl)
@@ -39,8 +36,9 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
+                var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _PutAndOneGetAsync(GetCreateClient(provider), Token: Source.Token);
+                await _PutAndOneGetAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -61,7 +59,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUrl);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._PostAndOneGetTextMultipartAsync(GetCreateClient(provider), Token: Source.Token);
+                await base._PostAndOneGetTextMultipartAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -82,7 +80,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUrl);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._PostAndOneGetFileMultipartAsync(GetCreateClient(provider), Token: Source.Token);
+                await base._PostAndOneGetFileMultipartAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -103,7 +101,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUrl);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._GetVersionAsync(GetCreateClient(provider), Token: Source.Token);
+                await base._GetVersionAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -126,7 +124,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._GetRootAsync(GetCreateClient(provider), Token: Source.Token);
+                await base._GetRootAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -148,7 +146,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._GetRoot2Async(GetCreateClient(provider), Token: Source.Token);
+                await base._GetRoot2Async(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -171,7 +169,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.GetHelpAsync(GetCreateClient(provider), Token: Source.Token);
+                await base.GetHelpAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -192,7 +190,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._OptionsRootAsync(GetCreateClient(provider), Token: Source.Token);
+                await base._OptionsRootAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {
@@ -213,7 +211,7 @@ namespace PipingServer.App.APITests
                 using var provider = CreateProvider(pipingServerUri);
                 var factory = provider.GetRequiredService<IHttpClientFactory>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._PostRootAsync(GetCreateClient(provider), Token: Source.Token);
+                await base._PostRootAsync(factory, Token: Source.Token);
             }
             catch (AssertFailedException e)
             {

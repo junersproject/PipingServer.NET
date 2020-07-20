@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PipingServer.Client;
 using static DebugUtils;
 
 namespace PipingServer.App.APITests
@@ -28,6 +30,7 @@ namespace PipingServer.App.APITests
             {
                 c.BaseAddress = pipingServerUrl;
             });
+            services.AddTransient<IPipingServerClient, PipingServerClient>();
             return services.BuildServiceProvider();
         }
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
@@ -36,12 +39,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await _PutAndOneGetAsync(factory, Token: Source.Token);
+                await _PutAndOneGetAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -57,12 +61,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._PostAndOneGetTextMultipartAsync(factory, Token: Source.Token);
+                await base._PostAndOneGetTextMultipartAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -78,12 +83,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._PostAndOneGetFileMultipartAsync(factory, Token: Source.Token);
+                await base._PostAndOneGetFileMultipartAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -99,12 +105,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUrl);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._GetVersionAsync(factory, Token: Source.Token);
+                await base._GetVersionAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -122,12 +129,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._GetRootAsync(factory, Token: Source.Token);
+                await base._GetRootAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -137,29 +145,6 @@ namespace PipingServer.App.APITests
                 throw;
             }
         }
-        [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
-        [Description("piping-server の ルート を取得する")]
-        public async Task GetRootExample2Async(Uri pipingServerUri)
-        {
-            try
-            {
-                using var provider = CreateProvider(pipingServerUri);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
-                using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._GetRoot2Async(factory, Token: Source.Token);
-            }
-            catch (AssertFailedException e)
-            {
-                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
-            }
-            catch (HttpRequestException e)
-            {
-                ThrowIfCoundNotResolveRemoteName(e);
-                ThrowIfHostIsUnknown(e);
-                throw;
-            }
-        }
-
         [TestMethod, TestCategory("Example"), DynamicData(nameof(OriginPipingServerUrls))]
         [Description("piping-server の /help の取得を試みる。")]
         public async Task GetHelpExampleAsync(Uri pipingServerUri)
@@ -167,12 +152,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base.GetHelpAsync(factory, Token: Source.Token);
+                await base.GetHelpAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -188,12 +174,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._OptionsRootAsync(factory, Token: Source.Token);
+                await base._OptionsRootAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)
@@ -209,12 +196,13 @@ namespace PipingServer.App.APITests
             try
             {
                 using var provider = CreateProvider(pipingServerUri);
-                var factory = provider.GetRequiredService<IHttpClientFactory>();
+                var Client = provider.GetRequiredService<IPipingServerClient>();
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
-                await base._PostRootAsync(factory, Token: Source.Token);
+                await _PostRootAsync(Client, Token: Source.Token);
             }
-            catch (AssertFailedException e)
+            catch (SimpleHttpResponseException e)
             {
+                Trace.WriteLine(e);
                 throw new AssertInconclusiveException("サポートされていないバージョン？", e);
             }
             catch (HttpRequestException e)

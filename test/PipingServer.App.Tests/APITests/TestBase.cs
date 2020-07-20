@@ -74,7 +74,7 @@ namespace PipingServer.App.APITests
         }
         protected async Task _PostRootAsync(IPipingServerClient Client, CancellationToken Token = default)
         {
-            var BodyText = await Client.GetTextAsync("", HttpMethod.Post, Token);
+            var BodyText = await Client.GetTextAsync("/", HttpMethod.Post, Token);
             Trace.WriteLine(BodyText);
         }
         /// <summary>

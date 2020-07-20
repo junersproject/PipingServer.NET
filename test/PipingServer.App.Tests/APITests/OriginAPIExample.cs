@@ -43,6 +43,11 @@ namespace PipingServer.App.APITests
                 using var Source = CreateTokenSource(TimeSpan.FromSeconds(30));
                 await _PutAndOneGetAsync(Client, Token: Source.Token);
             }
+            catch (AssertFailedException e)
+            {
+                Trace.WriteLine(e);
+                throw new AssertInconclusiveException("サポートされていないバージョン？", e);
+            }
             catch (SimpleHttpResponseException e)
             {
                 Trace.WriteLine(e);

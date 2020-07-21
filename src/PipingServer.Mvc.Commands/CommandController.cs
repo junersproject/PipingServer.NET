@@ -2,27 +2,31 @@
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using PipingServer.Core.Options;
 
 namespace PipingServer.Mvc.Commands
 {
     [Route("")]
     [ApiController]
-    public class DefaultController : ControllerBase
+    public class CommandController : ControllerBase
     {
-        readonly Encoding Encoding;
-        readonly ILogger<DefaultController> Logger;
-        public DefaultController(ILogger<DefaultController> Logger, Encoding? Encoding = default)
+        readonly ILogger<CommandController> Logger;
+        readonly PipingOptions Options;
+        public CommandController(ILogger<CommandController> Logger, IOptions<PipingOptions> Options)
         {
             this.Logger = Logger;
-            this.Encoding = Encoding ?? new UTF8Encoding(false);
+            this.Options = Options.Value;
         }
-        internal Version GetVersion() => typeof(Core.RequestKey)?.Assembly?.GetName()?.Version ?? throw new InvalidOperationException();
+        internal Version GetVersion() => new Version(Options.Version);
         /// <summary>
         /// ルートへのアクセス
         /// </summary>
         /// <returns></returns>
         [HttpGet(DefaultPath.Root)]
-        public IActionResult Index() => Content(Properties.Resources.Index, $"text/html; charset={Encoding.WebName}", Encoding);
+        [HttpPost(DefaultPath.Root)]
+        [HttpPut(DefaultPath.Root)]
+        public IActionResult Index() => Content(Properties.Resources.Index.Replace("${VERSION}", Options.Version), $"text/html; charset={Options.EncodingName}", Options.Encoding);
         /// <summary>
         /// ヘルプ
         /// </summary>
@@ -32,7 +36,7 @@ namespace PipingServer.Mvc.Commands
         {
             var Request = HttpContext.Request;
             var RequestBaseUri = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
-            return Content(GetHelpText(RequestBaseUri, GetVersion()), $"text/plain; chaset={Encoding.WebName}", Encoding);
+            return Content(GetHelpText(RequestBaseUri, GetVersion()), $"text/plain; chaset={Options.EncodingName}", Options.Encoding);
         }
         internal static string GetHelpText(string url, Version version)
             => $@"Help for piping-server {version}
@@ -95,8 +99,6 @@ curl {url}/mypath | openssl aes-256-cbc -d";
         [HttpPut(DefaultPath.Robots)]
         [HttpPost(DefaultPath.Help)]
         [HttpPut(DefaultPath.Help)]
-        [HttpPost(DefaultPath.Root)]
-        [HttpPut(DefaultPath.Root)]
         public IActionResult ErrorAccess()
         {
             var RelativeUri = HttpContext.Request.Path;
@@ -106,7 +108,7 @@ curl {url}/mypath | openssl aes-256-cbc -d";
         }
         protected IActionResult BadRequest(string Message)
         {
-            var Content = this.Content(Message, $"text/plain; charset={Encoding.WebName}", Encoding);
+            var Content = this.Content(Message, $"text/plain; charset={Options.EncodingName}", Options.Encoding);
             Content.StatusCode = 400;
             return Content;
         }

@@ -22,7 +22,7 @@ namespace PipingServer.App.APITests
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers()
-                .AddApplicationPart(typeof(DefaultController).Assembly)
+                .AddApplicationPart(typeof(CommandController).Assembly)
                 .AddApplicationPart(typeof(PipingController).Assembly);
             services.AddPiping();
         }

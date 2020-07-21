@@ -16,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		test\Directory.Build.targets = test\Directory.Build.targets
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
+		.github\workflows\testing.yml = .github\workflows\testing.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.App", "app\PipingServer.App\PipingServer.App.csproj", "{DBCDF606-BB7B-4E9E-875E-9D0219212782}"
@@ -40,7 +41,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Converters
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Mvc.Binding", "src\PipingServer.Mvc.Binding\PipingServer.Mvc.Binding.csproj", "{9F163BB2-8638-4C17-8CC5-8C99355BE77E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipingServer.Core.Abstract", "src\PipingServer.Core.Abstract\PipingServer.Core.Abstract.csproj", "{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Core.Abstract", "src\PipingServer.Core.Abstract\PipingServer.Core.Abstract.csproj", "{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipingServer.Client", "src\PipingServer.Client\PipingServer.Client.csproj", "{2299693C-E2AB-4A69-8AFC-2AD3B50B3310}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +99,10 @@ Global
 		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{491AAA2B-D24A-4DB2-90D8-C767B7C4AB0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2299693C-E2AB-4A69-8AFC-2AD3B50B3310}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2299693C-E2AB-4A69-8AFC-2AD3B50B3310}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2299693C-E2AB-4A69-8AFC-2AD3B50B3310}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2299693C-E2AB-4A69-8AFC-2AD3B50B3310}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

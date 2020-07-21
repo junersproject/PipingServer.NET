@@ -1,0 +1,8 @@
+on: [push, pull_request]
+    push:
+        branches:
+            - master
+    pull_request:
+            - master
+    - name: .NET Core CLI
+       uses: baruchiro/github-actions@0.0.1

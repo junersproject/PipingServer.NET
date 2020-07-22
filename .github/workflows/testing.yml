@@ -8,6 +8,12 @@ on:
             - master
 jobs:
     testing:
+        runs-on: ubuntu-latest
         steps:
+        - uses: actions/checkout@v2
+        - name: Setup .NET Core SDK
+          uses: actions/setup-dotnet@v1.4.0
+        - name: Build with dotnet
+            run: dotnet build --configuration Release
         - name: .NET Core CLI
-           uses: 'baruchiro/github-actions@0.0.1'
+           uses: baruchiro/github-actions@0.0.1

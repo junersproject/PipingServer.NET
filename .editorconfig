@@ -20,7 +20,7 @@ insert_final_newline = true
 charset              = utf-8-bom
 end_of_line          = crlf
 [*.yml]
-indent_size          = 4
+indent_size          = 2
 insert_final_newline = true
 charset              = utf-8
 ###############################

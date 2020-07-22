@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace PipingServer.Core.Pipes
 {
     public class PipeStatusChangedArgs : IPipe
     {
-        public PipeStatusChangedArgs(IPipe Pipe)
-            => (Key, Status, IsRemovable, ReceiversCount, Required) = Pipe;
+        public PipeStatusChangedArgs(IPipe Pipe, IHeaderDictionary? Headers = null)
+            => ((Key, Status, IsRemovable, ReceiversCount, Required), this.Headers) = (Pipe, Headers);
         public PipeStatusChangedArgs((RequestKey Key, PipeStatus Status, bool IsRemovable, int ReceiversCount, PipeType Required) Pipe)
             => (Key, Status, IsRemovable, ReceiversCount, Required) = Pipe;
         public RequestKey Key { get; }
@@ -19,6 +15,7 @@ namespace PipingServer.Core.Pipes
 
         public int ReceiversCount { get; }
         public PipeType Required { get; }
+        public IHeaderDictionary? Headers { get; }
 
     }
 }

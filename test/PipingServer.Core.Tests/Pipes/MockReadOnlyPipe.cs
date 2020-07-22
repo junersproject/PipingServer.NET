@@ -13,22 +13,15 @@ namespace PipingServer.Core.Pipes.Tests
     {
         public static Comparable Comparer = new Comparable();
         public MockReadOnlyPipe() { }
-        public MockReadOnlyPipe(PipeStatusChangedArgs Args, IReadOnlyPipe ReadOnlyPipe)
+        public MockReadOnlyPipe(PipeStatusChangedArgs Args)
         {
             Key = Args.Key;
             Status = Args.Status;
             Required = Args.Required;
             IsRemovable = Args.IsRemovable;
             ReceiversCount = Args.ReceiversCount;
-            if (PipeStatus.ResponseStart > Args.Status)
-                return;
-            var Task = ReadOnlyPipe.GetHeadersAsync();
-            if (Task.IsCompletedSuccessfully)
-                _ = System.Threading.Tasks.Task.Run(async () =>
-                {
-                    var result = await Task;
-                    Headers = new HeaderDictionary(result.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase));
-                });
+            if (Args.Headers is IHeaderDictionary)
+                Headers = Args.Headers;
         }
         public RequestKey Key { get; set; }
         public PipeStatus Status { get; set; }

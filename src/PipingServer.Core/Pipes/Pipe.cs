@@ -90,7 +90,7 @@ namespace PipingServer.Core.Pipes
             try
             {
                 Status = value;
-                OnStatusChanged?.Invoke(this, new PipeStatusChangedArgs(this));
+                OnStatusChanged?.Invoke(this, new PipeStatusChangedArgs(this, Headers));
             }
             finally
             {
@@ -110,6 +110,7 @@ namespace PipingServer.Core.Pipes
         /// </summary>
         internal bool IsSetSenderComplete { private set; get; } = false;
         bool IReadOnlyPipe.IsSetSenderComplete => IsSetSenderComplete;
+        internal IHeaderDictionary? Headers { get; set; }
         /// <summary>
         /// <see cref="PipeStatus.ResponseStart"/>の前までに実施される
         /// </summary>
@@ -126,6 +127,7 @@ namespace PipingServer.Core.Pipes
                 await SetStatusAsync(PipeStatus.Wait, Token);
             await ReadyAsync(Token);
             var Headers = await GetHeadersAsync(Token);
+            this.Headers = new ReadonlyHeaderDictionary(Headers);
             Receivers.SetHeaders(Headers);
             ResponseTaskSource.TrySetResult(true);
         }

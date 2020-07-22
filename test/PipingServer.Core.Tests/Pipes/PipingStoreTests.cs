@@ -60,7 +60,7 @@ namespace PipingServer.Core.Pipes.Tests
                 if (!(s is IReadOnlyPipe rop))
                     return;
                 Logger.LogInformation($"{s}:{arg.Status}");
-                StatusList.Add(new MockReadOnlyPipe(arg, rop) { Status = arg.Status });
+                StatusList.Add(new MockReadOnlyPipe(arg) { Status = arg.Status });
             };
             var RequestKey = new RequestKey("/test", new QueryCollection(new Dictionary<string, StringValues>
             {
@@ -146,7 +146,7 @@ namespace PipingServer.Core.Pipes.Tests
                 if (!(s is IReadOnlyPipe rop))
                     return;
                 Logger.LogInformation($"{s}:{arg.Status}");
-                StatusList.Add(new MockReadOnlyPipe(arg, rop) { Status = arg.Status });
+                StatusList.Add(new MockReadOnlyPipe(arg) { Status = arg.Status });
             };
             var RequestKey = new RequestKey("/test", new QueryCollection(new Dictionary<string, StringValues>
             {

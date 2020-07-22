@@ -108,8 +108,10 @@ namespace PipingServer.Core.Pipes.Tests
                 Assert.AreEqual(SendMessage, ReceiverMessage);
                 SenderResult.Dispose();
             }
+            if (Store is IAsyncDisposable Disposable)
+                await Disposable.DisposeAsync();
             Debug.WriteLine(nameof(StatusList));
-            foreach (var s in StatusList.ToArray())
+            foreach (var s in StatusList)
                 Debug.WriteLine(s);
             var ExpectStatusList = new[] {
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Created, Required = PipeType.All, IsRemovable = true, ReceiversCount = 0 },
@@ -191,9 +193,10 @@ namespace PipingServer.Core.Pipes.Tests
                 Assert.AreEqual(SendMessage, ReceiverMessage);
                 SenderResult.Dispose();
             }
-
+            if (Store is IAsyncDisposable Disposable)
+                await Disposable.DisposeAsync();
             Debug.WriteLine(nameof(StatusList));
-            foreach (var s in StatusList.ToArray())
+            foreach (var s in StatusList)
                 Debug.WriteLine(s);
             var ExpectStatusList = new[] {
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Created, Required = PipeType.All, IsRemovable = true, ReceiversCount = 0 },

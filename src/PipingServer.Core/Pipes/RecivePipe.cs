@@ -23,7 +23,7 @@ namespace PipingServer.Core.Pipes
         public int ReceiversCount => Current.ReceiversCount;
         public async ValueTask ConnectionAsync(IPipelineStreamResult CompletableStream, CancellationToken Token = default)
         {
-            using var finallyremove = Disposable.Create(() => Current.TryRemove());
+            using var finallyremove = Disposable.Create(() => _ = Current.TryRemoveAsync());
             SetReceiverCompletableStream(CompletableStream);
             await Current.AddReceiverAsync(CompletableStream, Token);
             await Current.ResponseReady(Token);
@@ -50,7 +50,7 @@ namespace PipingServer.Core.Pipes
                     Logger.LogDebug(string.Format(StreamRemoveSuccess, Result));
                 else
                     Logger.LogDebug(string.Format(StreamRemoveFaild, Result));
-                Current.TryRemove();
+                _ = Current.TryRemoveAsync();
             };
         }
         public override string ToString() => Current.ToString()!;

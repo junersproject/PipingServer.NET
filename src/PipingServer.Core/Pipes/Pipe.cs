@@ -12,7 +12,7 @@ using static PipingServer.Core.Properties.Resources;
 
 namespace PipingServer.Core.Pipes
 {
-    internal sealed class Pipe : IReadOnlyPipe, IDisposable
+    internal sealed class Pipe : IReadOnlyPipe, IAsyncDisposable, IDisposable
     {
         internal PipingOptions Options { get; }
         private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
@@ -64,7 +64,7 @@ namespace PipingServer.Core.Pipes
                 catch (OperationCanceledException)
                 {
                     await SetStatusAsync(PipeStatus.Canceled);
-                    Dispose();
+                    await DisposeAsync();
                 }
             });
             _ = Task.Run(async () =>
@@ -296,54 +296,67 @@ namespace PipingServer.Core.Pipes
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 
-        internal bool TryRemove()
+        internal async ValueTask<bool> TryRemoveAsync()
         {
             bool Removable;
             if (Removable = IsRemovable)
             {
-                Dispose();
+                await DisposeAsync();
             }
             return Removable;
         }
-        void Dispose(bool disposing)
+        async ValueTask SetStatusDisposeAsync()
+        {
+            await SetStatusAsync(PipeStatus.Dispose);
+            foreach (PipeStatusChangeEventHandler e in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
+                OnStatusChanged -= e;
+            try
+            {
+                OnFinally?.Invoke(this, new EventArgs());
+            }
+            catch (Exception) { }
+            foreach (EventHandler e in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
+                OnFinally -= e;
+        }
+
+        public async ValueTask DisposeAsync()
         {
             if (!disposedValue)
             {
-                disposedValue = true;
-                if (disposing)
-                {
-                    if (!ReadyTaskSource.Task.IsCompleted)
-                        ReadyTaskSource.TrySetCanceled();
-                    if (!ResponseTaskSource.Task.IsCompleted)
-                        ResponseTaskSource.TrySetCanceled();
-                    if (!InputDataSource.Task.IsCompleted)
-                        InputDataSource.TrySetCanceled();
-                    Receivers.Clear();
-                    Task.Run(async () =>
-                    {
-                        await SetStatusAsync(PipeStatus.Dispose);
-                        foreach (PipeStatusChangeEventHandler e in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
-                            OnStatusChanged -= e;
-                        try
-                        {
-                            OnFinally?.Invoke(this, new EventArgs());
-                        }
-                        catch (Exception) { }
-                        foreach (EventHandler e in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
-                            OnFinally -= e;
-                    });
-                    if (WaitTokenSource is CancellationTokenSource TokenSource)
-                        TokenSource.Dispose();
-                    if (CancelAction is IDisposable Disposable)
-                        Disposable.Dispose();
-                }
+                if (!ReadyTaskSource.Task.IsCompleted)
+                    ReadyTaskSource.TrySetCanceled();
+                if (!ResponseTaskSource.Task.IsCompleted)
+                    ResponseTaskSource.TrySetCanceled();
+                if (!InputDataSource.Task.IsCompleted)
+                    InputDataSource.TrySetCanceled();
+                Receivers.Clear();
+                await SetStatusDisposeAsync().ConfigureAwait(false);
+                Semaphore.Dispose();
+                if (WaitTokenSource is CancellationTokenSource TokenSource)
+                    TokenSource.Dispose();
+                if (CancelAction is IDisposable Disposable)
+                    Disposable.Dispose();
             }
+            disposedValue = true;
         }
 
-        // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
+        private void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    DisposeAsync().AsTask().Wait();
+                }
+                disposedValue = true;
+            }
+        }
+        ~Pipe() => Dispose(disposing: false);
+
         public void Dispose()
         {
-            Dispose(true);
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
         #endregion
     }

@@ -41,7 +41,7 @@ namespace PipingServer.Core.Pipes
         public async ValueTask ConnectionAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, IPipelineStreamResult CompletableStream, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
-            using var finallyremove = Disposable.Create(() => Current.TryRemove());
+            using var finallyremove = Disposable.Create(() => _ = Current.TryRemoveAsync());
             using var l = Logger?.LogDebugScope(nameof(ConnectionAsync));
             SetSenderCompletableStream(CompletableStream);
             var SetHeaderTask = SetHeadersAsync(DataTask, Token);
@@ -58,7 +58,7 @@ namespace PipingServer.Core.Pipes
             if (Result.Stream == PipelineStream.Empty)
                 Result.Stream = new PipelineStream();
             Result.Headers[ContentTypeKey] = string.Format(Options.SenderResponseMessageContentType ?? SenderResponseMessageMimeType, Options.Encoding.WebName);
-            Result.OnFinally += (o, arg) => Current.TryRemove();
+            Result.OnFinally += (o, arg) => _ = Current.TryRemoveAsync();
         }
         async Task SetSenderAsync(Task<(IHeaderDictionary Headers, Stream Stream)> DataTask, IPipelineStreamResult CompletableStream, CancellationToken Token)
         {

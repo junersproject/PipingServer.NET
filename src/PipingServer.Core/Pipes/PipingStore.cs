@@ -11,8 +11,9 @@ using static PipingServer.Core.Properties.Resources;
 
 namespace PipingServer.Core.Pipes
 {
-    public sealed class PipingStore : IPipingStore, IDisposable
+    public sealed class PipingStore : IPipingStore, IAsyncDisposable, IDisposable
     {
+        readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         readonly ILogger<PipingStore> Logger;
         readonly ILoggerFactory LoggerFactory;
         readonly PipingOptions Options;
@@ -37,8 +38,8 @@ namespace PipingServer.Core.Pipes
         internal async ValueTask<Pipe> GetAsync(RequestKey Key, CancellationToken Token = default)
         {
             Token.ThrowIfCancellationRequested();
-            await Task.CompletedTask;
-            lock (_waiters)
+            await Semaphore.WaitAsync(Token).ConfigureAwait(false);
+            try
             {
                 if (_waiters.TryGetValue(Key, out var Waiter))
                 {
@@ -51,9 +52,13 @@ namespace PipingServer.Core.Pipes
                     OnStatusChanged?.Invoke(Waiter, new PipeStatusChangedArgs(Waiter));
                     Logger.LogDebug(string.Format(PipingStore_Create, Waiter));
                     _waiters.Add(Key, Waiter);
-                    Waiter.OnFinally += (o, arg) => RemoveAsync(Key);
+                    Waiter.OnFinally += (o, arg) => _ = RemoveAsync(Key);
                 }
                 return Waiter;
+            }
+            finally
+            {
+                Semaphore.Release();
             }
         }
 
@@ -87,19 +92,24 @@ namespace PipingServer.Core.Pipes
                 // 指定されている受取数に相違がある
                 throw new PipingException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, Pipe.Key.Receivers, Key.Receivers), Pipe);
         }
-        Task<bool> RemoveAsync(RequestKey Key)
+        async Task<bool> RemoveAsync(RequestKey Key, CancellationToken Token = default)
         {
-            lock (_waiters)
+            await Semaphore.WaitAsync(Token).ConfigureAwait(false);
+            try
             {
                 var pipe = _waiters[Key];
                 var reuslt = _waiters.Remove(Key);
-                if (pipe is IDisposable disposable)
-                    disposable.Dispose();
+                if (pipe is IAsyncDisposable disposable)
+                    await disposable.DisposeAsync();
                 if (reuslt)
                     Logger.LogDebug(string.Format(PipingStore_Remove_Success, Key));
                 else
                     Logger.LogDebug(string.Format(PipingStore_Remove_Faild, Key));
-                return Task.FromResult(reuslt);
+                return reuslt;
+            }
+            finally
+            {
+                Semaphore.Release();
             }
         }
         public IEnumerator<IReadOnlyPipe> GetEnumerator() => _waiters.Values.OfType<IReadOnlyPipe>().GetEnumerator();
@@ -110,18 +120,28 @@ namespace PipingServer.Core.Pipes
         #region IDisposable Support
         private bool disposedValue = false; // 重複する呼び出しを検出するには
 
-        void Dispose(bool disposing)
+        public async ValueTask DisposeAsync()
         {
             if (!disposedValue)
             {
-                disposedValue = true;
+                foreach (var pipe in _waiters.Values.ToArray())
+                    if (pipe is IAsyncDisposable)
+                        await pipe.DisposeAsync().ConfigureAwait(false);
+                foreach (PipeStatusChangeEventHandler d in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
+                    OnStatusChanged -= d;
+            }
+            disposedValue = true;
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
                 if (disposing)
                 {
-                    foreach (var pipe in _waiters.Values.ToArray())
-                        pipe?.Dispose();
-                    foreach (PipeStatusChangeEventHandler d in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
-                        OnStatusChanged -= d;
+                    DisposeAsync().AsTask().Wait();
                 }
+                disposedValue = true;
             }
         }
 

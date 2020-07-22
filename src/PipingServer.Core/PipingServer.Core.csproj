@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>0.8.3.0</Version>
-    <FileVersion>0.8.3.0</FileVersion>
-    <PackageTags>piping-server</PackageTags>
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>

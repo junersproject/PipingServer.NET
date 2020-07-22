@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>0.8.3.0</Version>
-    <PackageTags>piping-server</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Resources\**" />

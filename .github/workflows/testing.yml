@@ -10,4 +10,4 @@ jobs:
     testing:
         steps:
         - name: .NET Core CLI
-           uses: baruchiro/github-actions@0.0.1
+           uses: 'baruchiro/github-actions@0.0.1'

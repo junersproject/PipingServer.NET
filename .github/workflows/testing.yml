@@ -12,9 +12,9 @@ jobs:
         with:
           dotnet-version: 3.1.100
       - name: Dotnet restore
-        run: make deps
+        run: dotnet restore
       - name: Dotnet build
-        run: make build
+        run: dotnet build
   test:
     runs-on: ubuntu-latest
     needs: [build]
@@ -25,6 +25,6 @@ jobs:
         with:
           dotnet-version: 3.1.100
       - name: Dotnet restore
-        run: make deps
+        run: dotnet restore
       - name: Dotnet test
-        run: make test
+        run: dotnet test

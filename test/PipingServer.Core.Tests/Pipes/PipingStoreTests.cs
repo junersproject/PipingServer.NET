@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PipingServer.Core.Options;
@@ -23,7 +24,10 @@ namespace PipingServer.Core.Pipes.Tests
         {
             var services = new ServiceCollection();
             services
-                .AddLogging()
+                .AddLogging(logging =>
+                {
+                    logging.AddConsole();
+                })
                 .Configure<PipingOptions>(config =>
                 {
                     config.BufferSize = 1024 * 4;
@@ -47,6 +51,7 @@ namespace PipingServer.Core.Pipes.Tests
         {
             using var provider = CreateProvider();
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(5));
+            var Logger = provider.GetRequiredService<ILogger<PipingStoreTests>>();
             var Token = TokenSource.Token;
             var Store = provider.GetRequiredService<PipingStore>();
             var StatusList = new List<MockReadOnlyPipe>();
@@ -54,7 +59,7 @@ namespace PipingServer.Core.Pipes.Tests
             {
                 if (!(s is IReadOnlyPipe rop))
                     return;
-                Debug.WriteLine($"{s}:{arg.Status}");
+                Logger.LogInformation($"{s}:{arg.Status}");
                 StatusList.Add(new MockReadOnlyPipe(arg, rop) { Status = arg.Status });
             };
             var RequestKey = new RequestKey("/test", new QueryCollection(new Dictionary<string, StringValues>
@@ -91,8 +96,8 @@ namespace PipingServer.Core.Pipes.Tests
                     , "sender content-type");
                 using var SenderResultStream = new MemoryStream();
                 await SenderResult.Stream.CopyToAsync(SenderResultStream);
-                Debug.WriteLine("SENDER RESPONSE MESSAGE:");
-                Debug.WriteLine(Encoding.GetString(SenderResultStream.ToArray()));
+                Logger.LogInformation("SENDER RESPONSE MESSAGE:");
+                Logger.LogInformation(Encoding.GetString(SenderResultStream.ToArray()));
                 Assert.AreEqual(PipeType.Receiver, ReceiverResult.PipeType, "receiver pipe type");
                 Assert.AreEqual(SendContentType
                     , ((ReceiverResult.Headers?.TryGetValue("Content-Type", out var rct) ?? false) ? rct : StringValues.Empty).ToString()
@@ -103,16 +108,16 @@ namespace PipingServer.Core.Pipes.Tests
                 using var ReceiverResultStream = new MemoryStream();
                 await ReceiverResult.Stream.CopyToAsync(ReceiverResultStream);
                 var ReceiverMessage = Encoding.GetString(ReceiverResultStream.ToArray());
-                Debug.WriteLine("RECEIVER RESPONSE MESSAGE:");
-                Debug.WriteLine(ReceiverMessage);
+                Logger.LogInformation("RECEIVER RESPONSE MESSAGE:");
+                Logger.LogInformation(ReceiverMessage);
                 Assert.AreEqual(SendMessage, ReceiverMessage);
                 SenderResult.Dispose();
             }
             if (Store is IAsyncDisposable Disposable)
                 await Disposable.DisposeAsync();
-            Debug.WriteLine(nameof(StatusList));
+            Logger.LogInformation(nameof(StatusList));
             foreach (var s in StatusList)
-                Debug.WriteLine(s);
+                Logger.LogInformation(s?.ToString());
             var ExpectStatusList = new[] {
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Created, Required = PipeType.All, IsRemovable = true, ReceiversCount = 0 },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Wait, Required = PipeType.Receiver, IsRemovable = false, ReceiversCount = 0 },
@@ -121,9 +126,9 @@ namespace PipingServer.Core.Pipes.Tests
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.ResponseEnd,Required = PipeType.None, IsRemovable = false, ReceiversCount = 1, Headers = SendData.Headers },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Dispose,Required = PipeType.None, IsRemovable = true, ReceiversCount = 0, Headers = SendData.Headers },
             };
-            Debug.WriteLine(nameof(ExpectStatusList));
+            Logger.LogInformation(nameof(ExpectStatusList));
             foreach (var s in ExpectStatusList)
-                Debug.WriteLine(s);
+                Logger.LogInformation(s?.ToString());
 
             CollectionAssert.AreEqual(ExpectStatusList, StatusList, MockReadOnlyPipe.Comparer);
         }
@@ -132,6 +137,7 @@ namespace PipingServer.Core.Pipes.Tests
         {
             using var provider = CreateProvider();
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(5));
+            var Logger = provider.GetRequiredService<ILogger<PipingStoreTests>>();
             var Token = TokenSource.Token;
             var StatusList = new List<MockReadOnlyPipe>();
             var Store = provider.GetRequiredService<PipingStore>();
@@ -139,7 +145,7 @@ namespace PipingServer.Core.Pipes.Tests
             {
                 if (!(s is IReadOnlyPipe rop))
                     return;
-                Debug.WriteLine($"{s}:{arg.Status}");
+                Logger.LogInformation($"{s}:{arg.Status}");
                 StatusList.Add(new MockReadOnlyPipe(arg, rop) { Status = arg.Status });
             };
             var RequestKey = new RequestKey("/test", new QueryCollection(new Dictionary<string, StringValues>
@@ -176,8 +182,8 @@ namespace PipingServer.Core.Pipes.Tests
                     , "sender content-type");
                 using var SenderResultStream = new MemoryStream();
                 await SenderResult.Stream.CopyToAsync(SenderResultStream);
-                Debug.WriteLine("SENDER RESPONSE MESSAGE:");
-                Debug.WriteLine(Encoding.GetString(SenderResultStream.ToArray()));
+                Logger.LogInformation("SENDER RESPONSE MESSAGE:");
+                Logger.LogInformation(Encoding.GetString(SenderResultStream.ToArray()));
                 Assert.AreEqual(PipeType.Receiver, ReceiverResult.PipeType, "receiver pipe type");
                 Assert.AreEqual(SendContentType
                     , ((ReceiverResult.Headers?.TryGetValue("Content-Type", out var rct) ?? false) ? rct : StringValues.Empty).ToString()
@@ -188,16 +194,16 @@ namespace PipingServer.Core.Pipes.Tests
                 using var ReceiverResultStream = new MemoryStream();
                 await ReceiverResult.Stream.CopyToAsync(ReceiverResultStream);
                 var ReceiverMessage = Encoding.GetString(ReceiverResultStream.ToArray());
-                Debug.WriteLine("RECEIVER RESPONSE MESSAGE:");
-                Debug.WriteLine(ReceiverMessage);
+                Logger.LogInformation("RECEIVER RESPONSE MESSAGE:");
+                Logger.LogInformation(ReceiverMessage);
                 Assert.AreEqual(SendMessage, ReceiverMessage);
                 SenderResult.Dispose();
             }
             if (Store is IAsyncDisposable Disposable)
                 await Disposable.DisposeAsync();
-            Debug.WriteLine(nameof(StatusList));
+            Logger.LogInformation(nameof(StatusList));
             foreach (var s in StatusList)
-                Debug.WriteLine(s);
+                Logger.LogInformation(s?.ToString());
             var ExpectStatusList = new[] {
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Created, Required = PipeType.All, IsRemovable = true, ReceiversCount = 0 },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Wait, Required = PipeType.Sender, IsRemovable = false, ReceiversCount = 1 },
@@ -206,9 +212,9 @@ namespace PipingServer.Core.Pipes.Tests
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.ResponseEnd, Required = PipeType.None, IsRemovable = false, ReceiversCount = 1, Headers = SendData.Headers },
                 new MockReadOnlyPipe{ Key = RequestKey, Status = PipeStatus.Dispose, Required = PipeType.None, IsRemovable = true, ReceiversCount = 0, Headers = SendData.Headers },
             };
-            Debug.WriteLine(nameof(ExpectStatusList));
+            Logger.LogInformation(nameof(ExpectStatusList));
             foreach (var s in ExpectStatusList)
-                Debug.WriteLine(s);
+                Logger.LogInformation(s?.ToString());
 
             CollectionAssert.AreEqual(ExpectStatusList, StatusList, MockReadOnlyPipe.Comparer);
         }

@@ -2,7 +2,7 @@
 {
     public enum PipeStatus : byte
     {
-        None = 0,
+        Created = 0,
         Wait,
         Ready,
         ResponseStart,

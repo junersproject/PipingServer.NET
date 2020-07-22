@@ -25,7 +25,7 @@ namespace PipingServer.Core.Pipes
         {
             using var finallyremove = Disposable.Create(() => Current.TryRemove());
             SetReceiverCompletableStream(CompletableStream);
-            Current.AddReceiver(CompletableStream);
+            await Current.AddReceiverAsync(CompletableStream, Token);
             await Current.ResponseReady(Token);
         }
         const string AccessControlAllowOriginKey = "Access-Control-Allow-Origin";

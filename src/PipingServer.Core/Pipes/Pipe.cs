@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +15,7 @@ namespace PipingServer.Core.Pipes
     internal sealed class Pipe : IReadOnlyPipe, IDisposable
     {
         internal PipingOptions Options { get; }
+        private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         public RequestKey Key { get; }
         public Pipe(RequestKey Key, PipingOptions Options)
         {
@@ -50,35 +50,57 @@ namespace PipingServer.Core.Pipes
         /// </summary>
         void RegisterEvents()
         {
-            // キャンセルイベント
-            Task.WhenAll(
-                ReadyTaskSource.Task
-                , ResponseTaskSource.Task
-                , InputDataSource.Task
-            ).ContinueWith(
-                t => Status = PipeStatus.Canceled
-                , TaskContinuationOptions.OnlyOnCanceled);
-            // レスポンス開始イベント
-            ResponseTaskSource.Task.ContinueWith(
-                t => Status = PipeStatus.ResponseStart
-                , TaskContinuationOptions.OnlyOnRanToCompletion);
-            // 待ち合わせ完了
-            ReadyTaskSource.Task.ContinueWith(
-                t => Status = PipeStatus.Ready
-                , TaskContinuationOptions.OnlyOnRanToCompletion);
+            _ = Task.Run(async () =>
+            {
+                // キャンセルイベント
+                try
+                {
+                    await Task.WhenAll(
+                        ReadyTaskSource.Task
+                        , ResponseTaskSource.Task
+                        , InputDataSource.Task
+                    );
+                }
+                catch (OperationCanceledException)
+                {
+                    await SetStatusAsync(PipeStatus.Canceled);
+                    Dispose();
+                }
+            });
+            _ = Task.Run(async () =>
+            {
+                // レスポンス開始イベント
+                await ResponseTaskSource.Task;
+                await SetStatusAsync(PipeStatus.ResponseStart);
+            });
+            _ = Task.Run(async () =>
+            {
+                // 待ち合わせ完了
+                await ReadyTaskSource.Task;
+                await SetStatusAsync(PipeStatus.Ready);
+            });
         }
         #region Status
-        PipeStatus status;
-        public PipeStatus Status
+        public PipeStatus Status { get; private set; }
+        private async ValueTask<bool> SetStatusAsync(PipeStatus value, CancellationToken Token = default)
         {
-            private set
+            if (((byte)Status) >= (byte)value)
+                return false;
+            await Semaphore.WaitAsync(Token).ConfigureAwait(false);
+            try
             {
-                if (((byte)status) >= (byte)value)
-                    return;
-                status = value;
+                Status = value;
                 OnStatusChanged?.Invoke(this, new PipeStatusChangedArgs(this));
             }
-            get => status;
+            finally
+            {
+                try
+                {
+                    Semaphore.Release();
+                }
+                catch (ObjectDisposedException) { }
+            }
+            return true;
         }
         #endregion
         #region Header And Stream Set Source
@@ -100,8 +122,8 @@ namespace PipingServer.Core.Pipes
             if (IsSetSenderComplete)
                 throw new PipingException(string.Format(TheNumberOfReceiversShouldBeRequestedReceiversCountButReceiversCount, Key.Receivers, ReceiversCount), this);
             IsSetSenderComplete = true;
-            if (Status == PipeStatus.None)
-                Status = PipeStatus.Wait;
+            if (Status == PipeStatus.Created)
+                await SetStatusAsync(PipeStatus.Wait, Token);
             await ReadyAsync(Token);
             var Headers = await GetHeadersAsync(Token);
             Receivers.SetHeaders(Headers);
@@ -230,7 +252,7 @@ namespace PipingServer.Core.Pipes
                 await Stream.WriteAsync(Buffer.Slice(0, bytesRead), Token).ConfigureAwait(false);
                 byteCounter += bytesRead;
             }
-            Status = PipeStatus.ResponseEnd;
+            await SetStatusAsync(PipeStatus.ResponseEnd, Token);
             return byteCounter;
         }
         /// <summary>
@@ -241,11 +263,11 @@ namespace PipingServer.Core.Pipes
         /// レシーバーの追加
         /// </summary>
         /// <param name="Result"></param>
-        internal void AddReceiver(IPipelineStreamResult Result)
+        internal async ValueTask AddReceiverAsync(IPipelineStreamResult Result, CancellationToken Token = default)
         {
             Receivers.Add(Result);
-            if (Status == PipeStatus.None)
-                Status = PipeStatus.Wait;
+            if (Status == PipeStatus.Created)
+                await SetStatusAsync(PipeStatus.Wait, Token);
             if (Status == PipeStatus.Wait && IsReady && !ReadyTaskSource.Task.IsCompleted)
                 ReadyTaskSource.TrySetResult(true);
         }
@@ -296,16 +318,20 @@ namespace PipingServer.Core.Pipes
                         ResponseTaskSource.TrySetCanceled();
                     if (!InputDataSource.Task.IsCompleted)
                         InputDataSource.TrySetCanceled();
-                    Status = PipeStatus.Dispose;
-                    foreach (PipeStatusChangeEventHandler e in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
-                        OnStatusChanged -= e;
-                    try
+                    Receivers.Clear();
+                    Task.Run(async () =>
                     {
-                        OnFinally?.Invoke(this, new EventArgs());
-                    }
-                    catch (Exception) { }
-                    foreach (EventHandler e in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
-                        OnFinally -= e;
+                        await SetStatusAsync(PipeStatus.Dispose);
+                        foreach (PipeStatusChangeEventHandler e in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
+                            OnStatusChanged -= e;
+                        try
+                        {
+                            OnFinally?.Invoke(this, new EventArgs());
+                        }
+                        catch (Exception) { }
+                        foreach (EventHandler e in (OnFinally?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
+                            OnFinally -= e;
+                    });
                     if (WaitTokenSource is CancellationTokenSource TokenSource)
                         TokenSource.Dispose();
                     if (CancelAction is IDisposable Disposable)

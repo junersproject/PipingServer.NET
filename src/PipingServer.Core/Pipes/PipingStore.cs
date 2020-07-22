@@ -48,6 +48,7 @@ namespace PipingServer.Core.Pipes
                 {
                     Waiter = new Pipe(Key, Options);
                     Waiter.OnStatusChanged += (p, args) => OnStatusChanged?.Invoke(p, args);
+                    OnStatusChanged?.Invoke(Waiter, new PipeStatusChangedArgs(Waiter));
                     Logger.LogDebug(string.Format(PipingStore_Create, Waiter));
                     _waiters.Add(Key, Waiter);
                     Waiter.OnFinally += (o, arg) => RemoveAsync(Key);
@@ -79,7 +80,7 @@ namespace PipingServer.Core.Pipes
         /// <param name="Key"></param>
         void AssertKey(Pipe Pipe, RequestKey Key)
         {
-            if (Pipe.Status != PipeStatus.None && Pipe.Status != PipeStatus.Wait)
+            if (Pipe.Status != PipeStatus.Created && Pipe.Status != PipeStatus.Wait)
                 // 登録できる状態でない
                 throw new PipingException(string.Format(ConnectionOnKeyHasBeenEstablishedAlready, Key), Pipe);
             else if (Key.Receivers != Pipe.Key.Receivers)
@@ -117,7 +118,7 @@ namespace PipingServer.Core.Pipes
                 if (disposing)
                 {
                     foreach (var pipe in _waiters.Values.ToArray())
-                        pipe.Dispose();
+                        pipe?.Dispose();
                     foreach (PipeStatusChangeEventHandler d in (OnStatusChanged?.GetInvocationList() ?? Enumerable.Empty<Delegate>()))
                         OnStatusChanged -= d;
                 }

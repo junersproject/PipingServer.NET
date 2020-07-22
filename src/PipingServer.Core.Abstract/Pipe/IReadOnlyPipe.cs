@@ -12,7 +12,7 @@ namespace PipingServer.Core.Pipes
         protected bool IsSetReceiversComplete { get; }
         PipeType IPipe.Required => (Status, IsSetSenderComplete, IsSetReceiversComplete) switch
         {
-            (PipeStatus.None, false, false) => PipeType.All,
+            (PipeStatus.Created, false, false) => PipeType.All,
             (PipeStatus.Wait, true, false) => PipeType.Receiver,
             (PipeStatus.Wait, false, true) => PipeType.Sender,
             _ => PipeType.None,

@@ -15,7 +15,7 @@ namespace PipingServer.Core.Pipes
         const string OPTIONS = "OPTIONS";
         public static IEnumerable<string> ToOptionMethods(this IReadOnlyPipe? Pipe)
         {
-            if (Pipe is IReadOnlyPipe && Pipe.Status != PipeStatus.None)
+            if (Pipe is IReadOnlyPipe && Pipe.Status != PipeStatus.Created)
             {
                 if (Pipe.Status == PipeStatus.Dispose)
                 {

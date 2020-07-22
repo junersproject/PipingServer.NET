@@ -64,6 +64,7 @@ namespace PipingServer.Mvc.Converters.Tests
                 }, StringToStream(TrimAllLines(
                     @"-----------------------------41952539122868
                     Content-Disposition: form-data; name=""multilined""
+
                     line 1
                     line 2
                     line 3
@@ -77,7 +78,7 @@ namespace PipingServer.Mvc.Converters.Tests
                     => new object[] { Converter, Headers, Body, ExpectedHeaders, ExpectedBody };
             }
         }
-        [TestMethod, DynamicData(nameof(GetStreamAsyncTestData)), Ignore]
+        [TestMethod, DynamicData(nameof(GetStreamAsyncTestData))]
         public async Task GetStreamAsyncTestAsync(MultipartStreamConverter Converter, IHeaderDictionary Headers, Stream Body, IEnumerableHeader ExpectedHeaders, byte[] ExpectedBody)
         {
             using var TokenSource = CreateTokenSource(TimeSpan.FromSeconds(30));
@@ -101,9 +102,9 @@ namespace PipingServer.Mvc.Converters.Tests
             return
                 string.Concat(
                     input.Split('\n')
-                         .Select(x => x.Trim())
-                         .Aggregate((first, second) => first + '\n' + second)
-                         .Where(x => x != '\r'));
+                         .Select(x => x.Trim(' ', '\r'))
+                         .Aggregate((first, second) => first + "\r\n" + second)
+                         );
         }
         public static Stream StringToStream(string input)
         {

@@ -120,9 +120,6 @@
   <data name="MissingContentTypeBoundary" xml:space="preserve">
     <value>Missing content-type boundary.</value>
   </data>
-  <data name="MultipartBoundaryLengthLimitExceeded" xml:space="preserve">
-    <value>Multipart boundary length limit {0} exceeded.</value>
-  </data>
   <data name="NoDataStream" xml:space="preserve">
     <value>No Data Stream.</value>
   </data>

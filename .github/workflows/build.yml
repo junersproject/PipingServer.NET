@@ -12,8 +12,7 @@ env:
   # Disable sending usage data to Microsoft
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # GitHub Packages Feed settings
-  GITHUB_OWNER: junersproject
-  GITHUB_FEED: https://nuget.pkg.github.com/${{ GITHUB_OWNER }}/index.json
+  GITHUB_FEED: https://nuget.pkg.github.com/junersproject/index.json
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json

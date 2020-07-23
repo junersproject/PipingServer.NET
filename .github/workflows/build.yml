@@ -84,9 +84,9 @@ jobs:
       - name: Push to GitHub Feed
         uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
         with:
-          nupkg-path:  './src/*/bin/Release/*.nupkg'
+          nupkg-path:  './src/**/*.nupkg'
           repo-owner:  $GITHUB_OWNER
           gh-user:  $GITHUB_OWNER
           token:  ${{ secrets.GITHUB_TOKEN }}
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./src/*/bin/Release/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
+        run: dotnet nuget push ./src/**/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY

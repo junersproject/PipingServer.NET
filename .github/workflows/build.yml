@@ -12,8 +12,8 @@ env:
   # Disable sending usage data to Microsoft
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # GitHub Packages Feed settings
-  GITHUB_FEED: https://nuget.pkg.github.com/giraffe-fsharp/
-  GITHUB_USER: dustinmoris
+  GITHUB_OWNER: junersproject
+  GITHUB_FEED: https://nuget.pkg.github.com/junersproject/index.json
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json
@@ -40,7 +40,7 @@ jobs:
         run: dotnet test -c Release
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet pack -v normal -c Release --no-restore --include-symbols --include-source -p:PackageVersion=$GITHUB_RUN_ID
+        run: dotnet pack -v normal -c Release --no-restore --include-symbols --include-source -p:PackageVersion=0.0.${GITHUB_RUN_ID}-alpha
       - name: Upload Artifact
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v2
@@ -57,11 +57,12 @@ jobs:
         with:
           name: nupkg
       - name: Push to GitHub Feed
-        run: |
-          for f in ./nupkg/*.nupkg
-          do
-            curl -vX PUT -u "$GITHUB_USER:$GITHUB_TOKEN" -F package=@$f $GITHUB_FEED
-          done
+        uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
+        with:
+          nupkg-path:  './nupkg/**/*.nupkg'
+          repo-owner:  $GITHUB_OWNER
+          gh-user:  $GITHUB_OWNER
+          token:  ${{ secrets.GITHUB_TOKEN }}
   deploy:
     needs: build
     if: github.event_name == 'release'
@@ -81,10 +82,11 @@ jobs:
           echo Clean Version: $VERSION
           dotnet pack -v normal -c Release --include-symbols --include-source -p:PackageVersion=$VERSION
       - name: Push to GitHub Feed
-        run: |
-          for f in ./nupkg/*.nupkg
-          do
-            curl -vX PUT -u "$GITHUB_USER:$GITHUB_TOKEN" -F package=@$f $GITHUB_FEED
-          done
+        uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
+        with:
+          nupkg-path:  './nupkg/**/*.nupkg'
+          repo-owner:  $GITHUB_OWNER
+          gh-user:  $GITHUB_OWNER
+          token:  ${{ secrets.GITHUB_TOKEN }}
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./nupkg/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
+        run: dotnet nuget push ./nupkg/**/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY

@@ -29,9 +29,6 @@ namespace PipingServer.Mvc.Converters
             var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary);
             if (StringSegment.IsNullOrEmpty(boundary))
                 throw new InvalidDataException(MissingContentTypeBoundary);
-            if (boundary.Length > Option.MultipartBoundaryLengthLimit)
-                throw new InvalidDataException(
-                    string.Format(MultipartBoundaryLengthLimitExceeded, Option.MultipartBoundaryLengthLimit));
             return boundary.Value;
         }
         public bool IsUse<IHeaderDictionary>(IDictionary<string, StringValues> Headers)
@@ -50,7 +47,12 @@ namespace PipingServer.Mvc.Converters
                 throw new ArgumentException(NotReadableStream);
             var ContentType = Headers[ContentTypeHeaderName];
             var boundary = GetBoundary(MediaTypeHeaderValue.Parse((string)ContentType));
-            var reader = new MultipartReader(boundary, Body, Option.BufferSize);
+            var reader = new MultipartReader(boundary, Body, Option.BufferSize)
+            {
+                BodyLengthLimit = Option.BodyLengthLimit,
+                HeadersCountLimit = Option.HeadersCountLimit,
+                HeadersLengthLimit = Option.HeadersLengthLimit,
+            };
             if ((await reader.ReadNextSectionAsync(Token)) is MultipartSection section)
             {
                 Headers.Clear();

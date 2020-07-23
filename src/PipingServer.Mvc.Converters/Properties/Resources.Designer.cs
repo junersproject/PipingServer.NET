@@ -70,15 +70,6 @@ namespace PipingServer.Mvc.Converters.Properties {
         }
         
         /// <summary>
-        ///   Multipart boundary length limit {0} exceeded. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string MultipartBoundaryLengthLimitExceeded {
-            get {
-                return ResourceManager.GetString("MultipartBoundaryLengthLimitExceeded", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   No Data Stream. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string NoDataStream {

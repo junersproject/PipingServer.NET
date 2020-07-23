@@ -12,8 +12,8 @@ env:
   # Disable sending usage data to Microsoft
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # GitHub Packages Feed settings
-  GITHUB_FEED: https://nuget.pkg.github.com/junersproject/index.json
-  GITHUB_USER: junersproject
+  GITHUB_OWNER: junersproject
+  GITHUB_FEED: https://nuget.pkg.github.com/${GITHUB_OWNER}/index.json
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json
@@ -61,7 +61,7 @@ jobs:
         with:
           dotnet-version: 3.1.301
       - name: Push to GitHub Feed
-        run: dotnet nuget push ./nupkg/**/*.nupkg --source $GITHUB_FEED --skip-duplicate --api-key $GITHUB_TOKEN
+        run: dotnet nuget push ./nupkg/**/*.nupkg --source $GITHUB_FEED --symbol-source $GITHUB_FEED --skip-duplicate --api-key $GITHUB_TOKEN
   deploy:
     needs: build
     if: github.event_name == 'release'
@@ -81,6 +81,6 @@ jobs:
           echo Clean Version: $VERSION
           dotnet pack -v normal -c Release --include-symbols --include-source -p:PackageVersion=$VERSION
       - name: Push to GitHub Feed
-        run: dotnet nuget push ./nupkg/**/*.nupkg --source $GITHUB_FEED --skip-duplicate --api-key $GITHUB_TOKEN
+        run: dotnet nuget push ./nupkg/**/*.nupkg --source $GITHUB_FEED --symbol-source $GITHUB_FEED --skip-duplicate --api-key $GITHUB_TOKEN
       - name: Push to NuGet Feed
         run: dotnet nuget push ./nupkg/**/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY

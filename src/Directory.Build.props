@@ -7,7 +7,7 @@
     <PackageProjectUrl>https://github.com/junersproject/PipingServer.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/junersproject/PipingServer.NET.git</RepositoryUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\LICENSE.txt">

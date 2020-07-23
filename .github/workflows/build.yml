@@ -60,8 +60,8 @@ jobs:
         uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
         with:
           nupkg-path:  './nupkg/**/*.nupkg'
-          repo-owner:  ${{ GITHUB_OWNER }}
-          gh-user:  ${{ GITHUB_OWNER }}
+          repo-owner:  $GITHUB_OWNER
+          gh-user:  $GITHUB_OWNER
           token:  ${{ secrets.GITHUB_TOKEN }}
   deploy:
     needs: build
@@ -85,8 +85,8 @@ jobs:
         uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
         with:
           nupkg-path:  './nupkg/**/*.nupkg'
-          repo-owner:  ${{ GITHUB_OWNER }}
-          gh-user:  ${{ GITHUB_OWNER }}
+          repo-owner:  $GITHUB_OWNER
+          gh-user:  $GITHUB_OWNER
           token:  ${{ secrets.GITHUB_TOKEN }}
       - name: Push to NuGet Feed
         run: dotnet nuget push ./nupkg/**/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY

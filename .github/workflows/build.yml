@@ -89,4 +89,4 @@ jobs:
           gh-user:  $GITHUB_OWNER
           token:  ${{ secrets.GITHUB_TOKEN }}
       - name: Push to NuGet Feed
-        run: dotnet nuget push ./src/**/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
+        run: dotnet nuget push ./src/**/*.nupkg --skip-duplicate --api-key $NUGET_KEY --symbol-api-key $NUGET_KEY

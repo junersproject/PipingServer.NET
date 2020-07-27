@@ -14,7 +14,6 @@ namespace PipingServer.Mvc.Converters
 {
     public class MultipartStreamConverter : IStreamConverter
     {
-        static readonly Encoding Encoding = new UTF8Encoding(false);
         readonly MultipartStreamConverterOption Option;
         public MultipartStreamConverter(IOptions<MultipartStreamConverterOption> Options) => Option = Options.Value;
         const string MultipartMimeTypeStart = "multipart/form-data";

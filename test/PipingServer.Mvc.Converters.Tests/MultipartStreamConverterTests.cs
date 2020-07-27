@@ -23,7 +23,7 @@ namespace PipingServer.Mvc.Converters.Tests
             {
 
             });
-            var Converter = new MultipartStreamConverter(Option);
+            _ = new MultipartStreamConverter(Option);
         }
         static IEnumerable<object[]> IsUseTestData
         {

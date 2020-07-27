@@ -15,7 +15,7 @@ namespace PipingServer.Core.Pipes
     internal sealed class Pipe : IReadOnlyPipe, IAsyncDisposable, IDisposable
     {
         internal PipingOptions Options { get; }
-        private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         public RequestKey Key { get; }
         public Pipe(RequestKey Key, PipingOptions Options)
         {

@@ -20,7 +20,7 @@ namespace PipingServer.Core.Internal
         public ReadonlyHeaderDictionary(int capacity)
             => Dict = new Dictionary<string, StringValues>(capacity);
         public ReadonlyHeaderDictionary(IDictionary<string, StringValues> dictionary, IEqualityComparer<string> comparer)
-            => Dict = new Dictionary<string, StringValues>(comparer);
+            => Dict = new Dictionary<string, StringValues>(dictionary, comparer);
         public ReadonlyHeaderDictionary(IEnumerable<KeyValuePair<string, StringValues>> collection, IEqualityComparer<string> comparer)
             => Dict = new Dictionary<string, StringValues>(collection, comparer);
         public ReadonlyHeaderDictionary(int capacity, IEqualityComparer<string> comparer)

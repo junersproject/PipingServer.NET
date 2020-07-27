@@ -6,7 +6,7 @@ namespace PipingServer.Client
     public class HttpResponseMessageResult : IDisposable
     {
         public HttpResponseMessage Message { get; }
-        IDisposable Disposable;
+        readonly IDisposable Disposable;
         private bool disposedValue;
 
         public HttpResponseMessageResult(HttpResponseMessage Message, IDisposable Disposable)

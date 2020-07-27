@@ -8,17 +8,16 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PipingServer.Client;
-using static PipingServer.App.APITests.HttpClientFactory;
 using static DebugUtils;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace PipingServer.App.APITests
 {
     [TestClass]
     public class ServiceAPITests : TestBase
     {
-        IDisposable? disposable;
-        IHttpClientFactory HttpClientFactory = null!;
+        IServiceProvider Provider = null!;
         [TestInitialize]
         public void Initialize()
         {
@@ -30,15 +29,20 @@ namespace PipingServer.App.APITests
                 })
                 .UseStartup<Startup>();
             var server = new TestServer(builder);
-            var list = DisposableList.Create(server);
-            HttpClientFactory = Create(server);
-            disposable = list;
+            var services = new ServiceCollection();
+            services
+                .AddSingleton(server);
+            services
+                .AddHttpClient(Options.DefaultName, (Provider,HttpClient) => HttpClient.BaseAddress = Provider.GetRequiredService<TestServer>().BaseAddress)
+                .ConfigurePrimaryHttpMessageHandler(Provider => Provider.GetRequiredService<TestServer>().CreateHandler());
+            Provider = services.BuildServiceProvider();
         }
-        protected IPipingServerClient CreateClient() => new PipingServerClient(HttpClientFactory, Options.Create(new PipingServerClientOptions()));
+        protected IPipingServerClient CreateClient() => new PipingServerClient(Provider.GetRequiredService<IHttpClientFactory>(), Options.Create(new PipingServerClientOptions()));
         [TestCleanup]
         public void Cleanup()
         {
-            disposable!.Dispose();
+            if(Provider is IDisposable Disposable)
+                Disposable.Dispose();
         }
         [TestMethod, TestCategory("Example")]
         public async Task PutAndOneGetAsync()

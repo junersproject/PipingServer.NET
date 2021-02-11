@@ -18,7 +18,7 @@ namespace PipingServer.App.APITests
         {
             get
             {
-                yield return OriginPipingServerUrls(new Uri("https://ppng.ml"));
+                yield return OriginPipingServerUrls(new Uri("https://ppng.io"));
                 yield return OriginPipingServerUrls(new Uri("https://piping-92sr2pvuwg14.runkit.sh"));
                 static object[] OriginPipingServerUrls(Uri Uri) => new object[] { Uri, };
             }
